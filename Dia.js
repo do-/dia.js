@@ -5,11 +5,20 @@ global.darn = (o) => {
 
 darn ("Dia.js is loading...")
 
-reExport ('Conf');
-reExport ('ModuleTools');
-reExport ('HTTP');
+reExport ('Conf')
+reExport ('ModuleTools')
+reExport ('HTTP')
+reExport ('DB')
 
 function reExport (module_name) {
-    var m = require ('./' + module_name + '.js')
-    for (var i in m) exports [i] = m [i]
+
+    try {
+        var m = require ('./' + module_name + '.js')
+        for (var i in m) exports [i] = m [i]
+    }
+    catch (x) {
+        darn ('[ERROR] ' + x)
+        process.exit (1)
+    }
+    
 }
