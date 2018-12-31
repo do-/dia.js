@@ -7,4 +7,4 @@ darn (`Loading configuration from ${fn}...`)
 
 global.$_CONF = JSON.parse (fs.readFileSync (fn, 'utf8'))
 
-darn (` ...ok`)
+darn (' ...ok')

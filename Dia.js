@@ -3,12 +3,23 @@ global.darn = (o) => {
     return (o)
 }
 
-darn ("Dia.js is loading...")
+global.suicide = (x) => {
+    darn ('[ERROR] ' + x)
+    process.exit (1)
+}
 
-reExport ('Conf')
-reExport ('ModuleTools')
-reExport ('DB')
-reExport ('HTTP')
+exports.init = () => {
+
+    darn ("Dia.js is loading...")
+
+    reExport ('Conf')
+    reExport ('ModuleTools')
+    reExport ('DB')
+    reExport ('HTTP')
+    
+    return $_DB.connect ()
+
+}
 
 function reExport (module_name) {
 
@@ -17,8 +28,7 @@ function reExport (module_name) {
         for (var i in m) exports [i] = m [i]
     }
     catch (x) {
-        darn ('[ERROR] ' + x)
-        process.exit (1)
+        suicide (x)
     }
-    
+
 }

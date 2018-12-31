@@ -21,6 +21,4 @@ async function reExport () {
         process.exit (1)
     }
     
-    await $_DB.connect ()
-    
 }
