@@ -13,14 +13,14 @@ exports.get_request = (rq) => {
     return $_REQUEST
 }
 
-exports.out_json = (rp, code, page) => {
+exports.out_json = ($_REQUEST, rp, code, page) => {
     rp.statusCode = code
     rp.setHeader ('Content-Type', 'application/json')
     rp.end (JSON.stringify (page))
     darn (`type=${$_REQUEST.type} id=${$_REQUEST.id} action=${$_REQUEST.action} part=${$_REQUEST.part}`)
 }
 
-exports.out_error = (rp, ex) => {
+exports.out_error = ($_REQUEST, rp, ex) => {
     function s4 () {return Math.floor((1 + Math.random()) * 0x10000).toString (16).substring (1)}
     var id = s4 () + s4 () + '-' + s4 () + '-' + s4 () + '-' + s4 () + '-' + s4 () + s4 () + s4 ()
     darn ([id, ex])

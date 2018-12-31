@@ -8,19 +8,13 @@ global.suicide = (x) => {
     process.exit (1)
 }
 
-exports.init = () => {
+darn ("Dia.js is loading...")
 
-    darn ("Dia.js is loading...")
-
-    reExport ('Conf')
-    reExport ('ModuleTools')
-    reExport ('DB')
-    reExport ('HTTP')
+reExport ('Conf')
+reExport ('ModuleTools')
+reExport ('DB')
+reExport ('HTTP')
     
-    return $_DB.connect ()
-
-}
-
 function reExport (module_name) {
 
     try {
