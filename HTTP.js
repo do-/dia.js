@@ -24,5 +24,5 @@ exports.out_error = ($_REQUEST, rp, ex) => {
     function s4 () {return Math.floor((1 + Math.random()) * 0x10000).toString (16).substring (1)}
     var id = s4 () + s4 () + '-' + s4 () + '-' + s4 () + '-' + s4 () + '-' + s4 () + s4 () + s4 ()
     darn ([id, ex])
-    exports.out_json (rp, 500, {success: false, id: id, dt: new Date ().toJSON ()})
+    exports.out_json ($_REQUEST, rp, 500, {success: false, id: id, dt: new Date ().toJSON ()})
 }
