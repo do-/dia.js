@@ -10,10 +10,13 @@ global.darn = (o) => {
 
 darn ("Dia.js is loading...")
 
-require ('./Conf.js')
+reExport ('Conf');
+reExport ('ModuleTools');
 
-const ModuleTools = require ('./ModuleTools.js')
-exports.require_fresh = ModuleTools.require_fresh
+function reExport (module_name) {
+    var m = require ('./' + module_name + '.js')
+    for (var i in m) exports [i] = m [i]
+}
 
 global.$_REQUEST = {}
 
