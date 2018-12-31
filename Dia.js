@@ -10,14 +10,7 @@ global.darn = (o) => {
 
 darn ("Dia.js is loading...")
 
-load_conf ()
-
-function load_conf () {
-    var fn = path.resolve (process.env.DIA_JS_CONFIGURATION_FILE_PATH || '../conf/elud.json')
-    darn (`Dia.js is loading configuration from ${fn}...`)
-    global.$_CONF = JSON.parse (fs.readFileSync (fn, 'utf8'))
-    darn (` ...ok`)
-}
+require ('./Conf.js')
 
 const ModuleTools = require ('./ModuleTools.js')
 exports.require_fresh = ModuleTools.require_fresh
