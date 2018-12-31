@@ -19,6 +19,9 @@ function load_conf () {
     darn (` ...ok`)
 }
 
+const ModuleTools = require ('./ModuleTools.js')
+exports.require_fresh = ModuleTools.require_fresh
+
 global.$_REQUEST = {}
 
 exports.listen = (handler) => http.createServer (handler).listen ($_CONF.listen.port, $_CONF.listen.host, () => {
@@ -43,21 +46,4 @@ exports.out_error = (rp, ex) => {
     var id = s4 () + s4 () + '-' + s4 () + '-' + s4 () + '-' + s4 () + '-' + s4 () + s4 () + s4 ()
     darn ([id, ex])
     exports.out_json (rp, 500, {success: false, id: id, dt: new Date ().toJSON ()})
-}
-
-var inc_fresh = {}
-
-exports.require_fresh = () => {
-
-    const check = (abs, mtime) => {
-        var old = inc_fresh [abs]
-        if (old == mtime) return
-        if (old < mtime) delete require.cache [abs]
-        inc_fresh [abs] = mtime
-    }
-
-    var abs = path.resolve ('Content/' + $_REQUEST.type + '.js')
-    check (abs, fs.statSync (abs).mtime)
-    return require (abs)
-
 }
