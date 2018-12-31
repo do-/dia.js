@@ -3,7 +3,7 @@ const fs   = require ('fs')
 
 var inc_fresh = {}
 
-exports.require_fresh = () => {
+exports.require_fresh = (type) => {
 
     const check = (abs, mtime) => {
         var old = inc_fresh [abs]
@@ -12,7 +12,7 @@ exports.require_fresh = () => {
         inc_fresh [abs] = mtime
     }
 
-    var abs = path.resolve ('Content/' + $_REQUEST.type + '.js')
+    var abs = path.resolve ('Content/' + type + '.js')
     check (abs, fs.statSync (abs).mtime)
     return require (abs)
 

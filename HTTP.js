@@ -1,16 +1,16 @@
 const http = require ('http')
 const url  = require ('url')
 
-global.$_REQUEST = {}
-
 exports.listen = (handler) => http.createServer (handler).listen ($_CONF.listen.port, $_CONF.listen.host, () => {
     darn (`Dia.js server running at http://${$_CONF.listen.host}:${$_CONF.listen.port}/`);
 })
 
-exports.parse_request = (rq) => {
+exports.get_request = (rq) => {
     var uri = url.parse (rq.url)
     var params = new URLSearchParams (uri.search);
-    $_REQUEST = {}; for (var k of ['type', 'id', 'action', 'part']) if (params.has (k)) $_REQUEST [k] = params.get (k)
+    var $_REQUEST = {}
+    for (var k of ['type', 'id', 'action', 'part']) if (params.has (k)) $_REQUEST [k] = params.get (k)
+    return $_REQUEST
 }
 
 exports.out_json = (rp, code, page) => {

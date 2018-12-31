@@ -10,3 +10,7 @@ $_DB.connect = () => {
     darn ('Connecting to the database...')
     return $_DB.cn.connect ()
 }
+
+$_DB.select_loop = (src, cb, params) => {
+//    if (!params) params
+}
