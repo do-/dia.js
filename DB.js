@@ -1,24 +1,26 @@
 global.$_DB = {}
 
-var dsn = $_CONF.db ['connection-string']
+var dsn = $_CONF.db.connectionString
 
-if (!dsn) throw 'db.connection-string is not set'
+if (!dsn) throw 'db.connectionString is not set'
 
 var product = dsn.split (':') [0]
 
 darn (`Loading ${product} db driver...`)
 
-reExport (product)
+reExport ()
 
-function reExport (module_name) {
+async function reExport () {
 
     try {
-        var m = require ('./DB/' + module_name + '.js')
+        var m = require ('./DB/' + product + '.js')
         for (var i in m) exports [i] = m [i]
     }
     catch (x) {
         darn ('[ERROR] ' + x)
         process.exit (1)
     }
+    
+    await $_DB.connect ()
     
 }

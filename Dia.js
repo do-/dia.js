@@ -7,8 +7,8 @@ darn ("Dia.js is loading...")
 
 reExport ('Conf')
 reExport ('ModuleTools')
-reExport ('HTTP')
 reExport ('DB')
+reExport ('HTTP')
 
 function reExport (module_name) {
 
