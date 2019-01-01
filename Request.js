@@ -27,12 +27,21 @@ module.exports = class Request {
         rp.setHeader ('Content-Type', 'application/json')
         rp.end (JSON.stringify (data))
     }
+
+    out (data) {
+        this.out_json (200, this.to_message (data))
+    }
     
     carp (x) {
         console.log (this.uuid, x)
         this.out_json (500, this.to_fault (x))
     }
     
+    to_message (data) {return {
+        success: true, 
+        content: data 
+    }}
+
     to_fault (x) {return {
         success: false, 
         id: this.uuid, 
