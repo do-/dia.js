@@ -28,4 +28,15 @@ module.exports = class Request {
         rp.end (JSON.stringify (data))
     }
     
+    carp (x) {
+        console.log (this.uuid, x)
+        this.out_json (500, this.to_fault (x))
+    }
+    
+    to_fault (x) {return {
+        success: false, 
+        id: this.uuid, 
+        dt: new Date ().toJSON ()
+    }}
+    
 }
