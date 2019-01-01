@@ -18,6 +18,18 @@ module.exports = class Request {
     get_method_name () {
         return 'get'
     }
+    
+    get_module () {
+        return Dia.require_fresh (this.module_name)        
+    }
+    
+    get_method () {
+        let module = this.get_module ()
+        if (!module) throw `Module not defined: ${this.module_name}`
+        var method = module [this.method_name]
+        if (!method) throw `Method not defined: ${this.module_name}.${this.method_name}`
+        return method
+    }
 
     read_params () {
         let rq = this.http_request
