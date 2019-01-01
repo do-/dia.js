@@ -16,4 +16,10 @@ module.exports = class Request {
         for (var k of ['type', 'id', 'action', 'part']) if (params.has (k)) this.q [k] = params.get (k)
     }
     
+    out_json (code, data) {
+        this.rp.statusCode = code
+        this.rp.setHeader ('Content-Type', 'application/json')
+        this.rp.end (JSON.stringify (data))
+    }
+    
 }
