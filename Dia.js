@@ -6,7 +6,9 @@ reExport ('Conf')
 reExport ('ModuleTools')
 reExport ('DB')
 reExport ('HTTP')
-    
+
+this.Request = require ('./Request.js')
+
 function reExport (module_name) {
 
     try {
