@@ -2,7 +2,11 @@ var console_log = console.log
 
 console.log = function () {
 
-    let a = [new Date().toISOString ()]
+    let dt = new Date ()
+    
+    dt.setMinutes (dt.getMinutes () - dt.getTimezoneOffset ())
+
+    let a = [dt.toISOString ().substr (0, 23)]
 
     for (let i of arguments) {
 
