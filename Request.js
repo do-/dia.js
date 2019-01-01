@@ -6,15 +6,25 @@ module.exports = class Request {
     constructor (o) {
         this.uuid = Dia.new_uuid ()
         for (i in o) this [i] = o [i]
-        this.get_params ()
-    }    
-    
-    get_params () {
-        let rq = this.http_request
-        if (rq) this.get_http_params (rq)
+        this.read_params ()
+        this.module_name = this.get_module_name ()
+        this.method_name = this.get_method_name ()
     }
 
-    get_http_params (rq) {
+    get_module_name () {
+        return this.q.type
+    }
+
+    get_method_name () {
+        return 'get'
+    }
+
+    read_params () {
+        let rq = this.http_request
+        if (rq) this.read_http_params (rq)
+    }
+
+    read_http_params (rq) {
         let uri = url.parse (rq.url)
         let params = new URLSearchParams (uri.search);
         this.q = {}
