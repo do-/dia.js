@@ -1,5 +1,26 @@
+var console_log = console.log
+
+console.log = function () {
+
+    let a = [new Date().toISOString ()]
+
+    for (let i of arguments) {
+
+        if (a.length == 1 && typeof i == 'string' && i.indexOf ('%') > -1) {
+            a [0] += ' ' + i          
+        }
+        else {
+            a.push (i)
+        }
+        
+    }
+    
+    console_log.apply (console, a)
+    
+}
+
 global.darn = (o) => {
-    console.log (new Date ().toISOString (), o)
+    console.log (o)
     return (o)
 }
 
