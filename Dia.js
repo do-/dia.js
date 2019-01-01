@@ -1,12 +1,39 @@
+var Date_prototype_toISOString = Date.prototype.toISOString
+Date.prototype.toISOString = function () {
+
+    let off = this.getTimezoneOffset ()
+    
+    let dt  = new Date (this.getTime ())
+    dt.setMinutes (dt.getMinutes () - off)
+    
+    let s = Date_prototype_toISOString.call (dt).substr (0, 23)
+            
+    if (off < 0) {
+        s += '+'
+        off = -off
+    }
+    else {
+        s += '-'
+    }    
+    
+    let dd = (n) => {
+        if (n < 10) s += '0'
+        s += n
+    }
+
+    dd (Math.floor (off / 60))
+    s += ':'
+    dd (off % 60)    
+    
+    return s
+
+}
+
 var console_log = console.log
 
 console.log = function () {
 
-    let dt = new Date ()
-    
-    dt.setMinutes (dt.getMinutes () - dt.getTimezoneOffset ())
-
-    let a = [dt.toISOString ().substr (0, 23)]
+    let a = [new Date ().toISOString ()]
 
     for (let i of arguments) {
 
