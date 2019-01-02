@@ -6,12 +6,30 @@ module.exports = class extends Dia.DB.Client {
         return await this.backend.release ()
     }
     
-    async select_all (sql, params = []) {
+    fix_sql (original_sql) {    
+        let parts = original_sql.split ('?')
+        let sql = parts.shift ()
+        let cnt = 0
+        for (let part of parts) sql += `$${++cnt}${part}`        
+        return sql    
+    }
+
+    async select_all (original_sql, params = []) {
+    
+        let sql = this.fix_sql (original_sql)
+        
         let label = sql + ' ' + JSON.stringify (params)
+        
         console.time (label)
-        let result = await this.backend.query (sql, params)
-        console.timeEnd (label)
-        return result.rows
+        
+        try {
+            let result = await this.backend.query (sql, params)
+            return result.rows
+        }
+        finally {
+            console.timeEnd (label)
+        }
+        
     }
     
     async select_hash (sql, params) {
