@@ -33,9 +33,12 @@ module.exports = class {
     }
 
     async select_all_cnt (original_sql, params) {
-        let all = await this.select_all (original_sql, params)
-        let cnt = await this.select_scalar (this.to_counting_sql (original_sql), params)
-        return [all, cnt]
+
+        return Promise.all ([
+            this.select_all (original_sql, params),
+            this.select_scalar (this.to_counting_sql (original_sql), params),
+        ])
+    
     }
 
 }
