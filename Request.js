@@ -6,7 +6,11 @@ module.exports = class Request {
     constructor (o) {
         this.uuid = Dia.new_uuid ()
         for (i in o) this [i] = o [i]
-        this.read_params ()
+        this.run ()
+    }
+
+    async run () {
+        await this.read_params ()
         this.process_params ()
     }
 
@@ -35,16 +39,49 @@ module.exports = class Request {
         this.method_name = this.get_method_name ()
     }
 
-    read_params () {
+    async read_params () {
+        this.q = {}
         let rq = this.http_request
-        if (rq) this.read_http_params (rq)
+        if (rq) return await this.read_http_params (rq)
     }
 
-    read_http_params (rq) {
-        let uri = url.parse (rq.url)
+    read_http_head_params () {
+        let uri = url.parse (this.http_request.url)
         let params = new URLSearchParams (uri.search);
-        this.q = {}
         for (var k of ['type', 'id', 'action', 'part']) if (params.has (k)) this.q [k] = params.get (k)
+    }
+    
+    read_body_params () {
+        let o = JSON.parse (this.body)
+        for (let i in o) this.q [i] = o [i]
+        delete this.body
+    }
+    
+    async read_http_params (rq) {
+
+        return new Promise ((resolve, reject) => {
+        
+            this.body = '';
+
+            rq.on ('data', chunk => {
+                this.body += chunk.toString ()
+            })
+
+            rq.on ('end', () => {
+            
+                try {
+                    this.read_body_params ()
+                    this.read_http_head_params ()
+                    resolve ()
+                }
+                catch (x) {
+                    reject (x)
+                }
+                
+            })
+                
+        })
+        
     }
     
     out_json (code, data) {
