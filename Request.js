@@ -5,13 +5,37 @@ module.exports = class Request {
 
     constructor (o) {
         this.uuid = Dia.new_uuid ()
+        console.time (this.uuid)        
         for (i in o) this [i] = o [i]
         this.run ()
     }
 
     async run () {
-        await this.read_params ()
-        this.process_params ()
+        
+        try {
+            await this.read_params ()
+            await this.lock_resources ()
+            await this.process_params ()
+        }
+        catch (x) {
+            this.carp (x)
+        }
+        
+        try {
+            await this.unlock_resources ()
+        }
+        catch (x) {
+            darn (x)
+        }
+        
+        console.timeEnd (this.uuid)
+
+    }
+    
+    async lock_resources () {
+    }
+
+    async unlock_resources () {
     }
 
     get_module_name () {
