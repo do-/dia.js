@@ -16,5 +16,16 @@ module.exports = class {
         console.timeEnd (label)
         return result.rows
     }
+    
+    async select_hash (sql, params) {
+        let all = await this.select_all (sql, params)
+        return all.length ? all [0] : {}
+    }
+    
+    async select_scalar (sql, params) {
+        let r = await this.select_hash (sql, params)
+        for (let k in r) return r [k]
+        return null
+    }
 
 }
