@@ -7,8 +7,7 @@ module.exports = class Request {
         this.uuid = Dia.new_uuid ()
         for (i in o) this [i] = o [i]
         this.read_params ()
-        this.module_name = this.get_module_name ()
-        this.method_name = this.get_method_name ()
+        this.process_params ()
     }
 
     get_module_name () {
@@ -29,6 +28,11 @@ module.exports = class Request {
         var method = module [this.method_name]
         if (!method) throw `Method not defined: ${this.module_name}.${this.method_name}`
         return method
+    }
+
+    async process_params () {
+        this.module_name = this.get_module_name ()
+        this.method_name = this.get_method_name ()
     }
 
     read_params () {
