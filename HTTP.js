@@ -1,9 +1,15 @@
 const http = require ('http')
 const url  = require ('url')
 
-exports.listen = (handler) => http.createServer (handler).listen ($_CONF.listen.port, $_CONF.listen.host, () => {
-    darn (`Dia.js server running at http://${$_CONF.listen.host}:${$_CONF.listen.port}/`);
-})
+exports.listen = (handler) => {
+
+    let o = $_CONF.listen
+
+    http.createServer (handler).listen (o, () => {
+        console.log ('Dia.js HTTP server is running at ', o)
+    })
+
+}
 
 exports.get_http_request_body = async (rq) => {
 
