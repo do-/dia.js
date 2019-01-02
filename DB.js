@@ -13,3 +13,4 @@ exports.Pool = (o) => {
 }
 
 exports.Client = require ('./DB/Client.js')
+exports.Model  = require ('./DB/Model.js')
