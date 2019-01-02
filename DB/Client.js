@@ -27,5 +27,15 @@ module.exports = class {
         return data
 
     }
+    
+    to_counting_sql (original_sql) {
+        return original_sql.replace (/ORDER BY.*/, '').replace (/SELECT.*?\s+FROM\s+/, 'SELECT COUNT(*) FROM ')
+    }
+
+    async select_all_cnt (original_sql, params) {
+        let all = await this.select_all (original_sql, params)
+        let cnt = await this.select_scalar (this.to_counting_sql (original_sql), params)
+        return [all, cnt]
+    }
 
 }

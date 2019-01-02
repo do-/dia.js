@@ -41,6 +41,6 @@ module.exports = class extends Dia.DB.Client {
         let r = await this.select_hash (sql, params)
         for (let k in r) return r [k]
         return null
-    }
+    }    
 
 }
