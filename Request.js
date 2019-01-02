@@ -33,11 +33,11 @@ module.exports = class Request {
     }
     
     async acquire_resources () {
-        this.db = await this.db_pool.acquire ()
+        if (this.db_pools) for (let k in this.db_pools) this [k] = await this.db_pools [k].acquire ()
     }
 
     async release_resources () {
-        await this.db_pool.release (this.db)
+        if (this.db_pools) for (let k in this.db_pools) await this.db_pools [k].release (this [k])
     }
     
     get_module_name () {
