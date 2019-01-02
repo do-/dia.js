@@ -1,8 +1,6 @@
-module.exports = class {
+const Dia = require ('../../Dia.js')
 
-    constructor (backend) {
-        this.backend = backend
-    }
+module.exports = class extends Dia.DB.Client {
 
     async release () {
         return await this.backend.release ()

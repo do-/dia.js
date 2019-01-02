@@ -11,3 +11,5 @@ exports.Pool = (o) => {
     return new clazz (o)
 
 }
+
+exports.Client = require ('./DB/Client.js')
