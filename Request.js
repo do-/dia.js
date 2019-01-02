@@ -54,31 +54,24 @@ module.exports = class Request {
         let o = JSON.parse (this.body)
         for (let i in o) this.q [i] = o [i]
     }
-    
+
     async read_http_params (rq) {
-    
+
         this.body = await Dia.HTTP.get_http_request_body (this.http_request)
         this.read_body_params ()
         delete this.body
-    
+
         this.read_http_head_params ()
-           
-    }
-    
-    out_json (code, data) {
-        let rp = this.http_response
-        rp.statusCode = code
-        rp.setHeader ('Content-Type', 'application/json')
-        rp.end (JSON.stringify (data))
+
     }
 
     out (data) {
-        this.out_json (200, this.to_message (data))
+        Dia.HTTP.out_json (this.http_response, 200, this.to_message (data))
     }
     
     carp (x) {
-        console.log (this.uuid, x)
-        this.out_json (500, this.to_fault (x))
+        console.log (this.uuid, '[ERROR]', x)
+        Dia.HTTP.out_json (this.http_response, 500, this.to_fault (x))
     }
     
     to_message (data) {return {

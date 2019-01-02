@@ -27,3 +27,9 @@ exports.get_http_request_body = async (rq) => {
     })    
     
 }
+
+exports.out_json = (rp, code, data) => {
+    rp.statusCode = code
+    rp.setHeader ('Content-Type', 'application/json')
+    rp.end (JSON.stringify (data))
+}
