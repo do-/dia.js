@@ -14,7 +14,7 @@ module.exports = class Request {
         
         try {
             await this.read_params ()
-            await this.lock_resources ()
+            await this.acquire_resources ()
             await this.process_params ()
         }
         catch (x) {
@@ -22,7 +22,7 @@ module.exports = class Request {
         }
         
         try {
-            await this.unlock_resources ()
+            await this.release_resources ()
         }
         catch (x) {
             darn (x)
@@ -32,12 +32,14 @@ module.exports = class Request {
 
     }
     
-    async lock_resources () {
+    async acquire_resources () {
+        this.db = await this.db_pool.acquire ()
     }
 
-    async unlock_resources () {
+    async release_resources () {
+        await this.db_pool.release (this.db)
     }
-
+    
     get_module_name () {
         return this.q.type
     }
