@@ -6,8 +6,7 @@ module.exports = class extends Dia.DB.Client {
         return await this.backend.release ()
     }
     
-    async select_all (sql, params) {
-        if (!params) params = []
+    async select_all (sql, params = []) {
         let label = sql + ' ' + JSON.stringify (params)
         console.time (label)
         let result = await this.backend.query (sql, params)
