@@ -17,4 +17,15 @@ module.exports = class {
 
     }
 
+    async add_vocabularies (data, def) {
+
+        for (let name in def) {            
+            let o = def [name] || {}            
+            if (!o.off) data [name] = await this.select_vocabulary (o.name || name, o)        
+        }
+
+        return data
+
+    }
+
 }
