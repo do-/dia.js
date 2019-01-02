@@ -5,9 +5,9 @@ require ('./H4xx.js')
 reExport ('Conf')
 reExport ('ModuleTools')
 reExport ('DB')
-reExport ('HTTP')
 
 this.Request = require ('./Request.js')
+this.HTTP    = require ('./HTTP.js')
 
 function reExport (module_name) {
 

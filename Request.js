@@ -41,8 +41,7 @@ module.exports = class Request {
 
     async read_params () {
         this.q = {}
-        let rq = this.http_request
-        if (rq) return await this.read_http_params (rq)
+        if (this.http_request) return await this.read_http_params ()
     }
 
     read_http_head_params () {
@@ -54,34 +53,16 @@ module.exports = class Request {
     read_body_params () {
         let o = JSON.parse (this.body)
         for (let i in o) this.q [i] = o [i]
-        delete this.body
     }
     
     async read_http_params (rq) {
-
-        return new Promise ((resolve, reject) => {
-        
-            this.body = '';
-
-            rq.on ('data', chunk => {
-                this.body += chunk.toString ()
-            })
-
-            rq.on ('end', () => {
-            
-                try {
-                    this.read_body_params ()
-                    this.read_http_head_params ()
-                    resolve ()
-                }
-                catch (x) {
-                    reject (x)
-                }
-                
-            })
-                
-        })
-        
+    
+        this.body = await Dia.HTTP.get_http_request_body (this.http_request)
+        this.read_body_params ()
+        delete this.body
+    
+        this.read_http_head_params ()
+           
     }
     
     out_json (code, data) {
