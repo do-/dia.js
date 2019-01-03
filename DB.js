@@ -18,3 +18,4 @@ exports.Pool = (o, m) => {
 
 exports.Client = require ('./DB/Client.js')
 exports.Model  = require ('./DB/Model.js')
+exports.Query  = require ('./DB/Query.js')
