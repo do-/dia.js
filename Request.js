@@ -4,9 +4,9 @@ const url = require ('url')
 module.exports = class Request {
 
     constructor (o) {
+        for (let i in o) this [i] = o [i]
         this.uuid = Dia.new_uuid ()
         console.time (this.uuid)        
-        for (i in o) this [i] = o [i]
         this.run ()
     }
 
@@ -20,15 +20,19 @@ module.exports = class Request {
         catch (x) {
             this.carp (x)
         }
-        
-        try {
-            await this.release_resources ()
+        finally {
+
+            try {
+                await this.release_resources ()
+            }
+            catch (x) {
+                darn (x)
+            }
+            finally {
+                console.timeEnd (this.uuid)
+            }
+
         }
-        catch (x) {
-            darn (x)
-        }
-        
-        console.timeEnd (this.uuid)
 
     }
     
