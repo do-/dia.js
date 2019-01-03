@@ -96,7 +96,7 @@ this.src = src
                     if (hint.indexOf ('.') < 0) hint = `${query.parts[0].alias}.${hint}`                    
                     return `${hint}=${this.alias}.id`
                 }
-
+                
                 let find_ref_from_prev_part = () => {
                     for (let part of query.parts) {
                         if (part === this) return undefined
@@ -111,10 +111,28 @@ this.src = src
                     }
                 }
                 
+                let find_ref_to_prev_part = () => {
+                    let cols = model.tables [this.table].columns
+                    for (let part of query.parts) {
+                        if (part === this) return undefined
+                        let ref_col_names = []
+                        for (let name in cols) if (cols [name].ref == part.table) ref_col_names.push (name)
+                        switch (ref_col_names.length) {
+                            case 0: continue
+                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.id`
+                            default: throw `Ambiguous join condition for ${this.alias}`
+                        }
+                    }
+                }
+                
                 if (!this.is_root) {
-                    this.join_condition 
-                        = adjust_hint (this.join_hint)
-                        || find_ref_from_prev_part ()
+                                        
+                    if (!(                    
+                        this.join_condition = adjust_hint (this.join_hint)
+                            || find_ref_from_prev_part ()
+                            || find_ref_to_prev_part ()                            
+                    )) throw 'No join condition found for ' + this.alias
+                    
                 }
                                     
                 this.sql = '\n\t'
