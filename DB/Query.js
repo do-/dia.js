@@ -1,8 +1,11 @@
 module.exports = class {
 
     constructor (model, ...other) {
-
+    
         this.model = model
+        this.cols  = []
+        
+        let query = this        
 
         this.Part = class {
 
@@ -29,6 +32,7 @@ module.exports = class {
                     this.alias = (a || t).trim ()
 this.src = src                    
                     this.filters = v
+
                 }
 
             }
@@ -40,24 +44,44 @@ this.src = src
                 this.Col = class {
 
                     constructor (src) {
+                    
                         let [expr, alias] = src.split (/\s+AS\s+/)
+
                         this.part = part
                         this.expr = expr.trim ()
+
                         this.alias = (alias || expr).trim ()
+                        
+                        if (part.is_root) {
+                            if (this.expr == this.alias) delete this.alias
+                        }
+                        else {
+                            this.alias = `${part.alias}.${this.alias}`
+                        }
+                        
+                        this.expr = part.alias + '.' + this.expr                        
+                        this.sql = `\n\t${this.expr}`
+                        if (this.alias) this.sql += ` AS "${this.alias}"`
+
                     }
 
                 }
                 
-                if (this.cols == undefined) this.cols = part.is_root ? ['*'] : ['id', 'label']
+                if (this.cols == undefined) this.cols = model.get_default_query_columns (this)
                 
                 let cols = []; for (let src of this.cols) {
-                
-                    cols.push (new this.Col (src))
-                
+
+                    if (src == '*') {
+                        for (let c in model.tables [part.table].columns) cols.push (new this.Col (c))
+                    }
+                    else {
+                        cols.push (new this.Col (src))
+                    }
+
                 }
                 
-                this.cols = cols
-
+                for (let col of cols) query.cols.push (col)
+                 
             }
 
         }
@@ -65,6 +89,10 @@ this.src = src
         this.parts = other.map ((x) => new this.Part (x))
         this.parts [0].is_root = true
         for (let part of this.parts) part.adjust_cols ()
+        
+        this.sql = 'SELECT '
+        this.sql += this.cols.map ((col) => col.sql)
+        this.sql += '\nFROM '
 
     }
 

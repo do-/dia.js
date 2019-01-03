@@ -70,4 +70,8 @@ module.exports = class {
         
     }
     
+    get_default_query_columns (query_part) {
+        return query_part.is_root ? ['*'] : ['id', 'label']
+    }
+    
 }
