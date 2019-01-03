@@ -7,7 +7,6 @@ module.exports = class {
         if (!o.paths) o.paths = o.path ? [o.path] : []
         this.o = o
         this.reload ()
-darn (this.tables.tasks)        
     }
     
     reload () {
@@ -47,20 +46,24 @@ darn (this.tables.tasks)
         
         let col = {
             REMARK: comment,
-            COLUMN_DEF: column_def,
             NULLABLE: !!!column_def,
         }
         
-        let ref = /^\s*\((\w+)\)/.exec (type)        
-        if (ref) {
+        function set (k, v) {if (v) col [k] = v}
+        
+        set ('COLUMN_DEF', column_def)
+                
+        type = type.replace (/\s/g, '')
+        
+        if (type.charAt (0) == '(') {
             col.TYPE_NAME = 'int'
-            col.ref = ref [1]
+            col.ref = type.replace (/[\(\)]/g, '')
         }
         else {
-            let tsd = /^\s*(\w+)(?:\s*\[\s*(\d{1,2})(?:\s*,\s*(\d{1,2}))?\])?/.exec (type)        
-            col.TYPE_NAME = tsd [1]
-            col.COLUMN_SIZE = tsd [2]
-            col.DECIMAL_DIGITS = tsd [3]
+            let [t, s, p] = type.split (/[\[\,\]]/)
+            set ('TYPE_NAME', t)
+            set ('col.COLUMN_SIZE', s)
+            set ('col.DECIMAL_DIGITS', p)
         }
         
         return col
