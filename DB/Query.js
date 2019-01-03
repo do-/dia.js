@@ -7,6 +7,51 @@ module.exports = class {
         
         let query = this        
 
+        this.Filter = class {
+        
+            constructor (src, val) {
+
+                if (val === null && typeof val === 'object') {
+                    this.is_null = true
+                    this.params = []
+                }
+                else {
+                    this.params = Array.isArray (val) ? val : [val]
+                }
+                
+                let [_, col, etc, other] = /^(\w+)(\.\.\.)?\s*(\S*)$/.exec (src.trim ())
+
+                if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
+                
+                if (!other) other = this.params.length == 1 ? '=' : 'IN'
+                
+                this.sql = `(${col}`
+                if (etc) this.sql += ` IS NULL OR ${col}`
+                
+                this.sql += other
+                
+                if (!this.is_null && other.indexOf ('?') < 0) {
+                
+                    if (/IN$/.test (other)) {
+                        this.sql += '(?'
+                        for (let i = 0; i < this.params.length - 2; i ++) this.sql += ',?'
+                        this.sql += ')'
+                    }
+                    else if (/BETWEEN$/.test (other)) {
+                        this.sql += '? AND ?'
+                    }
+                    else {
+                        this.sql += '?'
+                    }
+                
+                }
+                
+                this.sql += ')'
+                                
+            }
+        
+        }
+        
         this.Part = class {
 
             constructor (value) {
@@ -34,8 +79,13 @@ module.exports = class {
                     let [t, a] = src.split (/\s+AS\s+/)
                     this.table = t.trim ()
                     this.alias = (a || t).trim ()
-this.src = src                    
-                    this.filters = v
+
+                    this.filters = []
+                    for (let fs in v) {
+                        let val = v [fs]
+                        if (typeof val === 'undefined') continue
+                        this.filters.push (new query.Filter (fs, val))
+                    }
 
                 }
 
@@ -144,7 +194,14 @@ this.src = src
                 if (!this.is_root) this.sql += 'LEFT JOIN '
                 this.sql += this.table
                 if (this.table != this.alias) this.sql += ` AS ${this.alias}`
-                if (!this.is_root) this.sql += ` ON (${this.join_condition})`
+                if (!this.is_root) {
+                    this.sql += ` ON (${this.join_condition}`
+                    for (let filter of this.filters) {
+                        this.sql += ` AND ${filter.sql}`
+                        for (let param of filter.params) query.params.push (param)
+                    }
+                    this.sql += ')'
+                }
                         
             }
            
@@ -154,6 +211,8 @@ this.src = src
         this.parts = other.map ((x) => new this.Part (x))
         this.parts [0].is_root = true
         for (let part of this.parts) part.adjust_cols ()
+
+        this.params = []
         for (let part of this.parts) part.adjust_join ()
         
         let get_sql = (x) => x.sql
@@ -162,6 +221,13 @@ this.src = src
         this.sql += this.cols.map (get_sql)
         this.sql += '\nFROM '
         this.sql += this.parts.map (get_sql).join ('')
+        
+        let filters = this.parts [0].filters
+        if (filters.length) {
+            this.sql += '\nWHERE '
+            this.sql += filters.map (get_sql).join ('\n\tAND ')
+            for (let filter of filters) for (let param of filter.params) this.params.push (param)
+        }
 
     }
 
