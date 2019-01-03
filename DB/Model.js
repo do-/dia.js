@@ -19,14 +19,19 @@ module.exports = class {
             let name = fn.split ('.') [0]
             let table = this.load_file (p + '/' + fn)
             table.name = name
+            if (!table.pk) throw 'No primary key defined for ' + name
             this.tables [name] = table
         }
     }
-
+    
     load_file (p) {
         let m = require (path.resolve (p))
+        this.adjust_table (m)
         if (m.columns) this.parse_columns (m.columns)
         return m
+    }
+    
+    adjust_table (table) {
     }
     
     parse_columns (columns) {
@@ -71,7 +76,7 @@ module.exports = class {
     }
     
     get_default_query_columns (query_part) {
-        return query_part.is_root ? ['*'] : ['id', 'label']
+        return ['*']
     }
-    
+
 }

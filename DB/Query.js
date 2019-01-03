@@ -94,32 +94,36 @@ this.src = src
                     if (!hint) return undefined
                     if (hint.indexOf ('=') > -1) return hint                    
                     if (hint.indexOf ('.') < 0) hint = `${query.parts[0].alias}.${hint}`                    
-                    return `${hint}=${this.alias}.id`
+                    return `${hint}=${this.alias}.${model.tables[this.table].pk}`
                 }
                 
                 let find_ref_from_prev_part = () => {
                     for (let part of query.parts) {
                         if (part === this) return undefined
-                        let cols = model.tables [part.table].columns
+                        let table = model.tables [part.table]
+                        if (!table) throw 'Table not found: ' + part.table
+                        let cols = table.columns
                         let ref_col_names = []
                         for (let name in cols) if (cols [name].ref == this.table) ref_col_names.push (name)
                         switch (ref_col_names.length) {
                             case 0: continue
-                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.id`
+                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.${model.tables[this.table].pk}`
                             default: throw `Ambiguous join condition for ${this.alias}`
                         }
                     }
                 }
                 
                 let find_ref_to_prev_part = () => {
-                    let cols = model.tables [this.table].columns
+                    let table = model.tables [this.table]
+                    if (!table) throw 'Table not found: ' + this.table
+                    let cols = table.columns
                     for (let part of query.parts) {
                         if (part === this) return undefined
                         let ref_col_names = []
                         for (let name in cols) if (cols [name].ref == part.table) ref_col_names.push (name)
                         switch (ref_col_names.length) {
                             case 0: continue
-                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.id`
+                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.${model.tables[part.table].pk}`
                             default: throw `Ambiguous join condition for ${this.alias}`
                         }
                     }
