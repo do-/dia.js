@@ -91,13 +91,30 @@ this.src = src
             adjust_join () {
             
                 let adjust_hint = (hint) => {
+                    if (!hint) return undefined
                     if (hint.indexOf ('=') > -1) return hint                    
                     if (hint.indexOf ('.') < 0) hint = `${query.parts[0].alias}.${hint}`                    
                     return `${hint}=${this.alias}.id`
                 }
+
+                let find_ref_from_prev_part = () => {
+                    for (let part of query.parts) {
+                        if (part === this) return undefined
+                        let cols = model.tables [part.table].columns
+                        let ref_col_names = []
+                        for (let name in cols) if (cols [name].ref == this.table) ref_col_names.push (name)
+                        switch (ref_col_names.length) {
+                            case 0: continue
+                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.id`
+                            default: throw `Ambiguous join condition for ${this.alias}`
+                        }
+                    }
+                }
                 
                 if (!this.is_root) {
-                    if (this.join_hint) this.join_condition = adjust_hint (this.join_hint)
+                    this.join_condition 
+                        = adjust_hint (this.join_hint)
+                        || find_ref_from_prev_part ()
                 }
                                     
                 this.sql = '\n\t'
