@@ -84,7 +84,15 @@ module.exports = class {
                     for (let fs in v) {
                         let val = v [fs]
                         if (typeof val === 'undefined') continue
-                        this.filters.push (new query.Filter (fs, val))
+                        if (fs == 'ORDER') {
+                            query.order = val
+                        }
+                        else if (fs == 'LIMIT') {
+                            query.limit = val
+                        }
+                        else {
+                            this.filters.push (new query.Filter (fs, val))
+                        }
                     }
 
                 }
@@ -228,6 +236,8 @@ module.exports = class {
             this.sql += filters.map (get_sql).join ('\n\tAND ')
             for (let filter of filters) for (let param of filter.params) this.params.push (param)
         }
+        
+        if (this.order) this.sql += `\nORDER BY \n\t ${this.order}`
 
     }
 
