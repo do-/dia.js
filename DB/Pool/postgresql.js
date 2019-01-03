@@ -9,7 +9,9 @@ module.exports = class {
     }
     
     async acquire () {  // darn (`${this.backend.totalCount} ${this.backend.idleCount} ${this.backend.waitingCount}`)    
-        return new wrapper (await this.backend.connect ())        
+        let c = new wrapper (await this.backend.connect ())
+        c.model = this.model        
+        return c
     }
 
     async release (client) {

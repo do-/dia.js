@@ -1,4 +1,4 @@
-exports.Pool = (o) => {
+exports.Pool = (o, m) => {
 
     let dsn = o.connectionString
     
@@ -8,7 +8,11 @@ exports.Pool = (o) => {
     
     let clazz = require ('./DB/Pool/' + product + '.js')
     
-    return new clazz (o)
+    let pool = new clazz (o)
+    
+    pool.model = m
+    
+    return pool
 
 }
 
