@@ -57,15 +57,17 @@ module.exports = class {
         return data
 
     }
-    
+
     async add (data, def) {
-
         let q = new Dia.DB.Query (this.model, def)
-        
         data [q.parts [0].alias] = await this.select_all (q.sql, q.params)
-
         return data
+    }
 
+    async fold (def, callback, data) {
+        let q = new Dia.DB.Query (this.model, def)
+        await this.select_loop (q.sql, q.params, callback, data)
+        return data
     }
 
 }

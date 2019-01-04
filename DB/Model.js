@@ -17,15 +17,15 @@ module.exports = class {
     load_dir (p) {
         for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
             let name = fn.split ('.') [0]
-            let table = this.load_file (p + '/' + fn)
-            table.name = name
+            let table = this.load_file (p + '/' + fn, name)
             if (!table.pk) throw 'No primary key defined for ' + name
             this.tables [name] = table
         }
     }
     
-    load_file (p) {
+    load_file (p, name) {
         let m = require (path.resolve (p))
+        m.name = name
         this.adjust_table (m)
         if (m.columns) this.parse_columns (m.columns)
         return m

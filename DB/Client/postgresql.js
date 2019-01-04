@@ -39,6 +39,12 @@ module.exports = class extends Dia.DB.Client {
         
     }
     
+    async select_loop (sql, params, callback, data) {
+        let all = await this.select_all (sql, params)
+        for (let one of all) callback (one, data)
+        return data
+    }
+
     async select_hash (sql, params) {
         let all = await this.select_all (sql, params)
         return all.length ? all [0] : {}
@@ -51,15 +57,10 @@ module.exports = class extends Dia.DB.Client {
     }    
     
     async get (def) {
-
-        let q = new Dia.DB.Query (this.model, def)
-        
+        let q = new Dia.DB.Query (this.model, def)       
         let [limited_sql, limited_params] = this.to_limited_sql_params (q.sql, q.params, 1)
-
         let getter = q.parts [0].cols.length == 1 ? this.select_scalar : this.select_hash
-
         return await getter.call (this, q.sql, q.params)
-
     }
-
+    
 }

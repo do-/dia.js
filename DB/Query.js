@@ -78,6 +78,7 @@ module.exports = class {
                     
                     let [t, a] = src.split (/\s+AS\s+/)
                     this.table = t.trim ()
+                    if (!model.tables [this.table]) throw 'Model misses the definition of ' + this.table
                     this.alias = (a || t).trim ()
 
                     this.filters = []
