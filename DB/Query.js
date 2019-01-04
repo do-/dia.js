@@ -87,9 +87,6 @@ module.exports = class {
                         if (fs == 'ORDER') {
                             query.order = val
                         }
-                        else if (fs == 'LIMIT') {
-                            query.limit = val
-                        }
                         else {
                             this.filters.push (new query.Filter (fs, val))
                         }
