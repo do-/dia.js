@@ -32,11 +32,13 @@ module.exports = class {
         return original_sql.replace (/ORDER BY.*/, '').replace (/SELECT.*?\s+FROM\s+/, 'SELECT COUNT(*) FROM ')
     }
 
-    async select_all_cnt (original_sql, params) {
+    async select_all_cnt (original_sql, original_params, limit, offset = 0) {
+    
+        let [limited_sql, limited_params] = this.to_limited_sql_params (original_sql, original_params, limit, offset)
 
         return Promise.all ([
-            this.select_all (original_sql, params),
-            this.select_scalar (this.to_counting_sql (original_sql), params),
+            this.select_all (limited_sql, limited_params),
+            this.select_scalar (this.to_counting_sql (original_sql), original_params),
         ])
     
     }

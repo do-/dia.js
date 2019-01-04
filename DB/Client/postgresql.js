@@ -14,6 +14,13 @@ module.exports = class extends Dia.DB.Client {
         return sql    
     }
 
+    to_limited_sql_params (original_sql, original_params, limit, offset) {
+        let params = original_params.slice ()
+        params.push (limit)
+        params.push (offset)
+        return [original_sql + ' LIMIT ? OFFSET ?', params]
+    }
+
     async select_all (original_sql, params = []) {
     
         let sql = this.fix_sql (original_sql)
