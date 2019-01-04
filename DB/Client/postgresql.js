@@ -25,7 +25,7 @@ module.exports = class extends Dia.DB.Client {
     
         let sql = this.fix_sql (original_sql)
         
-        let label = sql + ' ' + JSON.stringify (params)
+        let label = sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
         
         console.time (label)
         
