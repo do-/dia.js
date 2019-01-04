@@ -57,5 +57,15 @@ module.exports = class {
         return data
 
     }
+    
+    async add (data, def) {
+
+        let q = new Dia.DB.Query (this.model, def)
+        
+        data [q.parts [0].alias] = await this.select_all (q.sql, q.params)
+
+        return data
+
+    }
 
 }
