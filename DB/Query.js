@@ -139,6 +139,8 @@ module.exports = class {
 
                 }
                 
+                this.cols = cols
+                
                 for (let col of cols) query.cols.push (col)
                  
             }
