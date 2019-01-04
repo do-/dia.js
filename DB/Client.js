@@ -1,3 +1,5 @@
+const Dia = require ('../Dia.js')
+
 module.exports = class {
 
     constructor (backend) {
@@ -41,6 +43,19 @@ module.exports = class {
             this.select_scalar (this.to_counting_sql (original_sql), original_params),
         ])
     
+    }
+
+    async add_all_cnt (data, def, limit, offset = 0) {
+
+        let q = new Dia.DB.Query (this.model, def)
+
+        let [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
+                
+        data.all = all
+        data.cnt = cnt
+        
+        return data
+
     }
 
 }

@@ -1,6 +1,6 @@
 module.exports = class {
 
-    constructor (model, ...other) {
+    constructor (model, other) {
     
         this.model = model
         this.cols  = []
