@@ -228,7 +228,7 @@ module.exports = class {
 
         }
 
-        this.parts = other.map ((x) => new this.Part (x))
+        this.parts = Array.isArray (other) ? other.map ((x) => new this.Part (x)) : [new this.Part (other)]
         this.parts [0].is_root = true
         for (let part of this.parts) part.adjust_cols ()
 
