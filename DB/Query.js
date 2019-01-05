@@ -77,7 +77,14 @@ module.exports = class {
                     }
                     
                     let [t, a] = src.split (/\s+AS\s+/)
-                    this.table = t.trim ()
+                    
+                    t = t.trim ()
+                    if (t.charAt (0) == '$') {
+                        t = t.substr (1)
+                        this.is_inner = 1
+                    }                    
+                    
+                    this.table = t
                     if (!model.tables [this.table]) throw 'Model misses the definition of ' + this.table
                     this.alias = (a || t).trim ()
 
@@ -199,7 +206,10 @@ module.exports = class {
                                     
                 this.sql = '\n\t'
                 
-                if (!this.is_root) this.sql += 'LEFT JOIN '
+                if (!this.is_root) {
+                    this.sql += this.is_inner ? 'INNER' : 'LEFT'
+                    this.sql += ' JOIN '
+                }
                 this.sql += this.table
                 if (this.table != this.alias) this.sql += ` AS ${this.alias}`
                 if (!this.is_root) {
