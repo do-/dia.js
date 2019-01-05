@@ -1,25 +1,30 @@
 const Dia = require ('./Dia.js')
 const url = require ('url')
 
-module.exports = class Request {
+module.exports = class {
 
     constructor (o) {
         for (let i in o) this [i] = o [i]
         this.uuid = Dia.new_uuid ()
         this.__resources = []
-        console.time (this.uuid)        
         this.run ()
     }
 
     async run () {
         
+        console.time (this.uuid)        
+
         try {
             await this.read_params ()
             await this.acquire_resources ()
-            await this.process_params ()
+            this.module_name = this.get_module_name ()
+            this.method_name = this.get_method_name ()
+            let data = await this.get_method ().call (this)
+            this.out (data)
         }
         catch (x) {
             this.is_failed = true
+            this.carp (x)
         }
         finally {
 
@@ -36,7 +41,7 @@ module.exports = class Request {
         }
 
     }
-    
+
     is_transactional () {
         return !!this.q.action
     }
@@ -79,11 +84,6 @@ module.exports = class Request {
         var method = module [this.method_name]
         if (!method) throw `Method not defined: ${this.module_name}.${this.method_name}`
         return method
-    }
-
-    async process_params () {
-        this.module_name = this.get_module_name ()
-        this.method_name = this.get_method_name ()
     }
 
     async read_params () {
