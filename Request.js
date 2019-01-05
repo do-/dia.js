@@ -6,6 +6,7 @@ module.exports = class Request {
     constructor (o) {
         for (let i in o) this [i] = o [i]
         this.uuid = Dia.new_uuid ()
+        this.__resources = []
         console.time (this.uuid)        
         this.run ()
     }
@@ -18,7 +19,7 @@ module.exports = class Request {
             await this.process_params ()
         }
         catch (x) {
-            this.carp (x)
+            this.is_failed = true
         }
         finally {
 
@@ -36,14 +37,30 @@ module.exports = class Request {
 
     }
     
-    async acquire_resources () {
-        if (this.db_pools) for (let k in this.db_pools) this [k] = await this.db_pools [k].acquire ()
-    }
-
-    async release_resources () {
-        if (this.db_pools) for (let k in this.db_pools) await this.db_pools [k].release (this [k])
+    is_transactional () {
+        return !!this.q.action
     }
     
+    async acquire_resources () {    
+        if (this.db_pools) for (let k in this.db_pools) this [k] = await this.acquire_db_resource (k)
+    }
+
+    async acquire_db_resource (name) {
+        let db = await this.db_pools [name].acquire ()
+        this.__resources.push (db)
+        if (this.is_transactional ()) await db.begin ()
+        return db
+    }
+
+    async release_resources () {    
+        for (let resource of this.__resources) try {
+            resource.release (!this.is_failed)
+        }
+        catch (x) {
+            darn (x)
+        }
+    }
+
     get_module_name () {
         return this.q.type
     }

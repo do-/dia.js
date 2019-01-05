@@ -2,8 +2,29 @@ const Dia = require ('../../Dia.js')
 
 module.exports = class extends Dia.DB.Client {
 
-    async release () {
+    async finish_txn (success) {
+    
+        if (success) {
+            await this.commit ()
+        }
+        else {
+            darn ('[WARNING] Rolling back uncommitted transaction')
+            await this.rollback ()
+        }
+
+    }
+    
+    async release (success) {
+    
+        if (this.backend.is_txn_pending) try {        
+            this.finish_txn (success)
+        }
+        catch (x) {
+            darn (x)
+        }
+        
         return await this.backend.release ()
+    
     }
     
     fix_sql (original_sql) {    
@@ -92,6 +113,46 @@ module.exports = class extends Dia.DB.Client {
 
         return this.select_scalar (sql, params)
         
+    }
+    
+    async do (original_sql, params = []) {
+    
+        let sql = this.fix_sql (original_sql)
+        
+        let label = sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
+        
+        console.time (label)
+        
+        try {
+            return this.backend.query (sql, params)
+        }
+        finally {
+            console.timeEnd (label)
+        }
+        
+    }
+    
+    is_auto_commit () {
+        if (this.backend.is_txn_pending) return true
+        return false
+    }
+    
+    async begin () {
+        if (this.backend.is_txn_pending) throw "Nested transactions are not supported"
+        await this.do ('BEGIN')
+        this.backend.is_txn_pending = true
+    }
+    
+    async commit () {
+        if (this.auto_commit) return
+        await this.do ('COMMIT')
+        this.backend.is_txn_pending = false
+    }
+    
+    async rollback () {
+        if (this.auto_commit) return
+        await this.do ('ROLLBACK')
+        this.backend.is_txn_pending = false
     }
     
 }

@@ -8,9 +8,17 @@ module.exports = class {
         this.backend = new Pool (o)
     }
     
-    async acquire () {  // darn (`${this.backend.totalCount} ${this.backend.idleCount} ${this.backend.waitingCount}`)    
-        let c = new wrapper (await this.backend.connect ())
-        c.model = this.model        
+    async acquire () {  // darn (`${this.backend.totalCount} ${this.backend.idleCount} ${this.backend.waitingCount}`)
+        let raw = await this.backend.connect ()
+        let c = new wrapper (raw)
+        
+/*    
+        if (this.backend.is_txn_pending) {
+            darn ('[WARNING] Got a dirty connection, rolling back uncommitted transaction')            
+            (async () => {await this.rollback ()}) ()
+        }
+*/
+        c.model = this.model
         return c
     }
 
