@@ -20,11 +20,11 @@ module.exports = class {
             this.module_name = this.get_module_name ()
             this.method_name = this.get_method_name ()
             let data = await this.get_method ().call (this)
-            this.out (data)
+            this.send_out_data (data)
         }
         catch (x) {
             this.is_failed = true
-            this.carp (x)
+            this.send_out_error (x)
         }
         finally {
 
@@ -111,25 +111,5 @@ module.exports = class {
         this.read_http_head_params ()
 
     }
-
-    out (data) {
-        Dia.HTTP.out_json (this.http_response, 200, this.to_message (data))
-    }
-    
-    carp (x) {
-        console.log (this.uuid, '[ERROR]', x)
-        Dia.HTTP.out_json (this.http_response, 500, this.to_fault (x))
-    }
-    
-    to_message (data) {return {
-        success: true, 
-        content: data 
-    }}
-
-    to_fault (x) {return {
-        success: false, 
-        id: this.uuid, 
-        dt: new Date ().toJSON ()
-    }}
     
 }
