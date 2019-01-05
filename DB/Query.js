@@ -6,56 +6,11 @@ module.exports = class {
         this.cols  = []
         
         let query = this        
-
-        this.Filter = class {
-        
-            constructor (src, val) {
-
-                if (val === null && typeof val === 'object') {
-                    this.is_null = true
-                    this.params = []
-                }
-                else {
-                    this.params = Array.isArray (val) ? val : [val]
-                }
-                
-                let [_, col, etc, other] = /^(\w+)(\.\.\.)?\s*(\S*)$/.exec (src.trim ())
-
-                if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
-                
-                if (!other) other = this.params.length == 1 ? '=' : 'IN'
-                
-                this.sql = `(${col}`
-                if (etc) this.sql += ` IS NULL OR ${col}`
-                
-                this.sql += other
-                
-                if (!this.is_null && other.indexOf ('?') < 0) {
-                
-                    if (/IN$/.test (other)) {
-                        this.sql += '(?'
-                        for (let i = 0; i < this.params.length - 2; i ++) this.sql += ',?'
-                        this.sql += ')'
-                    }
-                    else if (/BETWEEN$/.test (other)) {
-                        this.sql += '? AND ?'
-                    }
-                    else {
-                        this.sql += '?'
-                    }
-                
-                }
-                
-                this.sql += ')'
-                                
-            }
-        
-        }
         
         this.Part = class {
 
             constructor (value) {
-
+            
                 if (value instanceof Object) for (let k in value) this [k] = value [k]; else this [value] = {}
                 
                 for (let k in this) {
@@ -87,6 +42,53 @@ module.exports = class {
                     this.table = t
                     if (!model.tables [this.table]) throw 'Model misses the definition of ' + this.table
                     this.alias = (a || t).trim ()
+                    
+                    let part = this
+
+                    this.Filter = class {
+
+                        constructor (src, val) {
+
+                            if (val === null && typeof val === 'object') {
+                                this.is_null = true
+                                this.params = []
+                            }
+                            else {
+                                this.params = Array.isArray (val) ? val : [val]
+                            }
+
+                            let [_, col, etc, other] = /^(\w+)(\.\.\.)?\s*(\S*)$/.exec (src.trim ())
+
+                            if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
+
+                            if (!other) other = this.params.length == 1 ? '=' : 'IN'
+
+                            this.sql = `(${part.alias}.${col}`
+                            if (etc) this.sql += ` IS NULL OR ${col}`
+
+                            this.sql += other
+
+                            if (!this.is_null && other.indexOf ('?') < 0) {
+
+                                if (/IN$/.test (other)) {
+                                    this.sql += '(?'
+                                    for (let i = 0; i < this.params.length - 2; i ++) this.sql += ',?'
+                                    this.sql += ')'
+                                }
+                                else if (/BETWEEN$/.test (other)) {
+                                    this.sql += '? AND ?'
+                                }
+                                else {
+                                    this.sql += '?'
+                                }
+
+                            }
+
+                            this.sql += ')'
+
+                        }
+
+                    }
 
                     this.filters = []
                     for (let fs in v) {
@@ -96,7 +98,7 @@ module.exports = class {
                             query.order = val
                         }
                         else {
-                            this.filters.push (new query.Filter (fs, val))
+                            this.filters.push (new this.Filter (fs, val))
                         }
                     }
 
