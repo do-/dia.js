@@ -57,7 +57,7 @@ module.exports = class {
                                 this.params = Array.isArray (val) ? val : [val]
                             }
 
-                            let [_, col, etc, other] = /^(\w+)(\.\.\.)?\s*(\S*)$/.exec (src.trim ())
+                            let [_, col, etc, other] = /^(\w+)(\.\.\.)?(\s*\S*)\s*$/.exec (src.trim ())
 
                             if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
 
@@ -77,6 +77,9 @@ module.exports = class {
                                 }
                                 else if (/BETWEEN$/.test (other)) {
                                     this.sql += '? AND ?'
+                                }
+                                else if (/LIKE$/.test (other)) {
+                                    this.sql += ' ?'
                                 }
                                 else {
                                     this.sql += '?'
