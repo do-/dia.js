@@ -74,9 +74,5 @@ module.exports = class {
         return col
         
     }
-    
-    get_default_query_columns (query_part) {
-        return ['*']
-    }
 
 }

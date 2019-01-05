@@ -136,8 +136,8 @@ module.exports = class {
 
                 }
                 
-                if (this.cols == undefined) this.cols = model.get_default_query_columns (this)
-                
+                if (this.cols == undefined) this.cols = ['*']
+
                 let cols = []; for (let src of this.cols) {
 
                     if (src == '*') {
