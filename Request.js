@@ -85,31 +85,5 @@ module.exports = class {
         if (!method) throw `Method not defined: ${this.module_name}.${this.method_name}`
         return method
     }
-
-    async read_params () {
-        this.q = {}
-        if (this.http_request) return await this.read_http_params ()
-    }
-
-    read_http_head_params () {
-        let uri = url.parse (this.http_request.url)
-        let params = new URLSearchParams (uri.search);
-        for (var k of ['type', 'id', 'action', 'part']) if (params.has (k)) this.q [k] = params.get (k)
-    }
-    
-    read_body_params () {
-        let o = JSON.parse (this.body)
-        for (let i in o) this.q [i] = o [i]
-    }
-
-    async read_http_params (rq) {
-
-        this.body = await Dia.HTTP.get_http_request_body (this.http_request)
-        this.read_body_params ()
-        delete this.body
-
-        this.read_http_head_params ()
-
-    }
     
 }
