@@ -1,4 +1,4 @@
-var Date_prototype_toISOString = Date.prototype.toISOString
+Date.prototype.toISOZString = Date.prototype.toISOString
 Date.prototype.toISOString = function () {
 
     let off = this.getTimezoneOffset ()
@@ -6,7 +6,7 @@ Date.prototype.toISOString = function () {
     let dt  = new Date (this.getTime ())
     dt.setMinutes (dt.getMinutes () - off)
     
-    let s = Date_prototype_toISOString.call (dt).substr (0, 23)
+    let s = dt.toISOZString ().substr (0, 23)
             
     if (off < 0) {
         s += '+'
