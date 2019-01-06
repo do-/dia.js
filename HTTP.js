@@ -38,6 +38,10 @@ exports.Handler = class extends Handler {
             finish () {
                 delete this.id
             }
+            
+            async get_user () {
+                return undefined
+            }
 
         }
 

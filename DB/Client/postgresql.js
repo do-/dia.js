@@ -115,6 +115,35 @@ module.exports = class extends Dia.DB.Client {
         
     }
     
+    async insert (table, data) {
+    
+        let def = this.model.tables [table]
+        if (!def) throw 'Table not found: ' + table
+
+        if (Array.isArray (data)) {
+            for (let d in data) await this.insert (table, d, key)
+            return
+        }
+        
+        let [fields, args, params] = [[], [], []]
+        
+        for (let k in data) {
+            let v = data [k]
+            if (typeof v === 'undefined') continue            
+            fields.push (k)
+            args.push ('?')
+            params.push (v)
+        }
+
+        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args})`
+        
+        let pk = def.pk
+        if (!data [pk]) sql += ` RETURNING ${pk}`
+
+        return this.select_scalar (sql, params)
+
+    }
+
     async do (original_sql, params = []) {
     
         let sql = this.fix_sql (original_sql)
@@ -154,5 +183,5 @@ module.exports = class extends Dia.DB.Client {
         await this.do ('ROLLBACK')
         this.backend.is_txn_pending = false
     }
-    
+            
 }

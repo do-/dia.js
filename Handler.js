@@ -19,7 +19,7 @@ module.exports = class {
             this.check_params ()
             this.session = this.get_session ()
             await this.acquire_resources ()
-            this.user = this.get_user ()
+            this.user = await this.get_user ()
             this.module_name = this.get_module_name ()
             this.method_name = this.get_method_name ()
             let data = await this.get_method ().call (this)
@@ -55,10 +55,11 @@ module.exports = class {
         return undefined
     }
 
-    get_user () {
-        return undefined
+    async get_user () {
+        if (!this.session) return undefined
+        return this.session.get_user ()
     }
-    
+
     is_transactional () {
         return !!this.q.action
     }
