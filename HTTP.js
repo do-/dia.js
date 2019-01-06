@@ -63,7 +63,7 @@ exports.Handler = class extends Handler {
             
             start () {
                 super.start ()
-                this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id);
+                this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id + '; HttpOnly');
             }
             
         }
