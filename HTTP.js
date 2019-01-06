@@ -14,6 +14,11 @@ exports.listen = (handler) => {
 
 exports.Handler = class extends Handler {
 
+    check () {
+        if (!this.http_request) throw '400 Empty http_request'
+        if (!this.http_response) throw 'Empty http_response'
+    }
+
     async get_http_request_body (rq) {
 
         return new Promise ((resolve, reject) => {
@@ -38,13 +43,18 @@ exports.Handler = class extends Handler {
     }
     
     parse_http_request_body () {
+    
+        if (this.http_request.headers ['content-type'] != 'application/json') return
+
         try {
             let o = JSON.parse (this.body)
+            if (Array.isArray (o)) throw '400 A plain object, not an array expected'
             for (let i in o) this.q [i] = o [i]
         }
         catch (x) {
             throw '400 Broken JSON'
         }
+        
     }
 
     async read_params () {
