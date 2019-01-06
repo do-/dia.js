@@ -1,3 +1,4 @@
+const Dia = require ('./Dia.js')
 const http = require ('http')
 const url  = require ('url')
 const Handler = require ('./Handler')
@@ -27,12 +28,12 @@ exports.Handler = class extends Handler {
             }
             
             new_id () {
-                return new_uuid ()
+                return Dia.new_uuid ()
             }
 
             start () {
                 if (this.id) this.finish ()
-                this.id = new_id ()
+                this.id = this.new_id ()
             }
 
             finish () {
