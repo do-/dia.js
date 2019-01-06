@@ -112,6 +112,13 @@ exports.Handler = class extends Handler {
         }
         
     }
+    
+    parse_x_headers () {
+        let h = this.http_request.headers
+        const pre = 'x-request-param-'
+        const len = pre.length
+        for (let k in h) if (k.substr (0, len) == pre) this.q [k.substr (len)] = h [k]
+    }
 
     async read_params () {
         
@@ -127,9 +134,11 @@ exports.Handler = class extends Handler {
         
         let uri = url.parse (this.http_request.url)
         new URLSearchParams (uri.search).forEach ((v, k) => this.q [k] = v)
+        
+        this.parse_x_headers ()
 
     }
-    
+
     get_module_name () {
         let type = this.q.type
         if (!type) throw '204 No content for you'
