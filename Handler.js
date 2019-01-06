@@ -10,7 +10,7 @@ module.exports = class {
     }
     
     get_log_banner () {
-        return `${this.module_name}.${this.method_name} [${this.session.id ? this.session.id : 'NO SESSION'}]`
+        return `${this.module_name}.${this.method_name}`
     }
 
     async run () {
@@ -31,6 +31,7 @@ module.exports = class {
             this.send_out_data (data)
         }
         catch (x) {
+            console.log (this.uuid, x)
             this.is_failed = true
             this.send_out_error (x)
         }
@@ -75,6 +76,7 @@ module.exports = class {
 
     async acquire_db_resource (name) {
         let db = await this.db_pools [name].acquire ()
+        db.log_prefix = this.uuid + ':  '
         this.__resources.push (db)
         if (this.is_transactional ()) await db.begin ()
         return db
