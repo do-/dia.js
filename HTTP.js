@@ -19,12 +19,33 @@ exports.Handler = class extends Handler {
         super (o)
         let handler = this
         
-        this.CookieSession = class {
+        this.Session = class {
         
             constructor (o) {
-                if (!o.cookie_name) throw 'cookie_name is not set'
                 this.h = handler
                 this.o = o
+            }
+            
+            new_id () {
+                return new_uuid ()
+            }
+
+            start () {
+                if (this.id) this.finish ()
+                this.id = new_id ()
+            }
+
+            finish () {
+                delete this.id
+            }
+
+        }
+
+        this.CookieSession = class extends this.Session {
+        
+            constructor (o) {
+                super (o)
+                if (!o.cookie_name) throw 'cookie_name is not set'
                 let cookies = this.h.http_request.headers.cookie
                 if (!cookies) return
                 for (let chunk of cookies.split (';')) {
@@ -33,6 +54,11 @@ exports.Handler = class extends Handler {
                     this.id = v
                     break
                 }
+            }
+            
+            start () {
+                super.start ()
+                this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id);
             }
             
         }
