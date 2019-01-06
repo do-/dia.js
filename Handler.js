@@ -7,7 +7,6 @@ module.exports = class {
         for (let i in o) this [i] = o [i]
         this.uuid = Dia.new_uuid ()
         this.__resources = []
-        this.run ()
     }
 
     async run () {
