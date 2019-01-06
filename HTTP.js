@@ -14,6 +14,31 @@ exports.listen = (handler) => {
 
 exports.Handler = class extends Handler {
 
+    constructor (o) {
+    
+        super (o)
+        let handler = this
+        
+        this.CookieSession = class {
+        
+            constructor (o) {
+                if (!o.cookie_name) throw 'cookie_name is not set'
+                this.h = handler
+                this.o = o
+                let cookies = this.h.http_request.headers.cookie
+                if (!cookies) return
+                for (let chunk of cookies.split (';')) {
+                    let [k, v] = chunk.trim ().split ('=')
+                    if (k != o.cookie_name) continue
+                    this.id = v
+                    break
+                }
+            }
+            
+        }
+        
+    }
+
     check () {
         if (!this.http_request) throw '400 Empty http_request'
         if (!this.http_response) throw 'Empty http_response'
