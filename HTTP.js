@@ -37,6 +37,7 @@ exports.Handler = class extends Handler {
             }
 
             finish () {
+                this.old_id = this.id
                 delete this.id
             }
             
@@ -64,6 +65,11 @@ exports.Handler = class extends Handler {
             start () {
                 super.start ()
                 this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id + '; HttpOnly');
+            }
+
+            finish () {
+                super.finish ()
+                this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=0; Expires=Thu, 01 Dec 1994 16:00:00 GMT');
             }
             
         }
