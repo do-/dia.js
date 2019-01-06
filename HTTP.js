@@ -135,6 +135,12 @@ exports.Handler = class extends Handler {
         if (!type) throw '204 No content for you'
         return type
     }
+    
+    get_log_banner () {
+        let b = super.get_log_banner ()
+        if (!this.session) return b
+        return `${b} [${this.session.id ? this.session.id : 'NO SESSION'}]`
+    }
 
     send_out_json (code, data) {
         let rp = this.http_response

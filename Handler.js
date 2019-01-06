@@ -8,6 +8,10 @@ module.exports = class {
         this.uuid = Dia.new_uuid ()
         this.__resources = []
     }
+    
+    get_log_banner () {
+        return `${this.module_name}.${this.method_name} [${this.session.id ? this.session.id : 'NO SESSION'}]`
+    }
 
     async run () {
         
@@ -21,7 +25,8 @@ module.exports = class {
             await this.acquire_resources ()
             this.user = await this.get_user ()
             this.module_name = this.get_module_name ()
-            this.method_name = this.get_method_name ()
+            this.method_name = this.get_method_name ()            
+            console.log (this.uuid + ': ' + this.get_log_banner ())            
             let data = await this.get_method ().call (this)
             this.send_out_data (data)
         }
