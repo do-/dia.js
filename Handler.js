@@ -84,10 +84,6 @@ module.exports = class {
         }
     }
 
-    get_module_name () {
-        return this.q.type
-    }
-
     get_method_name () {
         return 'get'
     }

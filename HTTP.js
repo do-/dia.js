@@ -129,6 +129,12 @@ exports.Handler = class extends Handler {
         new URLSearchParams (uri.search).forEach ((v, k) => this.q [k] = v)
 
     }
+    
+    get_module_name () {
+        let type = this.q.type
+        if (!type) throw '204 No content for you'
+        return type
+    }
 
     send_out_json (code, data) {
         let rp = this.http_response
