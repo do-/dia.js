@@ -153,7 +153,7 @@ module.exports = class extends Dia.DB.Client {
         console.time (label)
         
         try {
-            return this.backend.query (sql, params)
+            return await this.backend.query (sql, params)
         }
         finally {
             console.timeEnd (label)
