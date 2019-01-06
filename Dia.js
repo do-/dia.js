@@ -5,7 +5,7 @@ require ('./H4xx.js')
 reExport ('Conf')
 reExport ('ModuleTools')
 
-this.Request = require ('./Request.js')
+this.Handler = require ('./Handler.js')
 this.HTTP    = require ('./HTTP.js')
 this.DB      = require ('./DB.js')
 

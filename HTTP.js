@@ -1,6 +1,6 @@
 const http = require ('http')
 const url  = require ('url')
-const Request = require ('./Request')
+const Handler = require ('./Handler')
 
 exports.listen = (handler) => {
 
@@ -12,7 +12,7 @@ exports.listen = (handler) => {
 
 }
 
-exports.Request = class extends Request {
+exports.Handler = class extends Handler {
 
     async get_http_request_body (rq) {
 
@@ -43,7 +43,7 @@ exports.Request = class extends Request {
             for (let i in o) this.q [i] = o [i]
         }
         catch (x) {
-            throw '400 Incorrect JSON'
+            throw '400 Broken JSON'
         }
     }
 
