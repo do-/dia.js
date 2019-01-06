@@ -48,13 +48,20 @@ exports.Handler = class extends Handler {
     }
 
     async read_params () {
+        
         this.q = {}
-        this.body = await this.get_http_request_body (this.http_request)
-        this.parse_http_request_body ()
-        delete this.body
+        
+        switch (this.http_request.method) {
+            case 'POST':
+            case 'PUT':
+                this.body = await this.get_http_request_body (this.http_request)
+                this.parse_http_request_body ()
+                break
+        }
+        
         let uri = url.parse (this.http_request.url)
-        let params = new URLSearchParams (uri.search);
-        for (var k of ['type', 'id', 'action', 'part']) if (params.has (k)) this.q [k] = params.get (k)    
+        new URLSearchParams (uri.search).forEach ((v, k) => this.q [k] = v)
+
     }
 
     send_out_json (code, data) {

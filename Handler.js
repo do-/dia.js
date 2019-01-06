@@ -15,8 +15,12 @@ module.exports = class {
         console.time (this.uuid)        
 
         try {
+            this.check ()
             await this.read_params ()
+            this.check_params ()
+            this.session = this.get_session ()
             await this.acquire_resources ()
+            this.user = this.get_user ()
             this.module_name = this.get_module_name ()
             this.method_name = this.get_method_name ()
             let data = await this.get_method ().call (this)
@@ -42,6 +46,20 @@ module.exports = class {
 
     }
 
+    check () {
+    }
+
+    check_params () {
+    }
+    
+    get_session () {
+        return undefined
+    }
+
+    get_user () {
+        return undefined
+    }
+    
     is_transactional () {
         return !!this.q.action
     }
