@@ -121,7 +121,7 @@ module.exports = class extends Dia.DB.Client {
         if (!def) throw 'Table not found: ' + table
 
         if (Array.isArray (data)) {
-            for (let d in data) await this.insert (table, d, key)
+            for (let d in data) await this.insert (table, d)
             return
         }
         

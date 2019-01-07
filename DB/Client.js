@@ -74,5 +74,33 @@ module.exports = class {
         await this.select_loop (q.sql, q.params, callback, data)
         return data
     }
+    
+    async update (table, data) {
+
+        let def = this.model.tables [table]
+        if (!def) throw 'Table not found: ' + table
+
+        if (Array.isArray (data)) {
+            for (let d in data) await this.update (table, d)
+            return
+        }
+
+        let pk = data [def.pk]
+        if (pk == undefined) throw 'No primary key supplied for ' + table + ': ' + JSON.stringify (data)
+        delete data [def.pk]
+
+        let [fields, params] = [[], [], []]
+
+        for (let k in data) {
+            let v = data [k]
+            if (typeof v === 'undefined') continue
+            fields.push (`${k}=?`)
+            params.push (v)
+        }
+        params.push (pk)
+
+        return this.do (`UPDATE ${table} SET ${fields} WHERE ${def.pk}=?`, params)
+
+    }
 
 }
