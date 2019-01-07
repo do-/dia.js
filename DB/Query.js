@@ -46,6 +46,103 @@ module.exports = class {
                     let part = this
 
                     this.Filter = class {
+                    
+                        adjust_wildcards () {
+                        
+                            if (this.sql.indexOf ('%') < 0 ) return
+
+                            let parts = this.sql.split (/(\%?\?\%?)/)
+                            let i = 0
+                            this.sql = ''
+
+                            for (let part of parts) switch (part) {
+                                case '?':
+                                case '?%':
+                                case '%?':
+                                case '%?%':
+                                    switch (part) {
+                                        case '?%':
+                                            this.params [i] += '%'
+                                            break
+                                        case '%?':
+                                            this.params [i] = '%' + this.params [i]
+                                            break
+                                        case '%?%':
+                                            this.params [i] = '%' + this.params [i] + '%'
+                                            break
+                                    }
+                                    i ++
+                                    part = '?'
+                                default:
+                                    this.sql += part
+                            }
+                        
+                        }
+                        
+                        parse_col_etc_other (col_etc_other) {
+                        
+                            let [_, col, etc, other] = col_etc_other
+
+                            if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
+
+                            if (!other) other = this.params.length == 1 ? '=' : 'IN'
+
+                            let sql = `(${part.alias}.${col}`
+                            if (etc) sql += ` IS NULL OR ${col}`
+
+                            sql += other
+
+                            if (!this.is_null && other.indexOf ('?') < 0) {
+
+                                if (/IN$/.test (other)) {
+                                    sql += '(?'
+                                    for (let i = 0; i < this.params.length - 2; i ++) sql += ',?'
+                                    sql += ')'
+                                }
+                                else if (/BETWEEN$/.test (other)) {
+                                    sql += '? AND ?'
+                                }
+                                else if (/LIKE$/.test (other)) {
+                                    sql += ' ?'
+                                }
+                                else {
+                                    sql += '?'
+                                }
+
+                            }
+
+                            return sql + ')'
+                        
+                        }
+                        
+                        adjust_field_names (src) {
+                        
+                            let re_name = /([a-z][a-z_0-9]*)/
+                            
+                            let chunks = src.split (re_name)
+
+                            let max_i = chunks.length - 1
+                            
+                            for (let i = 0; i <= max_i; i ++) {
+                                                        
+                                let is_special = (c) => c == "'" && c == "."   
+                                
+                                if (i > 0) {
+                                    let prev = chunks [i - 1]
+                                    if (is_special (prev.charAt (prev.length - 1))) continue
+                                }
+
+                                if (i < max_i && is_special (chunks [i + 1].charAt (0))) continue
+
+                                if (!re_name.test (chunks [i])) continue
+
+                                chunks [i] = `${part.alias}.${chunks[i]}`
+
+                            } 
+
+                            return chunks.join ('')
+                            
+                        }
 
                         constructor (src, val) {
 
@@ -56,38 +153,14 @@ module.exports = class {
                             else {
                                 this.params = Array.isArray (val) ? val : [val]
                             }
+                            
+                            src = src.trim ()
+                            
+                            let col_etc_other = /^(\w+)(\.\.\.)?(\s*\S*)\s*$/.exec (src)
+                            
+                            this.sql = col_etc_other ? this.parse_col_etc_other (col_etc_other) : this.adjust_field_names (src)
 
-                            let [_, col, etc, other] = /^(\w+)(\.\.\.)?(\s*\S*)\s*$/.exec (src.trim ())
-
-                            if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
-
-                            if (!other) other = this.params.length == 1 ? '=' : 'IN'
-
-                            this.sql = `(${part.alias}.${col}`
-                            if (etc) this.sql += ` IS NULL OR ${col}`
-
-                            this.sql += other
-
-                            if (!this.is_null && other.indexOf ('?') < 0) {
-
-                                if (/IN$/.test (other)) {
-                                    this.sql += '(?'
-                                    for (let i = 0; i < this.params.length - 2; i ++) this.sql += ',?'
-                                    this.sql += ')'
-                                }
-                                else if (/BETWEEN$/.test (other)) {
-                                    this.sql += '? AND ?'
-                                }
-                                else if (/LIKE$/.test (other)) {
-                                    this.sql += ' ?'
-                                }
-                                else {
-                                    this.sql += '?'
-                                }
-
-                            }
-
-                            this.sql += ')'
+                            this.adjust_wildcards ()
 
                         }
 
