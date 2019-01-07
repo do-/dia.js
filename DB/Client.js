@@ -31,7 +31,13 @@ module.exports = class {
     }
     
     to_counting_sql (original_sql) {
-        return original_sql.replace (/ORDER BY.*/, '').replace (/SELECT.*?\s+FROM\s+/, 'SELECT COUNT(*) FROM ')
+        
+        let [unordered_sql, order] = original_sql.split (/ORDER\s+BY/)
+        
+        if (!order) throw 'to_counting_sql received some sql without ORDER BY: ' + original_sql
+            
+        return 'SELECT COUNT(*) ' + unordered_sql.substr (unordered_sql.indexOf ('FROM'))
+    
     }
 
     async select_all_cnt (original_sql, original_params, limit, offset = 0) {
@@ -51,10 +57,7 @@ module.exports = class {
 
         let [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
                 
-        data.all = all
-        data.cnt = cnt
-        
-        return data
+        return {all, cnt}
 
     }
 
