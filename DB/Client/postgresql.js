@@ -85,9 +85,9 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async upsert (table, data, key) {
-    
+darn ([table, data, key])    
         if (Array.isArray (data)) {
-            for (let d in data) await this.upsert (table, d, key)
+            for (let d of data) await this.upsert (table, d, key)
             return
         }
         
@@ -121,7 +121,7 @@ module.exports = class extends Dia.DB.Client {
         if (!def) throw 'Table not found: ' + table
 
         if (Array.isArray (data)) {
-            for (let d in data) await this.insert (table, d)
+            for (let d of data) await this.insert (table, d)
             return
         }
         

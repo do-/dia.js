@@ -84,7 +84,7 @@ module.exports = class {
         if (!def) throw 'Table not found: ' + table
 
         if (Array.isArray (data)) {
-            for (let d in data) await this.update (table, d, key)
+            for (let d of data) await this.update (table, d, key)
             return
         }
         
