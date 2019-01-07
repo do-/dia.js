@@ -75,31 +75,40 @@ module.exports = class {
         return data
     }
     
-    async update (table, data) {
+    async update (table, data, key) {
 
         let def = this.model.tables [table]
         if (!def) throw 'Table not found: ' + table
 
         if (Array.isArray (data)) {
-            for (let d in data) await this.update (table, d)
+            for (let d in data) await this.update (table, d, key)
             return
         }
+        
+        if (key == null) key = [def.pk]
+        if (!Array.isArray (key)) throw 'THe key must be an array of field names, got ' + JSON.stringify (key)
+        if (!key.length) throw 'Empty update key supplied for ' + table
 
-        let pk = data [def.pk]
-        if (pk == undefined) throw 'No primary key supplied for ' + table + ': ' + JSON.stringify (data)
-        delete data [def.pk]
-
-        let [fields, params] = [[], [], []]
+        let [fields, filter, params] = [[], [], []]
+        
+        for (let k of key) {
+            let v = data [k]
+            if (v == undefined) throw 'No ' + k + ' supplied for ' + table + ': ' + JSON.stringify (data)
+            filter.push (`${k}=?`)
+            params.push (v)
+            delete data [k]
+        }
 
         for (let k in data) {
             let v = data [k]
             if (typeof v === 'undefined') continue
-            fields.push (`${k}=?`)
-            params.push (v)
+            fields.unshift (`${k}=?`)
+            params.unshift (v)
         }
-        params.push (pk)
+        
+        if (!fields.length) throw 'Nothig to update in ' + table + ', only key fields supplied: '  + JSON.stringify ([filer, params])
 
-        return this.do (`UPDATE ${table} SET ${fields} WHERE ${def.pk}=?`, params)
+        return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')}`, params)
 
     }
 
