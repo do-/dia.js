@@ -80,7 +80,7 @@ module.exports = class {
                         }
                         
                         parse_col_etc_other (col_etc_other) {
-                        
+
                             let [_, col, etc, other] = col_etc_other
 
                             if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
@@ -166,7 +166,7 @@ module.exports = class {
                             
                             src = src.trim ()
                             
-                            let col_etc_other = /^(\w+)(\.\.\.)?(\s*\S*)\s*$/.exec (src)
+                            let col_etc_other = /^(\w+)(\.\.\.)?(\s*(?:NOT\s+)?\S*)\s*$/.exec (src)
                             
                             if (col_etc_other) {
                             
