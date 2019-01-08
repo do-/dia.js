@@ -85,7 +85,7 @@ module.exports = class {
 
                             if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
 
-                            if (!other) other = this.params.length == 1 ? '=' : 'IN'
+                            if (!other) other = this.params.length == 1 && !this.subquery ? '=' : ' IN'
 
                             let sql = `(${part.alias}.${col}`
                             if (etc) sql += ` IS NULL OR ${col}`
@@ -95,9 +95,17 @@ module.exports = class {
                             if (!this.is_null && other.indexOf ('?') < 0) {
 
                                 if (/IN$/.test (other)) {
-                                    sql += '(?'
-                                    for (let i = 0; i < this.params.length - 2; i ++) sql += ',?'
-                                    sql += ')'
+                                
+                                    if (this.subquery) {                                    
+                                        sql += ` (${this.subquery.sql})`
+                                        this.params = this.subquery.params
+                                    }
+                                    else {
+                                        sql += ' (?'
+                                        for (let i = 0; i < this.params.length - 2; i ++) sql += ',?'
+                                        sql += ')'
+                                    }
+                                    
                                 }
                                 else if (/BETWEEN$/.test (other)) {
                                     sql += '? AND ?'
@@ -145,6 +153,8 @@ module.exports = class {
                         }
 
                         constructor (src, val) {
+                        
+                            if (typeof val === 'object' && val != null && val.sql && val.params) this.subquery = val
 
                             if (val === null && typeof val === 'object') {
                                 this.is_null = true
@@ -158,7 +168,16 @@ module.exports = class {
                             
                             let col_etc_other = /^(\w+)(\.\.\.)?(\s*\S*)\s*$/.exec (src)
                             
-                            this.sql = col_etc_other ? this.parse_col_etc_other (col_etc_other) : this.adjust_field_names (src)
+                            if (col_etc_other) {
+                            
+                                this.sql = this.parse_col_etc_other (col_etc_other)
+                            
+                            }
+                            else {
+                            
+                                this.sql = this.adjust_field_names (src)
+                            
+                            }
 
                             this.adjust_wildcards ()
 
@@ -302,7 +321,11 @@ module.exports = class {
                     this.sql += ` ON (${this.join_condition}`
                     for (let filter of this.filters) {
                         this.sql += ` AND ${filter.sql}`
-                        for (let param of filter.params) query.params.push (param)
+                        for (let param of filter.params) query.params.push (
+                            typeof param !== 'boolean' ? param :
+                            param ? 1 :
+                            0
+                        )
                     }
                     this.sql += ')'
                 }
