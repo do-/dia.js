@@ -85,7 +85,7 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async upsert (table, data, key) {
-darn ([table, data, key])    
+
         if (Array.isArray (data)) {
             for (let d of data) await this.upsert (table, d, key)
             return
