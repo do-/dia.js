@@ -5,6 +5,10 @@ module.exports = class {
     constructor (backend) {
         this.backend = backend
     }
+    
+    query (def) {
+        return new Dia.DB.Query (this.model, def)
+    }
 
     async select_vocabulary (t, o = {}) {
     
@@ -53,7 +57,7 @@ module.exports = class {
 
     async add_all_cnt (data, def, limit, offset) {
 
-        let q = new Dia.DB.Query (this.model, def)        
+        let q = this.query (def)        
 
         if (limit == undefined) limit = q.limit
         if (limit == undefined) throw 'LIMIT not set for add_all_cnt: ' + JSON.stringify (def)
@@ -72,19 +76,19 @@ module.exports = class {
     }
 
     async add (data, def) {
-        let q = new Dia.DB.Query (this.model, def)
+        let q = this.query (def)
         if (q.limit) throw 'LIMIT set, use add_all_cnt: ' + JSON.stringify (def)
         data [q.parts [0].alias] = await this.select_all (q.sql, q.params)
         return data
     }    
     
     async list (def) {
-        let q = new Dia.DB.Query (this.model, def)
+        let q = this.query (def)
         return await this.select_all (q.sql, q.params)
     }
 
     async fold (def, callback, data) {
-        let q = new Dia.DB.Query (this.model, def)
+        let q = this.query (def)
         await this.select_loop (q.sql, q.params, callback, data)
         return data
     }
