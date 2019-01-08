@@ -51,18 +51,29 @@ module.exports = class {
     
     }
 
-    async add_all_cnt (data, def, limit, offset = 0) {
+    async add_all_cnt (data, def, limit, offset) {
 
-        let q = new Dia.DB.Query (this.model, def)
+        let q = new Dia.DB.Query (this.model, def)        
+
+        if (limit == undefined) limit = q.limit
+        if (limit == undefined) throw 'LIMIT not set for add_all_cnt: ' + JSON.stringify (def)
+
+        if (offset == undefined) offset = q.offset
+        if (offset == undefined) offset = 0
 
         let [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
-                
-        return {all, cnt}
+
+        data [q.parts [0].alias] = all
+        data.cnt = cnt
+        data.portion = limit
+// TODO: avoid hardcoded names
+        return data
 
     }
 
     async add (data, def) {
         let q = new Dia.DB.Query (this.model, def)
+        if (q.limit) throw 'LIMIT set, use add_all_cnt: ' + JSON.stringify (def)
         data [q.parts [0].alias] = await this.select_all (q.sql, q.params)
         return data
     }    

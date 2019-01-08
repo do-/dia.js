@@ -5,7 +5,7 @@ module.exports = class {
         this.model = model
         this.cols  = []
         
-        let query = this        
+        let query = this           
         
         this.Part = class {
 
@@ -168,14 +168,22 @@ module.exports = class {
 
                     this.filters = []
                     for (let fs in v) {
+                    
                         let val = v [fs]
+                        
                         if (typeof val === 'undefined') continue
-                        if (fs == 'ORDER') {
-                            query.order = val
+                        
+                        switch (fs) {                        
+                            case 'ORDER':
+                                query.order = val
+                                break
+                            case 'LIMIT':
+                                query.set_limit (val)
+                                break
+                            default:                            
+                                this.filters.push (new this.Filter (fs, val))
                         }
-                        else {
-                            this.filters.push (new this.Filter (fs, val))
-                        }
+                        
                     }
 
                 }
@@ -327,6 +335,17 @@ module.exports = class {
         
         if (this.order) this.sql += `\nORDER BY \n\t ${this.order}`
 
+    }
+
+    set_limit (val) {    
+        if (Array.isArray (val)) return this.set_limit_offset (val)
+        this.limit  = val
+        this.offset = 0
+    }
+
+    set_limit_offset (val) {
+        this.limit  = val [0]
+        this.offset = val [1] || 0
     }
 
 }
