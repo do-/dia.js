@@ -128,12 +128,15 @@ module.exports = class extends Dia.DB.Client {
         let [fields, args, params] = [[], [], []]
         
         for (let k in data) {
+            if (!def.columns [k]) continue
             let v = data [k]
             if (typeof v === 'undefined') continue            
             fields.push (k)
             args.push ('?')
             params.push (v)
         }
+        
+        if (!fields.length) throw 'No known values provided to insert in ' + table + ': ' + JSON.stringify (data)
 
         let sql = `INSERT INTO ${table} (${fields}) VALUES (${args})`
         
