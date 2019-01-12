@@ -2,7 +2,6 @@ console.log (new Date ().toString (), "Dia.js is loading...")
 
 require ('./H4xx.js')
 
-reExport ('Conf')
 reExport ('ModuleTools')
 
 this.Handler = require ('./Handler.js')

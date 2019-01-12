@@ -12,6 +12,7 @@ exports.Handler = class extends Handler {
         this.Session = class {
         
             constructor (o) {
+
                 this.h = handler
                 this.o = o
             }
@@ -40,6 +41,7 @@ exports.Handler = class extends Handler {
         
             constructor (o) {
                 super (o)
+
                 if (!o.cookie_name) throw 'cookie_name is not set'
                 let cookies = this.h.http_request.headers.cookie
                 if (!cookies) return
