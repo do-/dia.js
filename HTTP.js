@@ -43,7 +43,7 @@ exports.Handler = class extends Handler {
                 super (o)
 
                 if (!o.cookie_name) throw 'cookie_name is not set'
-                let cookies = this.h.http_request.headers.cookie
+                let cookies = this.h.http.request.headers.cookie
                 if (!cookies) return
                 for (let chunk of cookies.split (';')) {
                     let [k, v] = chunk.trim ().split ('=')
@@ -55,12 +55,12 @@ exports.Handler = class extends Handler {
             
             start () {
                 super.start ()
-                this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id + '; HttpOnly');
+                this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id + '; HttpOnly');
             }
 
             finish () {
                 super.finish ()
-                this.h.http_response.setHeader ('Set-Cookie', this.o.cookie_name + '=0; Expires=Thu, 01 Dec 1994 16:00:00 GMT');
+                this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=0; Expires=Thu, 01 Dec 1994 16:00:00 GMT');
             }
             
         }
@@ -68,8 +68,8 @@ exports.Handler = class extends Handler {
     }
 
     check () {
-        if (!this.http_request) throw '400 Empty http_request'
-        if (!this.http_response) throw 'Empty http_response'
+        if (!this.http.request) throw '400 Empty http_request'
+        if (!this.http.response) throw 'Empty http_response'
     }
 
     async get_http_request_body (rq) {
@@ -97,7 +97,7 @@ exports.Handler = class extends Handler {
     
     parse_http_request_body () {
     
-        if (this.http_request.headers ['content-type'] != 'application/json') return
+        if (this.http.request.headers ['content-type'] != 'application/json') return
 
         try {
             let o = JSON.parse (this.body)
@@ -111,7 +111,7 @@ exports.Handler = class extends Handler {
     }
     
     parse_x_headers () {
-        let h = this.http_request.headers
+        let h = this.http.request.headers
         const pre = 'x-request-param-'
         const len = pre.length
         for (let k in h) if (k.substr (0, len) == pre) this.q [k.substr (len)] = h [k]
@@ -121,15 +121,15 @@ exports.Handler = class extends Handler {
         
         this.q = {}
         
-        switch (this.http_request.method) {
+        switch (this.http.request.method) {
             case 'POST':
             case 'PUT':
-                this.body = await this.get_http_request_body (this.http_request)
+                this.body = await this.get_http_request_body (this.http.request)
                 this.parse_http_request_body ()
                 break
         }
         
-        let uri = url.parse (this.http_request.url)
+        let uri = url.parse (this.http.request.url)
         new URLSearchParams (uri.search).forEach ((v, k) => this.q [k] = v)
         
         this.parse_x_headers ()
@@ -149,14 +149,14 @@ exports.Handler = class extends Handler {
     }
 
     send_out_json (code, data) {
-        let rp = this.http_response
+        let rp = this.http.response
         rp.statusCode = code
         rp.setHeader ('Content-Type', 'application/json')
         rp.end (JSON.stringify (data))
     }
 
     send_out_text (s) {
-        let rp = this.http_response
+        let rp = this.http.response
         rp.statusCode = s.substr (0, 3)
         rp.setHeader ('Content-Type', 'text/plain')
         rp.end (s.substr (4))
