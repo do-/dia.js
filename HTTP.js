@@ -1,17 +1,6 @@
 const Dia = require ('./Dia.js')
-const http = require ('http')
 const url  = require ('url')
 const Handler = require ('./Handler')
-
-exports.listen = (handler) => {
-
-    let o = $_CONF.listen
-
-    http.createServer (handler).listen (o, () => {
-        console.log ('Dia.js HTTP server is running at ', o)
-    })
-
-}
 
 exports.Handler = class extends Handler {
 
