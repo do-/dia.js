@@ -24,8 +24,8 @@ module.exports = class {
             this.session = this.get_session ()
             await this.acquire_resources ()
             this.user = await this.get_user ()
-            this.module_name = this.get_module_name ()
-            this.method_name = this.get_method_name ()            
+            if (!this.module_name) this.module_name = this.get_module_name ()
+            if (!this.method_name) this.method_name = this.get_method_name ()
             console.log (this.uuid + ': ' + this.get_log_banner ())            
             let data = await this.get_method ().call (this)
             this.send_out_data (data)
@@ -51,12 +51,14 @@ module.exports = class {
 
     }
 
-    check () {
-    }
-
-    check_params () {
-    }
+    check () {}
     
+    async read_params () {}
+
+    check_params () {}
+
+    send_out_data () {}
+
     get_session () {
         return undefined
     }
