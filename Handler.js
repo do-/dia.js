@@ -74,6 +74,7 @@ module.exports = class {
     
     async acquire_resources () {    
         if (this.db_pools) for (let k in this.db_pools) this [k] = await this.acquire_db_resource (k)
+        if (this.mail_pools) for (let k in this.mail_pools) this [k] = this.mail_pools [k]
     }
 
     async acquire_db_resource (name) {
