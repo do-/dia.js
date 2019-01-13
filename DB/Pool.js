@@ -4,6 +4,22 @@ module.exports = class {
         this.options = o
     }
     
+    async update_model () {
+    
+        await this.load_schema ()
+    
+        try {
+            var db = await this.acquire ()
+            for (let sql of this.gen_sql_patch ()) await db.do (sql, [])
+        }
+        finally {
+            this.release (db)
+        }
+        
+        await this.load_schema ()
+
+    }    
+    
     async load_schema () {
     
         try {
