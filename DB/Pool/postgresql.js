@@ -1,10 +1,10 @@
 const {Pool} = require ('pg')
 const wrapper = require ('../Client/postgresql.js')
 
-module.exports = class {
+module.exports = class extends require ('../Pool.js') {
 
     constructor (o) {
-        this.options = o
+        super (o)
         this.backend = new Pool (o)
     }
     
