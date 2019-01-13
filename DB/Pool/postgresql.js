@@ -32,7 +32,7 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     gen_sql_column_comment (table, col) {
-        return `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK)
+        return {sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK), params: []}
     }
     
     gen_sql_column_definition (col) {
@@ -64,6 +64,7 @@ module.exports = class extends require ('../Pool.js') {
         for (let table of Object.values (this.model.tables)) {
         
             let existing_columns = (table.existing || {columns: {}}).columns
+            let after = table.on_after_add_column
         
             for (let col of Object.values (table.columns)) {
             
@@ -71,9 +72,14 @@ module.exports = class extends require ('../Pool.js') {
                 
                 if (ex) continue
                 
-                result.push (`ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col))
+                result.push ({sql: `ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col), params: []})
                 
                 result.push (this.gen_sql_column_comment (table, col))                
+                
+                if (after) {
+                    let a = after [col.name]
+                    if (a) for (let i of a) result.push (i)
+                }                
 
             }
 

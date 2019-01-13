@@ -10,7 +10,7 @@ module.exports = class {
     
         try {
             var db = await this.acquire ()
-            for (let sql of this.gen_sql_patch ()) await db.do (sql, [])
+            for (let i of this.gen_sql_patch ()) await db.do (i.sql, i.params)
         }
         finally {
             this.release (db)
