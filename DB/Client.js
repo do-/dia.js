@@ -133,6 +133,7 @@ module.exports = class {
     async load_schema () {
     
         await this.load_schema_tables ()
+        await this.load_schema_table_columns ()
 
     }
 

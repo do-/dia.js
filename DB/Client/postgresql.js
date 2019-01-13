@@ -213,9 +213,97 @@ module.exports = class extends Dia.DB.Client {
         for (let r of rs) {
             let t = tables [r.name]
             if (!t) continue
+            r.pk = 'id'              // TODO: discover it
+            r.columns = {}
             t.existing = r
         }
 
+    }
+    
+    async load_schema_table_columns () {
+    
+        let rs = await this.select_all (`
+
+            SELECT 
+                pg_attribute.*
+                , pg_type.typname
+                , pg_attrdef.adsrc
+                , pg_description.description
+                , pg_class.relname
+                , CASE atttypid
+                    WHEN 21 /*int2*/ THEN 16
+                    WHEN 23 /*int4*/ THEN 32
+                    WHEN 20 /*int8*/ THEN 64
+                    WHEN 1700 /*numeric*/ THEN
+                         CASE WHEN atttypmod = -1
+                           THEN null
+                           ELSE ((atttypmod - 4) >> 16) & 65535     -- calculate the precision
+                           END
+                    WHEN 700 /*float4*/ THEN 24 /*FLT_MANT_DIG*/
+                    WHEN 701 /*float8*/ THEN 53 /*DBL_MANT_DIG*/
+                    ELSE null
+                END   AS numeric_precision,
+                CASE 
+                  WHEN atttypid IN (21, 23, 20) THEN 0
+                  WHEN atttypid IN (1700) THEN            
+                    CASE 
+                        WHEN atttypmod = -1 THEN null       
+                        ELSE (atttypmod - 4) & 65535            -- calculate the scale  
+                    END
+                     ELSE null
+                END AS numeric_scale                
+            FROM 
+                pg_namespace
+                LEFT JOIN pg_class ON (
+                    pg_class.relnamespace = pg_namespace.oid
+                    AND pg_class.relkind = 'r'
+                )
+                LEFT JOIN pg_attribute ON (
+                    pg_attribute.attrelid = pg_class.oid
+                    AND pg_attribute.attnum > 0
+                    AND NOT pg_attribute.attisdropped
+                )
+                LEFT JOIN pg_type ON pg_attribute.atttypid = pg_type.oid
+                LEFT JOIN pg_attrdef ON (
+                    pg_attrdef.adrelid = pg_attribute.attrelid
+                    AND pg_attrdef.adnum = pg_attribute.attnum
+                )
+                LEFT JOIN pg_description ON (
+                    pg_description.objoid = pg_attribute.attrelid
+                    AND pg_description.objsubid = pg_attribute.attnum
+                )
+            WHERE
+                pg_namespace.nspname = current_schema()
+
+        `, [])
+//darn (rs)        
+        let tables = this.model.tables
+        for (let r of rs) {        
+
+            let t = tables [r.relname]
+            if (!t) continue
+            
+            let name = r.attname
+            
+            let col = {
+                name,
+                TYPE_NAME : r.typname.toUpperCase (),
+                REMARKS   : r.description,
+                NULLABLE  : !!!r.attnotnull,
+                COLUMN_DEF: undefined,
+            }                        
+
+            if (r.adsrc != null) col.COLUMN_DEF = String (r.adsrc)
+
+            if (col.TYPE_NAME == 'NUMERIC') {
+                col.COLUMN_SIZE = r.numeric_precision
+                col.DECIMAL_DIGITS = r.numeric_scale
+            }
+
+            t.existing.columns [name] = col
+            
+        }
+        
     }
             
 }
