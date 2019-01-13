@@ -25,5 +25,103 @@ module.exports = class extends require ('../Pool.js') {
     async release (client) {
         return await client.release ()
     }
+    
+    gen_sql_quoted_literal (s) {
+        if (s == null) s = ''
+        return "'" + String (s).replace(/'/g, "''") + "'"
+    }
+
+    gen_sql_column_comment (table, col) {
+        return `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK)
+    }
+    
+    gen_sql_column_definition (col) {
+    
+        let sql = col.TYPE_NAME
+        
+        if (col.COLUMN_SIZE > 0) {
+            sql += '(' + col.COLUMN_SIZE
+            if (col.DECIMAL_DIGITS) sql += ',' + col.DECIMAL_DIGITS
+            sql += ')'
+        }
+        
+        let def = col.COLUMN_DEF
+        if (def != undefined) {
+            if (def.indexOf (')') < 0) def = this.gen_sql_quoted_literal (def)
+            sql += ' DEFAULT ' + def
+        }
+        
+        if (col.NULLABLE === false) sql += ' NOT NULL'
+        
+        return sql
+
+    }
+    
+    gen_sql_add_columns () {
+    
+        let result = []
+        
+        for (let table of Object.values (this.model.tables)) {
+        
+            let existing_columns = (table.existing || {columns: {}}).columns
+        
+            for (let col of Object.values (table.columns)) {
+            
+                let ex = existing_columns [col.name]
+                
+                if (ex) continue
+                
+                result.push (`ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col))
+                
+                result.push (this.gen_sql_column_comment (table, col))                
+
+            }
+
+        }
+    
+        return result
+    
+    }
+    
+    normalize_model_table_column (table, col) {
+        
+        super.normalize_model_table_column (table, col) 
+        
+        function get_int_type_name (prefix) {switch (prefix) {
+            case 'MEDIUM': 
+            case 'BIG': 
+                return 'INT8'
+            case 'SMALL': 
+            case 'TINY':
+                return 'INT2'
+            default: 
+                return 'INT4'
+        }}
+        
+        if (/INT$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = get_int_type_name (col.TYPE_NAME.substr (0, col.TYPE_NAME.length - 3))
+        }
+        else if (/(CHAR|TEXT)$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'TEXT'
+        }
+        else if (/BINARY$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'BYTEA'
+        }
+        else if (/BLOB$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'OID'
+        }
+        else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER') {
+            col.TYPE_NAME = 'NUMERIC'
+        }
+        else if (col.TYPE_NAME == 'DATETIME') {
+            col.TYPE_NAME = 'TIMESTAMP'
+        }
+        
+        if (col.TYPE_NAME == 'NUMERIC') {
+            if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
+            if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
+        }                
+        
+    }
 
 }
