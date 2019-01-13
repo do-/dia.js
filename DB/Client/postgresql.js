@@ -213,8 +213,8 @@ module.exports = class extends Dia.DB.Client {
         for (let r of rs) {
             let t = tables [r.name]
             if (!t) continue
-            r.pk = 'id'              // TODO: discover it
             r.columns = {}
+            r.keys = {}
             t.existing = r
         }
 
@@ -305,5 +305,40 @@ module.exports = class extends Dia.DB.Client {
         }
         
     }
+    
+    async load_schema_table_keys () {
+    
+        let rs = await this.select_all (`
+            SELECT 
+                * 
+            FROM 
+                pg_indexes
+            WHERE 
+                schemaname = current_schema ()
+        `, [])
+
+        let tables = this.model.tables
+        let re_def = /\((.*)\)/
+        let re_pk = /_pkey$/
+
+        for (let r of rs) {
+        
+            let t = tables [r.tablename]
+            if (!t) continue
             
+            let d = re_def.exec (r.indexdef)
+            if (!d) continue
+            let def = d [1].replace (/\s/g, '')
+            
+            if (re_pk.test (r.indexname)) {
+                t.existing.pk = def
+            }
+            else {
+                t.existing.keys [r.indexname] = def
+            }
+
+        }
+        
+    }
+
 }

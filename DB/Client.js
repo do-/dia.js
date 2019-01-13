@@ -134,6 +134,7 @@ module.exports = class {
     
         await this.load_schema_tables ()
         await this.load_schema_table_columns ()
+        await this.load_schema_table_keys ()
 
     }
 
