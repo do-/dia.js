@@ -186,5 +186,36 @@ module.exports = class extends Dia.DB.Client {
         await this.do ('ROLLBACK')
         this.backend.is_txn_pending = false
     }
+    
+    async load_schema_tables () {
+
+        let rs = await this.select_all (`
+
+            SELECT 
+                pg_class.relname AS name
+                , pg_description.description AS label
+            FROM 
+                pg_namespace
+                LEFT JOIN pg_class ON (
+                    pg_class.relnamespace = pg_namespace.oid
+                    AND pg_class.relkind = 'r'
+                )
+                LEFT JOIN pg_description ON (
+                    pg_description.objoid = pg_class.oid
+                    AND pg_description.objsubid = 0
+                )
+            WHERE
+                pg_namespace.nspname = current_schema()
+
+        `, [])
+        
+        let tables = this.model.tables
+        for (let r of rs) {
+            let t = tables [r.name]
+            if (!t) continue
+            t.existing = r
+        }
+
+    }
             
 }

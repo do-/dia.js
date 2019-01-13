@@ -129,5 +129,11 @@ module.exports = class {
         return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')}`, params)
 
     }
+    
+    async load_schema () {
+    
+        await this.load_schema_tables ()
+
+    }
 
 }
