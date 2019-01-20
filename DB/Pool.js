@@ -35,9 +35,10 @@ module.exports = class {
     gen_sql_patch () {
     
         this.normalize_model ()
-    
+
         return []
             .concat (this.gen_sql_add_columns ())
+            .concat (this.gen_sql_update_triggers ())
     
     }
 
@@ -47,6 +48,7 @@ module.exports = class {
     
     normalize_model_table (table) {
         if (table.columns) for (let col of Object.values (table.columns)) this.normalize_model_table_column (table, col)
+        if (table.triggers) for (let k in table.triggers) this.normalize_model_table_trigger (table, k)
     }
     
     normalize_model_table_column (table, col) {        

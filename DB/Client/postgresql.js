@@ -215,6 +215,7 @@ module.exports = class extends Dia.DB.Client {
             if (!t) continue
             r.columns = {}
             r.keys = {}
+            r.triggers = {}
             t.existing = r
         }
 
@@ -339,6 +340,32 @@ module.exports = class extends Dia.DB.Client {
 
         }
         
+    }
+    
+    async load_schema_table_triggers () {
+    
+        let rs = await this.select_all (`
+            SELECT 
+                pg_class.relname tablename
+                , SUBSTRING (pg_trigger.tgname, 4, LENGTH (pg_trigger.tgname) - 4 - LENGTH (pg_class.relname)) k
+                , pg_proc.prosrc v
+            FROM
+                pg_trigger 
+                INNER JOIN pg_proc ON pg_proc.oid=pg_trigger.tgfoid
+                INNER JOIN pg_class ON pg_trigger.tgrelid = pg_class.oid
+        `, [])          
+        
+        let tables = this.model.tables
+
+        for (let r of rs) {
+        
+            let t = tables [r.tablename]
+            if (!t) continue
+            
+            t.existing.triggers [r.k] = r.v.trim ()
+        
+        }
+    
     }
 
 }

@@ -89,6 +89,71 @@ module.exports = class extends require ('../Pool.js') {
     
     }
     
+    gen_sql_update_triggers () {
+    
+        let result = []
+        
+        for (let table of Object.values (this.model.tables)) {
+        
+            let triggers = table.triggers
+        
+            if (!triggers) continue
+        
+            let existing_triggers = (table.existing || {triggers: {}}).triggers
+            
+            for (let name in triggers) {
+            
+                let src = triggers [name]
+                
+                if (src == existing_triggers [name]) continue
+                
+                let [phase, ...events] = name.toUpperCase ().split ('_')
+                
+                let glob = `on_${name}_${table.name}`
+                
+                result.push ({sql: `
+
+                    CREATE OR REPLACE FUNCTION ${glob}() RETURNS trigger AS \$${glob}\$
+
+                        ${src}
+
+                    \$${glob}\$ LANGUAGE plpgsql;
+
+                `, params: []})
+
+                result.push ({sql: `
+                
+                    DROP TRIGGER IF EXISTS ${glob} ON ${table.name};
+                    
+                `, params: []})
+
+                result.push ({sql: `
+
+                    CREATE TRIGGER 
+                        ${glob}
+                    ${phase} ${events.join (' OR ')} ON 
+                        ${table.name}
+                    FOR EACH ROW EXECUTE PROCEDURE 
+                        ${glob} ();
+
+                `, params: []})
+            
+            }
+        
+        }
+        
+        return result
+
+    }
+        
+    normalize_model_table_trigger (table, k) {
+    
+        let src = table.triggers [k].replace (/\s+/g, ' ').trim ()
+    
+        table.triggers [k] = `BEGIN ${src} END;`
+    
+    }
+    
     normalize_model_table_column (table, col) {
         
         super.normalize_model_table_column (table, col) 
