@@ -72,16 +72,23 @@ module.exports = class {
         return !!this.q.action
     }
     
-    async acquire_resources () {    
-        if (this.db_pools) for (let k in this.db_pools) this [k] = await this.acquire_db_resource (k)
-        if (this.mail_pools) for (let k in this.mail_pools) this [k] = this.mail_pools [k]
+    async acquire_resources () {
+
+        if (this.pools) for (let k in this.pools) {
+        
+            let pool = this.pools [k]
+
+            this [k] = pool.acquire ? await this.acquire_resource (pool) : pool
+
+        }
+
     }
 
-    async acquire_db_resource (name) {
-        let db = await this.db_pools [name].acquire ()
+    async acquire_resource (pool) {
+        let db = await pool.acquire ()
         db.log_prefix = this.uuid + ':  '
         this.__resources.push (db)
-        if (this.is_transactional ()) await db.begin ()
+        if (db.begin && this.is_transactional ()) await db.begin ()
         return db
     }
 
