@@ -348,6 +348,7 @@ module.exports = class extends Dia.DB.Client {
     async load_schema_table_triggers () {
     
         let rs = await this.select_all (`
+
             SELECT 
                 pg_class.relname tablename
                 , SUBSTRING (pg_trigger.tgname, 4, LENGTH (pg_trigger.tgname) - 4 - LENGTH (pg_class.relname)) k
@@ -356,6 +357,10 @@ module.exports = class extends Dia.DB.Client {
                 pg_trigger 
                 INNER JOIN pg_proc ON pg_proc.oid=pg_trigger.tgfoid
                 INNER JOIN pg_class ON pg_trigger.tgrelid = pg_class.oid
+                INNER JOIN pg_namespace ON pg_class.relnamespace = pg_namespace.oid
+            WHERE
+                pg_namespace.nspname = current_schema()
+
         `, [])          
         
         let tables = this.model.tables
