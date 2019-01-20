@@ -311,7 +311,7 @@ module.exports = class extends Dia.DB.Client {
     
         let rs = await this.select_all (`
             SELECT 
-                * 
+                *
             FROM 
                 pg_indexes
             WHERE 
@@ -335,7 +335,10 @@ module.exports = class extends Dia.DB.Client {
                 t.existing.pk = def
             }
             else {
-                t.existing.keys [r.indexname] = def
+                let name = r.indexname
+                let prefix = `ix_${r.tablename}_`
+                if (name.indexOf (prefix) == 0)
+                t.existing.keys [name.substr (prefix.length)] = def
             }
 
         }

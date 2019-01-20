@@ -35,9 +35,10 @@ module.exports = class {
     gen_sql_patch () {
     
         this.normalize_model ()
-
+darn (this.model.tables.task_notes)    
         return []
             .concat (this.gen_sql_add_columns ())
+            .concat (this.gen_sql_update_keys ())
             .concat (this.gen_sql_update_triggers ())
     
     }

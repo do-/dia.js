@@ -145,7 +145,41 @@ module.exports = class extends require ('../Pool.js') {
         return result
 
     }
+
+    gen_sql_update_keys () {
+    
+        let result = []
         
+        for (let table of Object.values (this.model.tables)) {
+        
+            let keys = table.keys
+
+            if (!keys) continue
+        
+            let existing_keys = (table.existing || {keys: {}}).keys
+
+            for (let name in keys) {
+            
+                let src = keys [name]
+                
+                let old_src = existing_keys [name]
+                
+                if (src == old_src) continue
+
+                let glob = `ix_${table.name}_${name}`
+
+                if (old_src) result.push ({sql: `DROP INDEX ${glob};`, params: []})
+                
+                if (src != null) result.push ({sql: `CREATE INDEX ${glob} ON ${table.name} (${src});`, params: []})
+
+            }
+
+        }
+
+        return result
+
+    }
+
     normalize_model_table_trigger (table, k) {
     
         let src = table.triggers [k].replace (/\s+/g, ' ').trim ()
