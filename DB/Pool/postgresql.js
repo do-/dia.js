@@ -57,6 +57,39 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    gen_sql_upsert_data () {
+
+        let result = []
+        
+        for (let table of Object.values (this.model.tables)) {
+        
+            let data = table.data
+            
+            if (!data) continue
+            
+            for (let record of data) {
+            
+                let [f, s, v] = [[], [], []]
+                            
+                for (let k in record) {
+                
+                    f.push (k)
+                    v.push (record [k])
+                    
+                    if (k != table.pk) s.push (`${k}=EXCLUDED.${k}`)
+
+                }
+            
+                result.push ({sql: `INSERT INTO "${table.name}" (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO UPDATE SET ${s}`, params: v})
+
+            }
+        
+        }
+
+        return result
+
+    }
+    
     gen_sql_add_columns () {
     
         let result = []

@@ -40,6 +40,7 @@ module.exports = class {
             .concat (this.gen_sql_add_columns ())
             .concat (this.gen_sql_update_keys ())
             .concat (this.gen_sql_update_triggers ())
+            .concat (this.gen_sql_upsert_data ())
     
     }
 
