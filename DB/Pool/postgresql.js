@@ -57,6 +57,25 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    gen_sql_add_tables () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) if (!table.existing) {
+
+            let pk = table.pk
+            let df = table.columns [pk]
+            
+            table.existing = {pk, columns: {[pk]: df}, keys: {}, triggers: {}}
+
+            result.push ({sql: `CREATE TABLE "${table.name}" (${pk} ${this.gen_sql_column_definition (df)} PRIMARY KEY)`, params: []})
+
+        }
+
+        return result
+
+    }
+
     gen_sql_upsert_data () {
 
         let result = []
@@ -239,7 +258,7 @@ module.exports = class extends require ('../Pool.js') {
         if (/INT$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = get_int_type_name (col.TYPE_NAME.substr (0, col.TYPE_NAME.length - 3))
         }
-        else if (/(CHAR|TEXT)$/.test (col.TYPE_NAME)) {
+        else if (/(CHAR|STRING|TEXT)$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'TEXT'
         }
         else if (/BINARY$/.test (col.TYPE_NAME)) {

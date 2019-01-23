@@ -37,6 +37,7 @@ module.exports = class {
         this.normalize_model ()
 
         return []
+            .concat (this.gen_sql_add_tables ())
             .concat (this.gen_sql_add_columns ())
             .concat (this.gen_sql_update_keys ())
             .concat (this.gen_sql_update_triggers ())
