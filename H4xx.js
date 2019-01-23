@@ -42,6 +42,10 @@ console.log = function () {
     
 }
 
+global.clone = (o) => {
+    return JSON.parse (JSON.stringify (o))
+}
+
 global.darn = (o) => {
     console.log (o)
     return (o)

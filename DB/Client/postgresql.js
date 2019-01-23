@@ -289,7 +289,7 @@ module.exports = class extends Dia.DB.Client {
             let col = {
                 name,
                 TYPE_NAME : r.typname.toUpperCase (),
-                REMARKS   : r.description,
+                REMARK    : r.description,
                 NULLABLE  : !!!r.attnotnull,
                 COLUMN_DEF: undefined,
             }                        

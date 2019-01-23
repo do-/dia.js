@@ -30,10 +30,6 @@ module.exports = class extends require ('../Pool.js') {
         if (s == null) s = ''
         return "'" + String (s).replace(/'/g, "''") + "'"
     }
-
-    gen_sql_column_comment (table, col) {
-        return {sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK), params: []}
-    }
     
     gen_sql_column_definition (col) {
     
@@ -129,7 +125,8 @@ module.exports = class extends require ('../Pool.js') {
         
         for (let table of Object.values (this.model.tables)) {
         
-            let existing_columns = (table.existing || {columns: {}}).columns
+            let existing_columns = table.existing.columns
+
             let after = table.on_after_add_column
         
             for (let col of Object.values (table.columns)) {
@@ -139,13 +136,15 @@ module.exports = class extends require ('../Pool.js') {
                 if (ex) continue
                 
                 result.push ({sql: `ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col), params: []})
-                
-                result.push (this.gen_sql_column_comment (table, col))                
-                
+                                
                 if (after) {
                     let a = after [col.name]
                     if (a) for (let i of a) result.push (i)
                 }                
+
+                existing_columns [col.name] = clone (col)
+                
+                delete existing_columns [col.name].REMARK
 
             }
 
@@ -154,6 +153,30 @@ module.exports = class extends require ('../Pool.js') {
         return result
     
     }
+    
+    gen_sql_comment_columns () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) {
+
+            let existing_columns = table.existing.columns
+
+            for (let col of Object.values (table.columns)) {
+            
+                let label = col.REMARK
+
+                if (label == existing_columns [col.name].REMARK) continue
+                
+                result.push ({sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
+
+            }
+
+        }
+
+        return result
+
+    }    
     
     gen_sql_update_triggers () {
     
