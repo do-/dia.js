@@ -76,6 +76,20 @@ module.exports = class extends require ('../Pool.js') {
 
     }
 
+    gen_sql_comment_tables () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) 
+        
+            if (table.label != table.existing.label)
+
+                result.push ({sql: `COMMENT ON TABLE "${table.name}" IS ` + this.gen_sql_quoted_literal (table.label), params: []})
+
+        return result
+
+    }
+
     gen_sql_upsert_data () {
 
         let result = []
