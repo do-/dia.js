@@ -100,6 +100,39 @@ module.exports = class extends Dia.DB.Client {
         if (!key) key = [def.pk]
         if (!Array.isArray (key)) key = [key]
         
+        let where = ''
+        
+        if (key [0] != def.pk) {
+        
+            let keys = def.keys
+            if (!keys) throw 'Keys are not defined for ' + table
+            
+            let the_index
+            
+            outer: for (let ix of Object.values (keys)) {
+
+                if (!ix.match (/^\s*CREATE\s*UNIQUE/i)) continue
+                
+                let cols = ix.slice (1 + ix.indexOf ('('), ix.lastIndexOf (')'))
+
+                let parts = cols.split (/\s*,\s*/)
+                
+                if (parts.length != key.length) continue
+                
+                for (let i = 0; i < parts.length; i ++) if (parts [i] != key [i]) continue outer
+                
+                the_index = ix
+                
+                break
+            
+            }
+        
+            if (!the_index) throw 'No unique key found for ' + table + ' on ' + key
+                        
+            where = the_index.match (/ WHERE .*$/)
+            
+        }
+        
         let [fields, args, set, params] = [[], [], [], []]
         
         for (let k in data) {
@@ -108,8 +141,8 @@ module.exports = class extends Dia.DB.Client {
             params.push (data [k])
             if (key.indexOf (k) < 0) set.push (`${k}=COALESCE(EXCLUDED.${k},${table}.${k})`)
         }
-// TODO: eliminate "fake"!!!        
-        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) WHERE fake = 0 DO UPDATE SET ${set} RETURNING id`
+
+        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) ${where} DO UPDATE SET ${set} RETURNING id`
 
         return this.select_scalar (sql, params)
         
