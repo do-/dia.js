@@ -83,7 +83,7 @@ module.exports = class {
 
                             let [_, col, etc, other] = col_etc_other
 
-                            if (this.is_null) other = other == '<>' ? ' IS NOT NULL' : ' IS NULL'
+                            if (this.is_null) other = other.trim () == '<>' ? ' IS NOT NULL' : ' IS NULL'
 
                             if (!other) other = this.params.length == 1 && !this.subquery ? '=' : ' IN'
 
