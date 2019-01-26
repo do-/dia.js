@@ -234,6 +234,25 @@ module.exports = class extends require ('../Pool.js') {
         return result
 
     }
+    
+    normalize_model_table_key (table, k) {
+
+        let glob = `ix_${table.name}_${k}`
+    
+        let src = table.keys [k]
+        
+        if (src != null) {
+            src = src.trim ()
+            if (src.indexOf ('(') < 0) src = `(${src})`
+            if (src.indexOf ('USING') < 0) src = src.replace ('(', 'USING btree (')
+            src = src.replace ('USING', `INDEX ${glob} ON ${table.name} USING`)
+            src = 'CREATE ' + src
+        }
+        
+        delete table.keys [k]
+        table.keys [glob] = src
+
+    }
 
     gen_sql_update_keys () {
     
@@ -253,13 +272,16 @@ module.exports = class extends require ('../Pool.js') {
                 
                 let old_src = existing_keys [name]
                 
-                if (src == old_src) continue
-
-                let glob = `ix_${table.name}_${name}`
-
-                if (old_src) result.push ({sql: `DROP INDEX ${glob};`, params: []})
+                function invariant (s) {
+                    if (s == null) return ''
+                    return s.replace (/[\s\(\)]/g, '').toLowerCase ()
+                }
                 
-                if (src != null) result.push ({sql: `CREATE INDEX ${glob} ON ${table.name} (${src});`, params: []})
+                if (invariant (src) == invariant (old_src)) continue
+
+                if (old_src) result.push ({sql: `DROP INDEX ${name};`, params: []})
+                
+                if (src != null) result.push ({sql: src, params: []})
 
             }
 

@@ -319,27 +319,17 @@ module.exports = class extends Dia.DB.Client {
         `, [])
 
         let tables = this.model.tables
-        let re_def = /\((.*)\)/
         let re_pk = /_pkey$/
 
         for (let r of rs) {
-        
+
             let t = tables [r.tablename]
             if (!t) continue
             
-            let d = re_def.exec (r.indexdef)
-            if (!d) continue
-            let def = d [1].replace (/\s/g, '')
+            let k = r.indexname            
+            let v = r.indexdef
             
-            if (re_pk.test (r.indexname)) {
-                t.existing.pk = def
-            }
-            else {
-                let name = r.indexname
-                let prefix = `ix_${r.tablename}_`
-                if (name.indexOf (prefix) == 0)
-                t.existing.keys [name.substr (prefix.length)] = def
-            }
+            if (re_pk.test (k)) t.existing.pk = v; else t.existing.keys [k] = v
 
         }
         
