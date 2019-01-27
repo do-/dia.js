@@ -141,6 +141,36 @@ module.exports = class extends require ('../Pool.js') {
     
     }
     
+    gen_sql_recreate_tables () {
+    
+//darn (this.model.tables.sessions.columns.id_user.ref)
+    
+        let result = []
+        
+        for (let table of Object.values (this.model.tables)) {
+            
+            if (table.pk == table.existing.pk) continue;
+                        
+            let tmp_table = clone (table)
+            
+            tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
+            
+            result.push ({sql: `DROP TABLE IF EXISTS ${tmp_table.name}`, params: []})
+            
+            result.push (this.gen_sql_add_table (tmp_table))
+            
+            for (let col of Object.values (tmp_table.columns)) if (col.name != tmp_table.pk) result.push (this.gen_sql_add_column (tmp_table, col))
+            
+            let cols = Object.keys (tmp_table.columns).filter (k => table.existing.columns [k])
+
+            result.push ({sql: `INSERT INTO ${tmp_table.name} (${cols}) SELECT ${cols} FROM ${table.name}`, params: []})
+
+        }        
+        
+        return result
+
+    }
+    
     gen_sql_add_columns () {
     
         let result = []
