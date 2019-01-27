@@ -362,7 +362,12 @@ module.exports = class extends Dia.DB.Client {
             let k = r.indexname            
             let v = r.indexdef
             
-            if (re_pk.test (k)) t.existing.pk = v; else t.existing.keys [k] = v
+            if (re_pk.test (k)) {
+                t.existing.pk = /\((.*)\)/.exec (v) [1].trim ()
+            } 
+            else {
+                t.existing.keys [k] = v
+            }
 
         }
         
