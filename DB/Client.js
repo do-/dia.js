@@ -19,7 +19,7 @@ module.exports = class {
         
         if ((o.label = o.label || 'label') != 'label') o.label = o.label.replace (/ AS.*/, '') + ' AS label'
 
-        return this.select_all (`SELECT id, ${o.label} FROM ${t} WHERE ${filter} ORDER BY ${o.order}`)
+        return this.select_all (`SELECT ${this.model.tables [t].pk} id, ${o.label} FROM ${t} WHERE ${filter} ORDER BY ${o.order}`)
 
     }
 
