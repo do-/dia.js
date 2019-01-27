@@ -26,13 +26,14 @@ module.exports = class {
     load_file (p, name) {
         let m = require (path.resolve (p))
         m.name = name
-        this.adjust_table (m)
+        this.on_before_parse_table_columns (m)
         if (m.columns) this.parse_columns (m.columns)
+        this.on_after_parse_table_columns (m)
         return m
     }
     
-    adjust_table (table) {
-    }
+    on_before_parse_table_columns (table) {}
+    on_after_parse_table_columns (table) {}
     
     parse_columns (columns) {
         for (let name in columns) {
