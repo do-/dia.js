@@ -53,6 +53,19 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    gen_sql_add_table (table) {
+    
+        let pk = table.pk
+        
+        let df = table.columns [pk]
+        
+        return {
+            sql: `CREATE TABLE "${table.name}" (${pk} ${this.gen_sql_column_definition (df)} PRIMARY KEY)`, 
+            params: []
+        }
+
+    }
+    
     gen_sql_add_tables () {
 
         let result = []
@@ -64,7 +77,7 @@ module.exports = class extends require ('../Pool.js') {
             
             table.existing = {pk, columns: {[pk]: df}, keys: {}, triggers: {}}
 
-            result.push ({sql: `CREATE TABLE "${table.name}" (${pk} ${this.gen_sql_column_definition (df)} PRIMARY KEY)`, params: []})
+            result.push (this.gen_sql_add_table (table))
 
         }
 
@@ -119,6 +132,15 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    gen_sql_add_column (table, col) {
+    
+        return {
+            sql: `ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col), 
+            params: []
+        }
+    
+    }
+    
     gen_sql_add_columns () {
     
         let result = []
@@ -134,8 +156,8 @@ module.exports = class extends require ('../Pool.js') {
                 let ex = existing_columns [col.name]
                 
                 if (ex) continue
-                
-                result.push ({sql: `ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col), params: []})
+
+                result.push (this.gen_sql_add_column (table, col))
                                 
                 if (after) {
                     let a = after [col.name]
