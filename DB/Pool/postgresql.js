@@ -332,6 +332,10 @@ module.exports = class extends require ('../Pool.js') {
         else if (col.TYPE_NAME == 'DATETIME') {
             col.TYPE_NAME = 'TIMESTAMP'
         }
+        else if (col.TYPE_NAME == 'CHECKBOX') {
+            col.TYPE_NAME = 'INT2'
+            col.COLUMN_DEF = '0'
+        }
         
         if (col.TYPE_NAME == 'NUMERIC') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
