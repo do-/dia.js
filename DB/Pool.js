@@ -5,9 +5,7 @@ module.exports = class {
     }
     
     async update_model () {
-    
-        await this.load_schema ()
-    
+
         try {
             var db = await this.acquire ()
             for (let i of this.gen_sql_patch ()) await db.do (i.sql, i.params)
@@ -16,14 +14,13 @@ module.exports = class {
             this.release (db)
         }
         
-        await this.load_schema ()
-
     }    
     
     async load_schema () {
     
         try {
             var db = await this.acquire ()
+            db.log_prefix = '[LOADING SCHEMA] '
             await db.load_schema ()
         }
         finally {
