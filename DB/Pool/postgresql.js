@@ -279,6 +279,18 @@ module.exports = class extends require ('../Pool.js') {
                     }
                 
                 }
+                
+                if (col.name != table.pk) {
+
+                    let n = col.NULLABLE
+
+                    if (n != existing_columns [col.name].NULLABLE) {
+
+                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
+
+                    }
+
+                }                
 
             }
 
