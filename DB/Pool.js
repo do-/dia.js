@@ -42,6 +42,7 @@ module.exports = class {
             .concat (this.gen_sql_add_tables ())
             .concat (this.gen_sql_comment_tables ())
             .concat (this.gen_sql_add_columns ())
+            .concat (this.gen_sql_set_default_columns ())
             .concat (this.gen_sql_comment_columns ())
             .concat (this.gen_sql_update_keys ())
             .concat (this.gen_sql_update_triggers ())

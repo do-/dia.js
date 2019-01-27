@@ -169,7 +169,13 @@ module.exports = class extends require ('../Pool.js') {
 
                 cols.push (col_name)
 
-                if (col_name != tmp_table.pk) result.push (this.gen_sql_add_column (tmp_table, col))
+                if (col_name != tmp_table.pk) {
+                
+                    delete col.COLUMN_DEF
+                
+                    result.push (this.gen_sql_add_column (tmp_table, col))
+                    
+                }
 
             }
 
@@ -244,6 +250,43 @@ module.exports = class extends require ('../Pool.js') {
         return result
     
     }
+
+    gen_sql_set_default_columns () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) {
+
+            let existing_columns = table.existing.columns
+
+            for (let col of Object.values (table.columns)) {
+            
+                let d = col.COLUMN_DEF
+
+                if (d != existing_columns [col.name].COLUMN_DEF) {
+                
+                    if (d == null) {
+
+                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
+
+                    }
+                    else {
+
+                        if (d.indexOf ('(') < 0) result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${d} WHERE "${col.name}" IS NULL`, params: []})
+
+                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
+
+                    }
+                
+                }
+
+            }
+
+        }
+
+        return result
+
+    }    
     
     gen_sql_comment_columns () {
 
