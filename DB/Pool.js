@@ -5,17 +5,21 @@ module.exports = class {
     }
     
     async update_model () {
+        return this.run (this.gen_sql_patch ())
+    }
+    
+    async run (list) {
 
         try {
             var db = await this.acquire ()
-            for (let i of this.gen_sql_patch ()) await db.do (i.sql, i.params)
+            for (let i of list) await db.do (i.sql, i.params)
         }
         finally {
             this.release (db)
         }
         
     }    
-    
+
     async load_schema () {
     
         try {
