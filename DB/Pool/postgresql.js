@@ -172,6 +172,7 @@ module.exports = class extends require ('../Pool.js') {
                 if (col_name != tmp_table.pk) {
                 
                     delete col.COLUMN_DEF
+                    delete table.existing.columns [col_name].COLUMN_DEF
                 
                     result.push (this.gen_sql_add_column (tmp_table, col))
                     
