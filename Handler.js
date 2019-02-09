@@ -69,7 +69,7 @@ module.exports = class {
     }
 
     is_transactional () {
-        return !!this.q.action
+        return !!this.rq.action
     }
     
     async acquire_resources () {

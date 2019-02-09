@@ -102,7 +102,7 @@ exports.Handler = class extends Handler {
         try {
             let o = JSON.parse (this.body)
             if (Array.isArray (o)) throw '400 A plain object, not an array expected'
-            for (let i in o) this.q [i] = o [i]
+            for (let i in o) this.rq [i] = o [i]
         }
         catch (x) {
             throw '400 Broken JSON'
@@ -114,12 +114,12 @@ exports.Handler = class extends Handler {
         let h = this.http.request.headers
         const pre = 'x-request-param-'
         const len = pre.length
-        for (let k in h) if (k.substr (0, len) == pre) this.q [k.substr (len)] = h [k]
+        for (let k in h) if (k.substr (0, len) == pre) this.rq [k.substr (len)] = h [k]
     }
 
     async read_params () {
         
-        this.q = {}
+        this.rq = {}
         
         switch (this.http.request.method) {
             case 'POST':
@@ -130,14 +130,14 @@ exports.Handler = class extends Handler {
         }
         
         let uri = url.parse (this.http.request.url)
-        new URLSearchParams (uri.search).forEach ((v, k) => this.q [k] = v)
+        new URLSearchParams (uri.search).forEach ((v, k) => this.rq [k] = v)
         
         this.parse_x_headers ()
 
     }
 
     get_module_name () {
-        let type = this.q.type
+        let type = this.rq.type
         if (!type) throw '204 No content for you'
         return type
     }
