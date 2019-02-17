@@ -344,9 +344,11 @@ module.exports = class extends Dia.DB.Client {
     
         let rs = await this.select_all (`
             SELECT 
-                *
-            FROM 
-                pg_indexes
+                tablename, 
+                indexname, 
+                REPLACE (indexdef, schemaname || '.', '') AS indexdef
+            FROM
+                pg_indexes 
             WHERE 
                 schemaname = current_schema ()
         `, [])
