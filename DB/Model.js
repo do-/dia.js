@@ -62,7 +62,6 @@ module.exports = class {
         type = type.replace (/\s/g, '')
         
         if (type.charAt (0) == '(') {
-            col.TYPE_NAME = 'int'
             col.ref = type.replace (/[\(\)]/g, '')
         }
         else {

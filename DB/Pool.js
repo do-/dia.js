@@ -60,7 +60,12 @@ module.exports = class {
         if (table.triggers) for (let k in table.triggers) this.normalize_model_table_trigger (table, k)
     }
     
-    normalize_model_table_column (table, col) {        
+    normalize_model_table_column (table, col) {
+
+        if (!col.TYPE_NAME && col.ref) {
+            let t = this.model.tables [col.ref]
+            col.TYPE_NAME = t.columns [t.pk].TYPE_NAME
+        }
 
         col.TYPE_NAME = col.TYPE_NAME.toUpperCase ()
 
