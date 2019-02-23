@@ -143,14 +143,14 @@ module.exports = class extends require ('../Pool.js') {
     
     gen_sql_recreate_tables () {
     
-//darn (this.model.tables.sessions.columns.id_user.ref)
-    
         let result = []
         
         for (let table_name in this.model.tables) {
         
             let table = this.model.tables [table_name]
             
+            if (!table.existing) continue;
+
             if (table.pk == table.existing.pk) continue;
                         
             let tmp_table = clone (table)
