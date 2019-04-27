@@ -2,6 +2,10 @@ const Dia = require ('../../Dia.js')
 
 module.exports = class extends Dia.DB.Client {
 
+    is_pk_violation (e) {
+        return e.code == '23505'
+    }
+
     async finish_txn (success) {
     
         if (success) {
