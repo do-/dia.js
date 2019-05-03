@@ -3,7 +3,7 @@ const Dia = require ('../../Dia.js')
 module.exports = class extends Dia.DB.Client {
 
     is_pk_violation (e) {
-        return e.code == '23505'
+        return e.code == '23505' && /_pkey$/.test (e.constraint)
     }
 
     async finish_txn (success) {
