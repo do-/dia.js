@@ -65,7 +65,7 @@ module.exports = class extends require ('../Pool.js') {
         }
 
     }
-    
+        
     gen_sql_add_tables () {
 
         let result = []
@@ -76,6 +76,7 @@ module.exports = class extends require ('../Pool.js') {
             let df = table.columns [pk]
             
             table.existing = {pk, columns: {[pk]: df}, keys: {}, triggers: {}}
+            table._is_just_added = 1
 
             result.push (this.gen_sql_add_table (table))
 

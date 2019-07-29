@@ -47,6 +47,7 @@ module.exports = class {
             .concat (this.gen_sql_update_keys ())
             .concat (this.gen_sql_update_triggers ())
             .concat (this.gen_sql_upsert_data ())
+            .concat (this.gen_sql_after_add_tables ())
     
     }
 
@@ -73,5 +74,19 @@ module.exports = class {
         if (col.COLUMN_DEF != null)    col.COLUMN_DEF = String (col.COLUMN_DEF)
         
     }    
+
+    gen_sql_after_add_tables () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) if (table._is_just_added) {
+
+            let a = table.on_after_add_table; if (a) result.push (a)
+
+        }
+
+        return result
+
+    }
 
 }
