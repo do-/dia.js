@@ -11,6 +11,7 @@ module.exports = class {
     
     reload () {
         this.tables = {}
+        this.views = {}
         for (let p of this.o.paths) this.load_dir (p)
     }
     
@@ -19,7 +20,7 @@ module.exports = class {
             let name = fn.split ('.') [0]
             let table = this.load_file (p + '/' + fn, name)
             if (!table.pk) throw 'No primary key defined for ' + name
-            this.tables [name] = table
+            this [table.sql ? 'views' : 'tables'] [name] = table
         }
     }
     
