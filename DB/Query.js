@@ -95,14 +95,14 @@ module.exports = class {
                             if (!this.is_null && other.indexOf ('?') < 0) {
 
                                 if (/IN$/.test (other)) {
-                                
+
                                     if (this.subquery) {                                    
                                         sql += ` (${this.subquery.sql})`
                                         this.params = this.subquery.params
                                     }
                                     else {
                                         sql += ' (?'
-                                        for (let i = 0; i < this.params.length - 2; i ++) sql += ',?'
+                                        for (let i = 0; i < this.params.length - 1; i ++) sql += ',?'
                                         sql += ')'
                                     }
                                     
