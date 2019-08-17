@@ -15,9 +15,35 @@ module.exports = class {
     set   (k, v) { this._ [k] = [v, this.time ()] }    
 
     get (k) {
+    
         let [v, t] = this._ [k] || [null, 0]
-        if (this.ttl && t < this.threshold ()) return this.del (k)
+        
+        if (this.ttl && t < this.threshold ()) {
+    		darn ('expired ' + this.name + ' ' + k + ': ' + JSON.stringify (this._ [k]))
+        	return this.del (k)
+		}
+		
         return v
+        
+    }
+    
+    async to_get (k, f) {
+    
+        let [v, t] = this._ [k] || [null, 0]
+        
+        if (this.ttl && t < this.threshold ()) {
+    		darn ('expired ' + this.name + ' ' + k + ': ' + JSON.stringify (this._ [k]))
+        	return this.del (k)
+		}
+        
+        if (v == null && f) {
+        	v = await f (k)
+        	if (v == null) return null
+        	this.set (k, v)
+        }
+        
+        return v
+        
     }
     
     cleanup () {
