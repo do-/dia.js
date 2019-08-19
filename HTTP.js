@@ -187,5 +187,10 @@ exports.Handler = class extends Handler {
         id: this.uuid, 
         dt: new Date ().toJSON ()
     }}
+    
+    no_user () {
+    	if (this.is_anonymous ()) return undefined
+		throw '401 Unauthorized'
+    }
 
 }

@@ -23,7 +23,7 @@ module.exports = class {
             this.check_params ()
             this.session = this.get_session ()
             await this.acquire_resources ()
-            this.user = await this.get_user ()
+            if (!this.is_anonymous ()) this.user = await this.get_user ()
             if (!this.module_name) this.module_name = this.get_module_name ()
             if (!this.method_name) this.method_name = this.get_method_name ()
             console.log (this.uuid + ': ' + this.get_log_banner ())            
@@ -70,6 +70,10 @@ module.exports = class {
 
     is_transactional () {
         return !!this.rq.action
+    }
+    
+    is_anonymous () {
+        return false
     }
     
     async acquire_resources () {
