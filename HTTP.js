@@ -21,12 +21,12 @@ exports.Handler = class extends Handler {
                 return Dia.new_uuid ()
             }
 
-            start () {
+            async start () {
                 if (this.id) this.finish ()
                 this.id = this.new_id ()
             }
 
-            finish () {
+            async finish () {
                 this.old_id = this.id
                 delete this.id
             }
@@ -53,13 +53,13 @@ exports.Handler = class extends Handler {
                 }
             }
             
-            start () {
-                super.start ()
+            async start () {
+                await super.start ()
                 this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id + '; HttpOnly');
             }
 
-            finish () {
-                super.finish ()
+            async finish () {
+                await super.finish ()
                 this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=0; Expires=Thu, 01 Dec 1994 16:00:00 GMT');
             }
             
