@@ -485,7 +485,7 @@ module.exports = class extends require ('../Pool.js') {
             col.TYPE_NAME = get_int_type_name (col.TYPE_NAME.substr (0, col.TYPE_NAME.length - 3))
         }
         else if (/(CHAR|STRING|TEXT)$/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'TEXT'
+            col.TYPE_NAME = col.COLUMN_SIZE ? 'VARCHAR' : 'TEXT'
         }
         else if (/BINARY$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'BYTEA'

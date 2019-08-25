@@ -79,8 +79,8 @@ module.exports = class {
         else {
             let [t, s, p] = type.split (/[\[\,\]]/)
             set ('TYPE_NAME', t)
-            set ('col.COLUMN_SIZE', s)
-            set ('col.DECIMAL_DIGITS', p)
+            set ('COLUMN_SIZE', s)
+            set ('DECIMAL_DIGITS', p)
         }
         
         return col
