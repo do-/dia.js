@@ -11,12 +11,16 @@ module.exports = class {
     }
 
     async select_vocabulary (t, o = {}) {
-    
+
+        let def = this.model.tables [t]
+
+        let data = def.data; if (data && !Object.keys (o).length) return data
+
         if (!o.order) o.order = 2
         
         if ((o.label = o.label || 'label') != 'label') o.label = o.label.replace (/ AS.*/, '') + ' AS label'
-
-        return this.select_all (`SELECT ${this.model.tables [t].pk} id, ${o.label} FROM ${t} WHERE ${o.filter || '1=1'} ORDER BY ${o.order}`)
+        
+        return this.select_all (`SELECT ${def.pk} id, ${o.label} FROM ${t} WHERE ${o.filter || '1=1'} ORDER BY ${o.order}`)
 
     }
 
