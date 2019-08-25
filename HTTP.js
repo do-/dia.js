@@ -167,9 +167,18 @@ exports.Handler = class extends Handler {
     }
 
     send_out_error (x) {
+    
         if (/^\d\d\d /.test (x)) return this.send_out_text (x)
-        if (typeof x == 'string' && x.charAt (0) == '#') return this.send_out_json (422, this.to_validation_error (x))
+
+        let message = 
+        	typeof x == 'string' ? x : 
+        	x instanceof Error   ? x.message : 
+        	''
+
+        if (message.charAt (0) == '#') return this.send_out_json (422, this.to_validation_error (message))
+
         this.send_out_json (500, this.to_fault (x))
+
     }
 
     to_message (data) {return {
