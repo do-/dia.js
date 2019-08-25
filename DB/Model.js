@@ -29,6 +29,12 @@ module.exports = class {
         m.name = name
         this.on_before_parse_table_columns (m)
         if (m.columns) this.parse_columns (m.columns)
+        let triggers = m.triggers; if (triggers) {
+        	for (let k in triggers) {
+        		let v = triggers [k]
+        		if (typeof v === 'function') triggers [k] = v.apply (m)
+        	}
+        }
         this.on_after_parse_table_columns (m)
         return m
     }
@@ -59,7 +65,12 @@ module.exports = class {
         function set (k, v) {if (v) col [k] = v}
         
         set ('COLUMN_DEF', column_def)
-                
+                        
+        let [t, re] = type.split ('/'); if (re) {
+        	type = t
+	        set ('PATTERN', re)
+        }
+        
         type = type.replace (/\s/g, '')
         
         if (type.charAt (0) == '(') {
