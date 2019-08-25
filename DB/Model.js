@@ -25,20 +25,27 @@ module.exports = class {
     }
     
     load_file (p, name) {
+
         let m = require (path.resolve (p))
+
         m.name = name
+        m.model = this
+
         this.on_before_parse_table_columns (m)
+
         if (m.columns) this.parse_columns (m.columns)
-        let triggers = m.triggers; if (triggers) {
-        	for (let k in triggers) {
-        		let v = triggers [k]
-        		if (typeof v === 'function') triggers [k] = v.apply (m)
-        	}
-        }
+
+        let triggers = m.triggers; if (triggers) {for (let k in triggers) {
+        	let v = triggers [k]
+        	if (typeof v === 'function') triggers [k] = v.apply (m)
+        }}
+
         this.on_after_parse_table_columns (m)
+
         return m
+
     }
-    
+
     on_before_parse_table_columns (table) {}
     on_after_parse_table_columns (table) {}
     
