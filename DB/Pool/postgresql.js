@@ -359,7 +359,7 @@ module.exports = class extends require ('../Pool.js') {
             
             for (let name in triggers) {
             
-                let src = triggers [name]
+                let src = triggers [name].replace (/\$/g, '$$$$')
                 
                 if (src == existing_triggers [name]) continue
                 
