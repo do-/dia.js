@@ -6,6 +6,7 @@ reExport ('ModuleTools')
 
 this.Handler = require ('./Handler.js')
 this.HTTP    = require ('./HTTP.js')
+this.Async   = require ('./Async.js')
 this.DB      = require ('./DB.js')
 this.Cache   = require ('./Cache.js')
 
