@@ -1,6 +1,5 @@
-const Dia = require ('./Dia.js')
 const url  = require ('url')
-const Handler = require ('./Handler')
+const Handler = require ('../Handler')
 
 exports.Handler = class extends Handler {
 	

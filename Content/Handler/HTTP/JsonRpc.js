@@ -1,4 +1,4 @@
-const HTTP = require ('./HTTP')
+const HTTP = require ('../HTTP')
 
 exports.Handler = class extends HTTP.Handler {
 

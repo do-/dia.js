@@ -4,8 +4,8 @@ require ('./H4xx.js')
 
 reExport ('ModuleTools')
 
-this.Handler = require ('./Handler.js')
-this.HTTP    = require ('./HTTP.js')
+this.Handler = require ('./Content/Handler.js')
+this.HTTP    = require ('./Content/Handler/HTTP.js')
 this.DB      = require ('./DB.js')
 this.Cache   = require ('./Cache.js')
 

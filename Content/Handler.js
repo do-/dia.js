@@ -1,4 +1,4 @@
-const Dia = require ('./Dia.js')
+const Dia = require ('../Dia.js')
 const url = require ('url')
 
 module.exports = class {
