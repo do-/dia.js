@@ -31,7 +31,6 @@ exports.Handler = class extends HTTP.Handler {
         let id = rq.id
         if (id == null) throw "-32600 Missing request id"
         id = id.toLowerCase ()
-        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test (id)) throw "-32602 Request id is not a UUID"
 		this.uuid = id
 
         let p = rq.params
