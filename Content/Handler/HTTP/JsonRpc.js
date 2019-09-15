@@ -2,6 +2,21 @@ const HTTP = require ('../HTTP')
 
 exports.Handler = class extends HTTP.Handler {
 
+    parse_http_request_body () {
+    
+        if (this.http.request.headers ['content-type'] != 'application/json') throw '-32700 application/json expected'
+
+        try {
+            let o = JSON.parse (this.body)
+            if (Array.isArray (o)) throw '-32600 A plain object, not an array expected'
+            for (let i in o) this.rq [i] = o [i]
+        }
+        catch (x) {
+            throw '-32700 Broken JSON'
+        }
+        
+    }
+
     async read_params () {
     
     	await super.read_params ()
@@ -22,9 +37,9 @@ exports.Handler = class extends HTTP.Handler {
         let p = rq.params
         
         let [type] = this.http.request.url.split ('/').filter (s => s)
-
-        p.type    = type
-        p.action  = rq.method
+        p.type = type     
+        
+        if ((p.action = rq.method) == null) throw "-32600 Method not defined"
 
         this.rq = p
 
@@ -47,8 +62,8 @@ exports.Handler = class extends HTTP.Handler {
     }
     
     send_out_error (x) {
-    
-        if (/^-326\d\d /.test (x)) {
+
+		if (/^-32[67]\d\d /.test (x)) {
         
         	let code = x.substr (0, 6)
         	
