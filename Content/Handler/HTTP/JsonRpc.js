@@ -2,6 +2,12 @@ const HTTP = require ('../HTTP')
 
 exports.Handler = class extends HTTP.Handler {
 
+    check () {
+        super.check ()
+        let m = this.http.request.method
+        if (m != 'POST') throw '405 No ' + m + 's please'
+    }
+
     parse_http_request_body () {
     
         if (this.http.request.headers ['content-type'] != 'application/json') throw '-32700 application/json expected'
