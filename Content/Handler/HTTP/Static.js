@@ -15,5 +15,9 @@ exports.Handler = class extends HTTP.Handler {
     send_out_data (server) {
 		server.serve (this.http.request, this.http.response)
     }
+    
+    get_log_banner () {
+        return this.http.request.url
+    }
 
 }
