@@ -141,8 +141,10 @@ module.exports = class extends require ('../Pool.js') {
                     if (k != table.pk) s.push (`${k}=EXCLUDED.${k}`)
 
                 }
-            
-                result.push ({sql: `INSERT INTO "${table.name}" (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO UPDATE SET ${s}`, params: v})
+                
+                let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
+                            
+                result.push ({sql: `INSERT INTO "${table.name}" (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO ${something}`, params: v})
 
             }
         
