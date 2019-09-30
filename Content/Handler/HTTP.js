@@ -1,70 +1,20 @@
 const Dia = require ('../../Dia.js')
 const url  = require ('url')
 const Handler = require ('../Handler')
+const Session = require ('./HTTP/Session/Session')
+const CookieSession = require ('./HTTP/Session/CookieSession')
 
 exports.Handler = class extends Handler {
 
     constructor (o) {
     
         super (o)
+        
         let handler = this
         
-        this.Session = class {
-        
-            constructor (o) {
+        this.Session       = class extends Session       {constructor (o) {super (handler, o)}}
+        this.CookieSession = class extends CookieSession {constructor (o) {super (handler, o)}}
 
-                this.h = handler
-                this.o = o
-            }
-            
-            new_id () {
-                return Dia.new_uuid ()
-            }
-
-            async start () {
-                if (this.id) this.finish ()
-                this.id = this.new_id ()
-            }
-
-            async finish () {
-                this.old_id = this.id
-                delete this.id
-            }
-            
-            async get_user () {
-                return undefined
-            }
-
-        }
-
-        this.CookieSession = class extends this.Session {
-        
-            constructor (o) {
-                super (o)
-
-                if (!o.cookie_name) throw 'cookie_name is not set'
-                let cookies = this.h.http.request.headers.cookie
-                if (!cookies) return
-                for (let chunk of cookies.split (';')) {
-                    let [k, v] = chunk.trim ().split ('=')
-                    if (k != o.cookie_name) continue
-                    this.id = v
-                    break
-                }
-            }
-            
-            async start () {
-                await super.start ()
-                this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + this.id + '; HttpOnly');
-            }
-
-            async finish () {
-                await super.finish ()
-                this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=0; Expires=Thu, 01 Dec 1994 16:00:00 GMT');
-            }
-            
-        }
-        
     }
 
     check () {
