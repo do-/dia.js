@@ -2,7 +2,8 @@ const CookieSession = require ('./CookieSession')
 
 module.exports = class extends CookieSession {
 
-	constructor (h, o) {	
+	constructor (h, o) {
+		if (!o.timeout && o.sessions.ttl) o.timeout = o.sessions.ttl / 60000
 		super (h, o)
 	}
 		
@@ -10,8 +11,8 @@ module.exports = class extends CookieSession {
 		throw 'get_user_by_id is not defined'
     }
 
-    keep_alive () {
-    	this.o.sessions.set (this.id, this.user.uuid)
+    async keep_alive () {
+    	await this.o.sessions.to_set (this.id, this.user.uuid)
     	return this.user
     }
 
@@ -22,7 +23,7 @@ module.exports = class extends CookieSession {
     
     async finish () {            
         await super.finish ()
-        this.o.sessions.del (this.id)
+        this.o.sessions.to_del (this.id)
     }
 
     restrict_access () {
@@ -34,7 +35,7 @@ module.exports = class extends CookieSession {
 
         if (!this.id) return this.h.no_user ()
         
-        let uuid = this.o.sessions.get (this.id)
+        let uuid = await this.o.sessions.to_get (this.id)
 
         if (!uuid) {
         	darn (`session ${this.id} not found`)

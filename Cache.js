@@ -1,62 +1,67 @@
 module.exports = class {
 
     constructor (o) {
+
         for (let i in o) this [i] = o [i]
+
         this._ = {}
-        if (this.ttl) setInterval (() => this.cleanup (), this.ttl)
+
+        if (this.ttl) this._t = {}
+
     }
     
-	time      () { return  new Date ().getTime () }
-	
-	threshold () { return this.time () - this.ttl }
+    clearTimeout (k) {
 
-    del      (k) { delete this._ [k]; return null }
-    
-    set   (k, v) { this._ [k] = [v, this.time ()] }    
+    	if (!this.ttl) return
 
-    get (k) {
+    	clearTimeout (this._t [k])
+    	
+    	delete this._t [k]
     
-        let [v, t] = this._ [k] || [null, 0]
-        
-        if (this.ttl && t < this.threshold ()) {
-    		darn ('expired ' + this.name + ' ' + k + ': ' + JSON.stringify (this._ [k]))
-        	return this.del (k)
-		}
-		
-        return v
-        
     }
+
+    async to_del (k) {
+
+    	this.clearTimeout (k)
+    	
+    	let v = this._ [k]
+    	
+    	delete this._ [k]
+    	
+    	return v
+
+    }    
+    
+    async to_set (k, v) {
+    
+    	this.clearTimeout (k)
+    
+    	this._ [k] = v 
+    	
+    	if (this.ttl) this._t [k] = setTimeout (async () => {
+    	
+    		darn (`${this.name}: ${k} expired`)
+    		
+    		this.to_del (k)
+    	
+    	}, this.ttl)
+    	
+    	return v
+    
+    }    
     
     async to_get (k, f) {
-    
-        let [v, t] = this._ [k] || [null, 0]
+
+        let v = this._ [k]
+                
+        if (v != null || !f) return v
+
+		v = await f (k)
+
+		if (v == null) return v
+
+		return await this.to_set (k, v)
         
-        if (this.ttl && t < this.threshold ()) {
-    		darn ('expired ' + this.name + ' ' + k + ': ' + JSON.stringify (this._ [k]))
-        	return this.del (k)
-		}
-        
-        if (v == null && f) {
-        	v = await f (k)
-        	if (v == null) return null
-        	this.set (k, v)
-        }
-        
-        return v
-        
-    }
-    
-    cleanup () {
-    
-    	darn (this.name + " cleanup started")
-    
-    	let t = this.threshold ()
-		
-		for (let k in this._) if (this._ [k] [1] < t) {
-    		darn ('expired ' + this.name + ' ' + k + ': ' + JSON.stringify (this._ [k]))
-    		delete this._ [k]
-    	}
-    	
     }
 
 }
