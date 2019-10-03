@@ -50,7 +50,7 @@ module.exports = class extends Cache {
     
     }    
     
-    async to_get (k, f) {
+    async to_get (k) {
 
         return this._.get (k)
                         
