@@ -3,11 +3,15 @@ const memcached  = require ('memcached')
 
 module.exports = class extends Cache {
 
-    constructor (o) {
-    
-    	super (o)
+    constructor (a) {
 
-        this._ = new memcached (this.memcached)
+    	super (a)
+
+    	this.ttl /= 1000
+
+    	let [s, o] = this.memcached
+
+        this._ = new memcached (s, o)
 
     }
     
@@ -32,7 +36,7 @@ module.exports = class extends Cache {
     async to_set (k, v) {
 
     	await new Promise ((ok, fail) => {
-			this._.set (k, v, this.ttl / 1000, this.cb (ok, fail))
+			this._.set (k, v, this.ttl, this.cb (ok, fail))
     	})
     	
     	return v
