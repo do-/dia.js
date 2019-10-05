@@ -18,18 +18,24 @@ module.exports = class extends Cache {
     async to_del (k) {
     	
     	if (k == null) return
+    	
+    	let v = await this.to_get (k)
     
-    	return new Promise ((ok, fail) => {
+    	if (v != null) await new Promise ((ok, fail) => {
 			this._.del (k, this.cb (ok, fail))
     	})
+    	
+    	return v
     	
     }
 
     async to_set (k, v) {
 
-    	return new Promise ((ok, fail) => {
+    	await new Promise ((ok, fail) => {
 			this._.set (k, v, this.ttl / 1000, this.cb (ok, fail))
     	})
+    	
+    	return v
     
     }    
     
