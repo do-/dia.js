@@ -9,6 +9,11 @@ module.exports = class {
         this.__resources = []
     }
     
+    import (c, m) {
+    	let from = c.prototype, to = this.constructor.prototype
+    	for (let i of m) to [i] = from [i]
+    }
+    
     get_log_banner () {
         return `${this.module_name}.${this.method_name}`
     }
