@@ -18,7 +18,7 @@ exports.Handler = class extends HTTP.Handler {
             for (let i in o) this.rq [i] = o [i]
         }
         catch (x) {
-            throw '-32700 Broken JSON'
+            throw '-32700 Broken JSON: ' + x.message
         }
         
     }
