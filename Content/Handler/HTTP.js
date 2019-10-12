@@ -6,17 +6,6 @@ const CookieSession = require ('./HTTP/Session/CookieSession')
 
 exports.Handler = class extends Handler {
 
-    constructor (o) {
-    
-        super (o)
-        
-        let handler = this
-        
-        this.Session       = class extends Session       {constructor (o) {super (handler, o)}}
-        this.CookieSession = class extends CookieSession {constructor (o) {super (handler, o)}}
-
-    }
-
     check () {
         if (!this.http.request) throw '400 Empty http_request'
         if (!this.http.response) throw 'Empty http_response'
