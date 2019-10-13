@@ -125,7 +125,7 @@ module.exports = class {
             params.unshift (v)
         }
         
-        if (!fields.length) throw 'Nothig to update in ' + table + ', only key fields supplied: '  + JSON.stringify ([filer, params])
+        if (!fields.length) throw 'Nothig to update in ' + table + ', only key fields supplied: '  + JSON.stringify ([filter, params])
 
         return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')}`, params)
 
