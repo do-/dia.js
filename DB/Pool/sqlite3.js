@@ -1,5 +1,5 @@
 const genericPool = require ("generic-pool")
-const sqlite3     = require ("sqlite3")
+const sqlite3     = require ("sqlite3").verbose ()
 const wrapper     = require ('../Client/sqlite3.js')
 
 module.exports = class extends require ('../Pool.js') {
@@ -7,6 +7,8 @@ module.exports = class extends require ('../Pool.js') {
     constructor (o) {
     
         super (o)
+        
+        if (!o.filename) o.filename = o.connectionString.split ('://') [1]
         
         let factory = {
 
@@ -45,7 +47,7 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     async release (client) {
-        return await this.backend.release (client)
+        return await this.backend.release (client.backend)
     }
     
     gen_sql_quoted_literal (s) {
@@ -128,17 +130,7 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     gen_sql_comment_tables () {
-
-        let result = []
-
-        for (let table of Object.values (this.model.tables)) 
-        
-            if (table.label != table.existing.label)
-
-                result.push ({sql: `COMMENT ON TABLE "${table.name}" IS ` + this.gen_sql_quoted_literal (table.label), params: []})
-
-        return result
-
+		return []
     }
 
     gen_sql_upsert_data () {
@@ -346,84 +338,11 @@ module.exports = class extends require ('../Pool.js') {
     }    
     
     gen_sql_comment_columns () {
-
-        let result = []
-
-        for (let table of Object.values (this.model.tables)) {
-
-            let existing_columns = table.existing.columns
-
-            for (let col of Object.values (table.columns)) {
-            
-                let label = col.REMARK
-
-                if (label == existing_columns [col.name].REMARK) continue
-                
-                result.push ({sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
-
-            }
-
-        }
-
-        return result
-
+		return []
     }    
     
     gen_sql_update_triggers () {
-    
-        let result = []
-        
-        for (let table of Object.values (this.model.tables)) {
-        
-            let triggers = table.triggers
-        
-            if (!triggers) continue
-        
-            let existing_triggers = (table.existing || {triggers: {}}).triggers
-            
-            for (let name in triggers) {
-            
-                let src = triggers [name]
-                
-                if (src == existing_triggers [name]) continue
-                
-                let [phase, ...events] = name.toUpperCase ().split ('_')
-                
-                let glob = `on_${name}_${table.name}`
-                
-                result.push ({sql: `
-
-                    CREATE OR REPLACE FUNCTION ${glob}() RETURNS trigger AS \$${glob}\$
-
-                        ${src}
-
-                    \$${glob}\$ LANGUAGE plpgsql;
-
-                `, params: []})
-
-                result.push ({sql: `
-                
-                    DROP TRIGGER IF EXISTS ${glob} ON ${table.name};
-                    
-                `, params: []})
-
-                result.push ({sql: `
-
-                    CREATE TRIGGER 
-                        ${glob}
-                    ${phase} ${events.join (' OR ')} ON 
-                        ${table.name}
-                    FOR EACH ROW EXECUTE PROCEDURE 
-                        ${glob} ();
-
-                `, params: []})
-            
-            }
-        
-        }
-        
-        return result
-
+		return []
     }
     
     normalize_model_table_key (table, k) {
@@ -433,11 +352,13 @@ module.exports = class extends require ('../Pool.js') {
         let src = table.keys [k]
         
         if (src != null) {
-            src = src.trim ()
-            if (src.indexOf ('(') < 0) src = `(${src})`
-            if (src.indexOf ('USING') < 0) src = src.replace ('(', 'USING btree (')
-            src = src.replace ('USING', `INDEX ${glob} ON ${table.name} USING`)
-            src = 'CREATE ' + src
+        
+        	let unique = ''
+        	
+        	let um = /^\s*(UNIQUE)\s*\((.*?)\)\s*$/.exec (src); if (um) [unique, src] = um.slice (1)
+        
+        	src = `CREATE INDEX ${glob} ON ${table.name} (${src.trim ()})`
+        	
         }
         
         delete table.keys [k]
@@ -483,11 +404,7 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     normalize_model_table_trigger (table, k) {
-    
-        let src = table.triggers [k].replace (/\s+/g, ' ').trim ()
-    
-        table.triggers [k] = `BEGIN ${src} END;`
-    
+        
     }
     
     normalize_model_table_column (table, col) {

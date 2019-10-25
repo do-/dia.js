@@ -5,7 +5,7 @@ exports.Pool = (o, m) => {
     if (!dsn) throw 'No connectionString: ' + JSON.stringify (o)
     
     let product = dsn.split (':') [0]
-    
+        
     let clazz = require ('./DB/Pool/' + product + '.js')
     
     let pool = new clazz (o)

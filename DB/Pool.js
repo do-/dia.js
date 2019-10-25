@@ -27,6 +27,9 @@ module.exports = class {
             db.log_prefix = '[LOADING SCHEMA] '
             await db.load_schema ()
         }
+        catch (x) {
+        	darn (x)
+        }
         finally {
             this.release (db)
         }
