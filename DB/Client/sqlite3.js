@@ -306,6 +306,21 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async load_schema_table_keys () {
+    
+		let rs = await this.list_objects_of_type ('index')
+
+        let tables = this.model.tables
+
+        for (let r of rs) {        
+        
+        	let sql = r.sql; if (!sql) continue
+        	
+            let t = tables [r.tbl_name]            
+            if (!t) continue
+
+			t.existing.keys [r.name] = sql
+			
+		}
             
     }
     

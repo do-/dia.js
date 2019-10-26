@@ -357,7 +357,7 @@ return result
         	
         	let um = /^\s*(UNIQUE)\s*\((.*?)\)\s*$/.exec (src); if (um) [unique, src] = um.slice (1)
         
-        	src = `CREATE INDEX ${glob} ON ${table.name} (${src.trim ()})`
+        	src = `CREATE ${unique} INDEX ${glob} ON ${table.name} (${src.trim ()})`
         	
         }
         
@@ -388,7 +388,7 @@ return result
                     if (s == null) return ''
                     return s.replace (/[\s\(\)]/g, '').toLowerCase ()
                 }
-                
+
                 if (invariant (src) == invariant (old_src)) continue
 
                 if (old_src) result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
