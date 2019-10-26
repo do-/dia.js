@@ -244,11 +244,64 @@ module.exports = class extends Dia.DB.Client {
         this.backend.is_txn_pending = false
     }
     
+    async list_objects_of_type (type) {
+    	return this.select_all ('SELECT * FROM sqlite_master WHERE type=?', [type])
+    }
+    
     async load_schema_tables () {
+    
+        let tables = this.model.tables
+        
+		let rs = await this.list_objects_of_type ('table')
+
+        for (let r of rs) {
+            let t = tables [r.name]
+            if (!t) continue
+            r.columns = {}
+            r.keys = {}
+            t.existing = r
+        }
 
     }
     
     async load_schema_table_columns () {
+    
+		let rs = await this.list_objects_of_type ('table')
+    
+        let tables = this.model.tables
+        for (let r of rs) {        
+        
+            let t = tables [r.tbl_name]            
+            if (!t) continue
+
+        	let sql = r.sql
+        	sql = sql.substr (1 + sql.indexOf ('('))
+        	sql = sql.substr (0, sql.length - 1)
+        	
+        	for (let f of sql.split (', "')) {
+
+				let [_, name, type, dim, def, is_pk, is_nn] = /^(\w+)"? ([A-Z]+)([\(\d\,\)]*)(?: DEFAULT '(.*)')?( PRIMARY KEY)?( NOT NULL)?/.exec (f)
+				
+				if (is_pk) t.pk = name
+
+				let col = {
+					name,
+					TYPE_NAME : type,
+					NULLABLE  : !(is_nn || is_pk),
+					COLUMN_DEF: def,
+				}
+				
+				if (dim) {				
+					let [len, dd] = dim.split (/\D/).filter (_ => _)					
+					col.COLUMN_SIZE = len					
+					if (dd) col.DECIMAL_DIGITS = dd				
+				}
+				
+	            t.existing.columns [name] = col
+				
+        	}
+            
+        }    
         
     }
     

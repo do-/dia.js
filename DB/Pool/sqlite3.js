@@ -180,7 +180,7 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_recreate_tables () {
     
         let result = []
-        
+return result        
         for (let table_name in this.model.tables) {
         
             let table = this.model.tables [table_name]
@@ -188,7 +188,7 @@ module.exports = class extends require ('../Pool.js') {
             if (!table.existing) continue;
 
             if (table.pk == table.existing.pk) continue;
-                        
+
             let tmp_table = clone (table)
             
             tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
