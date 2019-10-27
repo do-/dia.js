@@ -43,6 +43,7 @@ module.exports = class extends require ('../Pool.js') {
         let raw = await this.backend.acquire ()
         let c = new wrapper (raw)
         c.model = this.model
+        c.pool = this
         return c
     }
 

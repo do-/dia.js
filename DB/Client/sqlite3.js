@@ -26,8 +26,8 @@ module.exports = class extends Dia.DB.Client {
         catch (x) {
             darn (x)
         }
-        
-        return await this.backend.release ()
+
+        return this.pool.release (this)
     
     }
     
