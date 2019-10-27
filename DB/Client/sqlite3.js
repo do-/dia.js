@@ -3,7 +3,15 @@ const Dia = require ('../../Dia.js')
 module.exports = class extends Dia.DB.Client {
 
     is_pk_violation (e) {
-        return false//e.code == '23505' && /_pkey$/.test (e.constraint)
+    	
+    	if (e.code != 'SQLITE_CONSTRAINT') return false
+
+    	let [table, column] = e.message.split (/:\s*/).pop ().split ('.')
+    	
+    	let def = this.model.tables [table]; if (!def) return false
+    
+        return column == def.pk
+
     }
 
     async finish_txn (success) {
