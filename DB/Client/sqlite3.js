@@ -184,9 +184,9 @@ module.exports = class extends Dia.DB.Client {
             if (key.indexOf (k) < 0) set.push (`${k}=COALESCE(EXCLUDED.${k},${table}.${k})`)
         }
 
-        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) ${where || ''} DO UPDATE SET ${set} RETURNING ${def.pk}`
+        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) ${where || ''} DO UPDATE SET ${set}`
 
-        return this.select_scalar (sql, params)
+        return this.do (sql, params)
         
     }
     
@@ -216,8 +216,8 @@ module.exports = class extends Dia.DB.Client {
         let sql = `INSERT INTO ${table} (${fields}) VALUES (${args})`
         
         let that = await this.do (sql, params)
-        
-		if (!data [def.pk]) return that.lastID
+
+        return data [def.pk] || that.lastID
 
     }
     
