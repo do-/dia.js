@@ -194,7 +194,10 @@ module.exports = class {
                         
                         switch (fs) {                        
                             case 'ORDER':
-                                query.order = val
+                                query.order = val.trim ()
+                                	.split (/\s*,\s*/)
+                                	.map (i => i.indexOf ('.') > 0 ? i : this.alias + '.' + i)
+                                	.join (',')
                                 break
                             case 'LIMIT':
                                 query.set_limit (val)
