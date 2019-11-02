@@ -2,7 +2,7 @@ const Dia = require ('../../../../Dia.js')
 
 module.exports = class {
 
-	constructor (h, o) {
+	constructor (h, o = {}) {
 		if (!o.timeout) o.timeout = 15 // min
 		this.h = h
 		this.o = o
