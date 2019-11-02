@@ -7,7 +7,7 @@ module.exports = class extends Session {
 	
 		super (h, o)
 
-		if (!o.cookie_name) throw 'cookie_name is not set'
+		if (!o.cookie_name) o.cookie_name = 'sid'
 		
 		let cookies = this.h.http.request.headers.cookie
 		
@@ -26,9 +26,13 @@ module.exports = class extends Session {
 		this.h.http.response.setHeader ('Set-Cookie', this.o.cookie_name + '=' + v)
 	}
 
+	set_cookie_on () {
+		this.set_cookie (this.id + '; HttpOnly')
+	}
+
 	async start () {
 		await super.start ()
-		this.set_cookie (this.id + '; HttpOnly')
+		this.set_cookie_on
 	}
 
 	async finish () {
