@@ -32,7 +32,7 @@ module.exports = class extends Session {
 
 	async start () {
 		await super.start ()
-		this.set_cookie_on
+		this.set_cookie_on ()
 	}
 
 	async finish () {
