@@ -10,7 +10,7 @@ exports.Handler = class extends HTTP.Handler {
 
     parse_http_request_body () {
     
-        if (this.http.request.headers ['content-type'] != 'application/json') throw '-32700 application/json expected'
+        if (this.get_content_type () != 'application/json') throw '-32700 application/json expected'
 
         try {
             let o = JSON.parse (this.body)

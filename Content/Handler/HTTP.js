@@ -13,30 +13,44 @@ exports.Handler = class extends Handler {
 
     async get_http_request_body (rq) {
 
-        return new Promise ((resolve, reject) => {
+    	let charset = this.get_charset ()
 
+        return new Promise ((ok, fail) => {
+        
             let body = '';
-
-            rq.on ('data', chunk => {
-                body += chunk.toString ()
+            
+            rq.on ('data',  b => {
+            	try {
+	            	body += b.toString (charset)
+	            }
+            	catch (x) {
+            		fail (x)
+            	}            
             })
-
-            rq.on ('end', () => {        
-                try {
-                    resolve (body)
-                }
-                catch (x) {
-                    reject (x)
-                }            
-            })
-
+        
+        	rq.on ('end' , () => {ok (body)})
+        
         })    
 
+    }
+
+    get_charset () {
+    	const default_charset = 'utf-8'
+    	let s = this.http.request.headers ['content-type']
+    	if (s == null) return default_charset
+    	for (let part of s.split (/; /)) if (part.match (/^charset=/)) return part.substr (8)
+    	return default_charset
+    }
+    
+    get_content_type () {
+    	let s = this.http.request.headers ['content-type']
+    	if (s == null) return null
+    	return s.split (';') [0]
     }
     
     parse_http_request_body () {
     
-        if (this.http.request.headers ['content-type'] != 'application/json') return
+        if (this.get_content_type () != 'application/json') return
 
         try {
             let o = JSON.parse (this.body)
@@ -54,6 +68,26 @@ exports.Handler = class extends Handler {
         const pre = 'x-request-param-'
         const len = pre.length
         for (let k in h) if (k.substr (0, len) == pre) this.rq [k.substr (len)] = h [k]
+    }
+    
+    get_restored_http_request () {
+
+    	const crlf = "\r\n"
+
+    	let rq = this.http.request
+
+		let s = rq.method + ' ' + rq.url + ' HTTP/' + rq.httpVersion + crlf
+
+		for (let k in rq.headers) {
+
+			s += k.split ('-').map (t => t.charAt(0).toUpperCase () + t.substr (1).toLowerCase ()).join ('-')
+
+			s += ': ' + rq.headers [k] + crlf
+
+        }
+
+		return s + crlf + this.body
+
     }
 
     async read_params () {
