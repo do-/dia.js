@@ -23,7 +23,7 @@ module.exports = class {
 	}
 
 	async get_user () {
-		return undefined
+		return this.user
 	}
 
 }
