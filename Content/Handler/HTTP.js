@@ -3,6 +3,7 @@ const url  = require ('url')
 const Handler = require ('../Handler')
 const Session = require ('./HTTP/Session/Session')
 const CookieSession = require ('./HTTP/Session/CookieSession')
+const {URL, URLSearchParams} = require ('url')
 
 exports.Handler = class extends Handler {
 
