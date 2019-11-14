@@ -49,8 +49,8 @@ module.exports = class {
             .concat (this.gen_sql_comment_columns ())
             .concat (this.gen_sql_update_keys ())
             .concat (this.gen_sql_update_triggers ())
-            .concat (this.gen_sql_upsert_data ())
             .concat (this.gen_sql_after_add_tables ())
+            .concat (this.gen_sql_upsert_data ())
             .concat (this.gen_sql_recreate_views ())
             
         let m = this.model
@@ -89,9 +89,18 @@ module.exports = class {
 
         let result = []
 
-        for (let table of Object.values (this.model.tables)) if (table._is_just_added) {
+        for (let table of Object.values (this.model.tables)) {
+        
+			if (table._is_just_added) {
 
-            let a = table.on_after_add_table; if (a) result.push (a)
+				let a = table.on_after_add_table; if (a) result.push (a)
+
+				let data = table.init_data; if (data) table.data = data
+
+			}
+			else {
+				delete table.init_data
+			}
 
         }
 

@@ -41,8 +41,8 @@ module.exports = class {
         }}
 
         this.on_after_parse_table_columns (m)
-        
-        if (typeof m.data === "function") ((async () => {m.data = await m.data.apply (m)})) ()       
+
+        for (let k of ['data', 'init_data']) if (typeof m [k] === "function") ((async () => {m [k] = await m [k].apply (m)})) ()
 
         return m
 
