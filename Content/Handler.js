@@ -129,4 +129,8 @@ module.exports = class {
         return method
     }
     
+    call (method_name) {
+    	return this.module [method_name].call (this)
+    }
+    
 }
