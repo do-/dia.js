@@ -123,6 +123,7 @@ module.exports = class {
     get_method () {
         let module = this.get_module ()
         if (!module) throw `Module not defined: ${this.module_name}`
+        this.module = module
         var method = module [this.method_name]
         if (!method) throw `Method not defined: ${this.module_name}.${this.method_name}`
         return method
