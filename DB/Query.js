@@ -186,10 +186,13 @@ module.exports = class {
                     }
 
                     this.filters = []
+
+                    if (typeof v !== 'object') v = {[model.tables [this.table].pk]: v}
+
                     for (let fs in v) {
                     
                         let val = v [fs]
-                        
+
                         if (typeof val === 'undefined') continue
                         
                         switch (fs) {                        
