@@ -96,4 +96,10 @@ module.exports = class {
         
     }
 
+	read_data_lines (name) {
+	
+		return fs.readFileSync ('./Model/data/' + name + '.txt', 'utf-8').split ("\n")
+	
+	}
+
 }
