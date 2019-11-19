@@ -29,7 +29,7 @@ module.exports = class extends Dia.DB.Client {
     async release (success) {
     
         if (this.backend.is_txn_pending) try {        
-            this.finish_txn (success)
+            await this.finish_txn (success)
         }
         catch (x) {
             darn (x)
