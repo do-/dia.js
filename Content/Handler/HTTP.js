@@ -5,6 +5,7 @@ const Session = require ('./HTTP/Session/Session')
 const CookieSession = require ('./HTTP/Session/CookieSession')
 const {URL, URLSearchParams} = require ('url')
 const stream = require ('stream')
+const contentDisposition = require ('content-disposition')
 
 exports.Handler = class extends Handler {
 
@@ -188,6 +189,18 @@ exports.Handler = class extends Handler {
     no_user () {
     	if (this.is_anonymous ()) return undefined
 		throw '401 Unauthorized'
+    }
+    
+    set_download_headers (o, size) {
+    
+    	if (typeof o == 'string') o = {filename: o, size}
+    
+    	let rp = this.http.response
+    	
+		rp.setHeader ('Content-Type', 'application/octet-stream')
+		if (o.size > 0) rp.setHeader ('Content-Length', o.size)
+		rp.setHeader ('Content-Disposition', contentDisposition (o.filename))
+
     }
 
 }
