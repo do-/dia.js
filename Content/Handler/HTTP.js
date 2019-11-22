@@ -4,6 +4,7 @@ const Handler = require ('../Handler')
 const Session = require ('./HTTP/Session/Session')
 const CookieSession = require ('./HTTP/Session/CookieSession')
 const {URL, URLSearchParams} = require ('url')
+const stream = require ('stream')
 
 exports.Handler = class extends Handler {
 
@@ -135,9 +136,22 @@ exports.Handler = class extends Handler {
         rp.setHeader ('Content-Type', 'text/plain')
         rp.end (s.substr (4))
     }
+    
+    send_out_stream (data) {
+        let rp = this.http.response
+        rp.statusCode = 200
+        data.pipe (rp)
+    }
 
     send_out_data (data) {
-        this.send_out_json (200, this.to_message (data))
+    
+		if (data instanceof stream.Readable) {
+	        this.send_out_stream (data)
+		}
+		else {
+	        this.send_out_json (200, this.to_message (data))
+		}
+		
     }
 
     send_out_error (x) {
