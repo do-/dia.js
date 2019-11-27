@@ -120,7 +120,7 @@ module.exports = class {
 
         for (let k in data) {
             let v = data [k]
-            if (typeof v === 'undefined') continue
+            if (!(k in def.columns) || typeof v === 'undefined') continue
             fields.unshift (`${k}=?`)
             params.unshift (v)
         }
