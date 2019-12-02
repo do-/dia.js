@@ -124,8 +124,8 @@ module.exports = class {
                         }
                         
                         adjust_field_names (src) {
-                        
-                            let re_name = /([a-z][a-z_0-9]*)/
+
+                            let re_name = /([a-z_][a-z_0-9]*)/
                             
                             let chunks = src.split (re_name)
 
@@ -167,7 +167,7 @@ module.exports = class {
                             src = src.trim ()
                             
                             let col_etc_other = /^(\w+)(\.\.\.)?(\s*(?:NOT\s+)?\S*)\s*$/.exec (src)
-                            
+
                             if (col_etc_other) {
                             
                                 this.sql = this.parse_col_etc_other (col_etc_other)
