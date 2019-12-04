@@ -461,11 +461,13 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     normalize_model_table_trigger (table, k) {
-    
+
         let src = table.triggers [k].replace (/\s+/g, ' ').trim ()
-    
-        table.triggers [k] = `BEGIN ${src} END;`
-    
+
+        if (!src.match (/^DECLARE/)) src = `BEGIN ${src} END;`
+
+        table.triggers [k] = src
+
     }
     
     normalize_model_table_column (table, col) {
