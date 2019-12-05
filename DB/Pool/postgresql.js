@@ -407,9 +407,9 @@ module.exports = class extends require ('../Pool.js') {
     normalize_model_table_key (table, k) {
 
         let glob = `ix_${table.name}_${k}`
-    
+
         let src = table.keys [k]
-        
+
         if (src != null) {
             src = src.trim ()
             if (src.indexOf ('(') < 0) src = `(${src})`
@@ -417,9 +417,16 @@ module.exports = class extends require ('../Pool.js') {
             src = src.replace ('USING', `INDEX ${glob} ON ${table.name} USING`)
             src = 'CREATE ' + src
         }
-        
-        delete table.keys [k]
-        table.keys [glob] = src
+
+        table.keys [k] = src
+
+        let o = [table.keys]; for (let j of ['on_before_create_index']) if (table [j]) o.push (table [j])
+
+        for (let h of o) if (k in h) {
+        	let v = h [k]
+			delete h [k]
+			h [glob] = v
+        }
 
     }
 
@@ -434,8 +441,10 @@ module.exports = class extends require ('../Pool.js') {
             if (!keys) continue
         
             let existing_keys = (table.existing || {keys: {}}).keys
+            
+            let before = table.on_before_create_index
 
-            for (let name in keys) {
+			for (let name in keys) {
             
                 let src = keys [name]
                 
@@ -448,7 +457,13 @@ module.exports = class extends require ('../Pool.js') {
                 
                 if (invariant (src) == invariant (old_src)) continue
 
-                if (old_src) result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
+                if (old_src) {
+                	result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
+                }
+                else if (before) {
+                    let b = before [name]
+                    if (b) for (let i of b) result.push (i)
+                }
                 
                 if (src != null) result.push ({sql: src, params: []})
 
