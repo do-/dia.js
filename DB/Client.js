@@ -94,6 +94,18 @@ module.exports = class {
         return data
     }
     
+    async insert_if_absent (table, data) {
+    
+        try {
+            await this.db.insert (table, data)
+        }
+        catch (x) {
+            if (this.db.is_pk_violation (x)) return data
+            throw x
+        }    
+
+    }
+    
     async update (table, data, key) {
 
         let def = this.model.tables [table]

@@ -183,6 +183,36 @@ module.exports = class extends Dia.DB.Client {
         return this.select_scalar (sql, params)
 
     }
+    
+    async insert_if_absent (table, data) {
+    
+        let def = this.model.tables [table]
+        if (!def) throw 'Table not found: ' + table
+
+        if (Array.isArray (data)) {
+            for (let d of data) await this.insert_if_absent (table, d)
+            return
+        }
+        
+        let pk = def.pk
+        if (!data [pk]) throw 'PK not set for ' + table + ': ' + JSON.stringify (data)
+        
+        let [fields, args, params] = [[], [], []]
+        
+        for (let k in data) {
+            if (!def.columns [k]) continue
+            let v = data [k]
+            if (typeof v === 'undefined') continue            
+            fields.push (k)
+            args.push ('?')
+            params.push (v)
+        }
+        
+        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${pk}) DO NOTHING`
+        
+        await this.do (sql, params)
+
+    }
 
     async do (original_sql, params = []) {
     
