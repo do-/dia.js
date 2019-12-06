@@ -15,16 +15,16 @@ module.exports = class {
     }}
 
     adjust_term (s) {
-    
+
         if (s.operator == 'null') {
             s.operator = 'is'
             s.value = null
+            s.expr = s.field
         }
-        else if (s.value == null) {
-            s.value = undefined
+        else {
+        	s.expr = s.field + this.op (s.operator)
+        	if (s.value == null) s.value = undefined
         }
-        
-        s.expr = s.field + this.op (s.operator)
         
         let dt_iso = (dt) => dt.substr (0, 10)
         
@@ -33,7 +33,7 @@ module.exports = class {
             s.value = s.value.map (s.type == 'date' ? dt_iso : (o) => typeof o == 'object' ? o.id : o)            
             
         }
-        else {
+        else if (s.value !== null) {
         
             s.value = String (s.value).trim ()            
             if (s.expr.indexOf ('LIKE') > -1) s.value = s.value.replace (/[\*\s]+/g, '%')
