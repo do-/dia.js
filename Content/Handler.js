@@ -1,5 +1,6 @@
 const Dia = require ('../Dia.js')
 const url = require ('url')
+const http = require ('http')
 
 module.exports = class {
 
@@ -131,6 +132,63 @@ module.exports = class {
     
     call (method_name) {
     	return this.module [method_name].call (this)
+    }
+    
+    async http_response (o, body) {
+    
+    	if (!o.method) o.method = body ? 'POST' : 'GET'
+    	
+    	if (o.url) {
+    	
+    		let u = url.parse (o.url)
+    		
+    		for (let k of ['protocol', 'hostname', 'port', 'path']) o [k] = u [k]
+    	
+    	}
+    
+		return new Promise ((ok, fail) => {
+
+			darn (this.uuid + ' HTTP rq ' + JSON.stringify ([o, body]))
+
+			try {
+			
+				let rp_body = ''
+		
+				let rq = http.request (o, rp => {
+
+					rp.setEncoding ('utf8')	
+					
+					rp.on ('data', s => rp_body += s)	
+					
+					rp.on ('end', () => {
+
+						darn (this.uuid + ' HTTP rp ' + JSON.stringify ([rp.headers, rp_body]))
+
+						if (rp.statusCode == 200) return ok (rp_body)						
+
+						let x = new Error (rp.statusCode + ' ' + rp.statusMessage)
+
+						x.code = rp.statusCode
+
+						x.body = rp_body
+
+						fail (x)
+
+					})
+
+				})
+				
+				body ? rq.end (body) : rq.end ()
+
+			}
+			catch (x) {
+
+				fail (x)
+
+			}
+		
+		})
+    
     }
     
 }
