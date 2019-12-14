@@ -73,6 +73,8 @@ module.exports = class {
 
 							rp.setEncoding ('utf8')	
 
+							rp.on ('error', x => fail (x))	
+							
 							rp.on ('data', s => rp_body += s)	
 
 							rp.on ('end', () => {
@@ -87,6 +89,8 @@ module.exports = class {
 							})
 
 						})
+
+						rq.on ('error', x => fail (x))	
 
 						has_body ? rq.end (body) : rq.end ()
 
