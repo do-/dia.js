@@ -149,6 +149,16 @@ module.exports = class {
 
 	async run () {
 	
+		if (this.is_busy) {
+
+			this.log ('run () called when busy, going to reset...')
+			
+			this.on ()
+			
+			return this.log ('...reset done, exiting run ()')
+
+		}
+	
 		this.next = new Date ().getTime () + this.o.period
 	
 		this.log ('run () called, next time may be at', this.next)
