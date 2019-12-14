@@ -1,3 +1,5 @@
+const Dia = require ('./Dia.js')
+
 module.exports = class {
 
 	constructor (o) {
@@ -8,7 +10,9 @@ module.exports = class {
 		
 		this.o = o
 		
-		this.log_label = [o.label, 'timer: '].filter (i => i).join (' ')
+        this.uuid = Dia.new_uuid ()
+
+		this.log_label = [this.uuid, o.label, 'timer: '].filter (i => i).join (' ')
 		
 	}
 	
