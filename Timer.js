@@ -130,7 +130,7 @@ module.exports = class {
 
 	async run () {
 	
-		this.next = new Date ().getTime () + this.period
+		this.next = new Date ().getTime () + this.o.period
 	
 		darn ('Timer: run () called')
 		
