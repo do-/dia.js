@@ -15,9 +15,18 @@ module.exports = class {
 		this.log_label = [this.uuid, o.label, 'timer: '].filter (i => i).join (' ')
 		
 	}
-	
-	log (s) {
-		darn (this.log_label + s)
+
+	log (s, ms) {
+
+		let m = this.log_label + s
+
+		if (ms) {
+			m += ' '
+			m += new Date (ms).toJSON ()
+		}
+		
+		darn (m)
+
 	}
 	
 	from_to (from, to) {
@@ -43,13 +52,13 @@ module.exports = class {
 
 		let when = ms + new Date ().getTime ()
 		
-		this.log ('the desired time is ' + new Date (when))
+		this.log ('the desired time is', when)
 
 		if (this.next && when < this.next) {
 		
 			when = this.next
 			
-			this.log ('adjusted to the next period ' + new Date (when))
+			this.log ('adjusted to the next period', when)
 		
 		}
 
@@ -82,7 +91,7 @@ module.exports = class {
 				
 				when = dt.getTime ()
 			
-				this.log ('adjusted to time window ' + new Date (when))
+				this.log ('adjusted to time window', when)
 			
 			}
 						
@@ -91,9 +100,9 @@ module.exports = class {
 		if (this.t) {
 					
 			if (this.when <= when) return this.log (`already scheduled at ${new Date (this.when)}, exiting`)
-			
-			this.log (`cancelling previous schedule at ${new Date (this.when)}`)
-			
+
+			this.log ('cancelling previous schedule at', this.when)
+
 			this.clear ()
 
 		}
@@ -104,7 +113,7 @@ module.exports = class {
 
 			let is_reset_to = this.is_reset_to
 			
-			if (is_reset_to >= when) return this.log ('was already reset to ' + new Date (is_reset_to) + ', nothing to do')
+			if (is_reset_to >= when) return this.log ('nothing to do: was already reset to', is_reset_to)
 			
 			this.is_reset_to = when
 
@@ -114,7 +123,7 @@ module.exports = class {
 
 		this.t = setTimeout (() => this.run (), when - new Date ().getTime ())
 
-		this.log ('now scheduled at ' + new Date (this.when = when))
+		this.log ('now scheduled at', this.when = when)
 		
 	}
 	
@@ -142,7 +151,7 @@ module.exports = class {
 	
 		this.next = new Date ().getTime () + this.o.period
 	
-		this.log ('run () called, next time may be at ' + new Date (this.next))
+		this.log ('run () called, next time may be at', this.next)
 		
 		this.is_busy = 1
 
