@@ -41,7 +41,7 @@ module.exports = class {
 				
 			}
 			
-			to_error (rp) {
+			to_error (rp, rp_body) {
 
 				let x = new Error (rp.statusCode + ' ' + rp.statusMessage)
 			
@@ -83,7 +83,7 @@ module.exports = class {
 								
 								switch (rp.statusCode) {
 									case 200 : return ok   (rp_body)
-									default  : return fail (this.to_error (rp))
+									default  : return fail (this.to_error (rp, rp_body))
 								}
 
 							})
