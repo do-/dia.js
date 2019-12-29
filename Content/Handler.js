@@ -130,6 +130,14 @@ module.exports = class {
         return method
     }
     
+    get_module_name () {
+        return this.rq.type
+    }
+
+    send_out_error (x) {
+    	darn (x)
+    }
+
     call (method_name) {
     	return this.module [method_name].call (this)
     }
