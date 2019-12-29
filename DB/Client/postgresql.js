@@ -231,12 +231,26 @@ module.exports = class extends Dia.DB.Client {
         
     }
     
-    async load (is, table, cols) {
+    async load (is, table, cols, o = {NULL: ''}) {
 
 		return new Promise ((ok, fail) => {
-			
-			let sql = `COPY ${table} (${cols}) FROM STDIN`
-		
+
+			let sql = ''; for (let k in o) {
+
+				let v = o [k]
+
+				if (v == null) continue
+				
+				if (!sql) sql = 'WITH'
+
+				if (typeof v !== "boolean") v = "'" + v.replace (/\'/g, "''") + "'" //'
+				
+				sql += ' ' + k + ' ' + v
+
+			}
+
+			sql = `COPY ${table} (${cols}) FROM STDIN ${sql}`
+
 	        let label = (this.log_prefix || '') + sql; console.time (label)
 
 			let os = this.backend.query (require ('pg-copy-streams').from (sql))
