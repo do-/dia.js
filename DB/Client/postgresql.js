@@ -231,6 +231,27 @@ module.exports = class extends Dia.DB.Client {
         
     }
     
+    async load (is, table, cols) {
+
+		return new Promise ((ok, fail) => {
+			
+			let sql = `COPY ${table} (${cols}) FROM STDIN`
+		
+	        let label = (this.log_prefix || '') + sql; console.time (label)
+
+			let os = this.backend.query (require ('pg-copy-streams').from (sql))
+
+			os.on ('end', () => ok (console.timeEnd (label)))
+
+			os.on ('error', fail)
+			is.on ('error', fail)
+
+			is.pipe (os)
+
+		})    
+
+    }
+    
     is_auto_commit () {
         if (this.backend.is_txn_pending) return true
         return false
