@@ -21,6 +21,8 @@ module.exports = class {
 			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
 
 				let h = new clazz (params, ok, fail)
+				
+				h.timer = this
 
 				this.log ('launching request ' + h.uuid)
 
