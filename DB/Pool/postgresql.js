@@ -8,6 +8,43 @@ module.exports = class extends require ('../Pool.js') {
         this.backend = new Pool (o)
     }
     
+    listen (o) {
+
+		let db = new (require ('pg')).Client (this.options.connectionString)		
+		
+		db.connect ()
+		
+		let sql = 'LISTEN ' + o.name
+		
+		db.query (sql)
+		
+		db.on ('notification', async e => {
+
+			try {
+			
+				await new Promise ((ok, fail) => {
+				
+					let h = new o.handler (Object.assign ({rq: JSON.parse (e.payload)}, o.params), ok, fail)
+					
+					darn (sql + ': ' + e.payload + ' -> ' + h.uuid)
+					
+					h.run ()
+					
+				})
+
+			}
+			catch (x) {
+
+				darn (x)
+
+			}
+
+		})
+
+		darn ('Listening for PostgreSQL notifications on ' + o.name)
+
+    }    
+    
     async acquire () {  // darn (`${this.backend.totalCount} ${this.backend.idleCount} ${this.backend.waitingCount}`)
         let raw = await this.backend.connect ()
         let c = new wrapper (raw)
