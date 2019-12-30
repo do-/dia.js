@@ -4,7 +4,9 @@ module.exports = class {
 
 	constructor (o) {
 	
-		if (!(o.period >= 1)) throw new Error ("Timer period must be at least 1 ms. Got options: " + JSON.stringify (o))
+		if (o.period < 0) throw new Error ("Timer period must be non-negative. Got options: " + JSON.stringify (o))
+
+		if (o.period != parseInt (o.period)) throw new Error ("Timer period must be integer (number of ms). Got options: " + JSON.stringify (o))
 		
 		if (typeof o.todo != 'function') throw new Error ("No valid `todo` set. Got options: " + JSON.stringify (o))
 		
