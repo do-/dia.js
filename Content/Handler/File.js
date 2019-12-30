@@ -15,8 +15,6 @@ exports.Handler = class extends Handler {
 
     async release_resources () {
 
-    	await super.release_resources ()
-
  		try {
 
  			let fn = this.rq.path
@@ -35,6 +33,8 @@ exports.Handler = class extends Handler {
 			darn (x)
 
 		}
+
+    	await super.release_resources ()
 
     }	
 
