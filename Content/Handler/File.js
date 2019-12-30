@@ -21,7 +21,7 @@ exports.Handler = class extends Handler {
 
  			let fn = this.rq.path
 
-			fs.unlinkSync (fn)
+			if (fs.existsSync (fn)) fs.unlinkSync (fn)
 
 			darn (this.uuid + ': deleted ' + fn)
 
