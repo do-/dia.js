@@ -3,10 +3,32 @@ const Dia = require ('./Dia.js')
 module.exports = class {
 
 	constructor (o) {
-	
-		if (o.period < 0) throw new Error ("Timer period must be non-negative. Got options: " + JSON.stringify (o))
 
-		if (o.period != parseInt (o.period)) throw new Error ("Timer period must be integer (number of ms). Got options: " + JSON.stringify (o))
+		o.period = (p => {
+		
+			if (p == null) return 0
+			
+			if (typeof p !== 'number') p = parseInt (p)
+			
+			if (isNaN (p)) return 0
+			
+			return p < 0 ? 0 : p
+			
+		}) (o.period)
+
+		if (Array.isArray (o.todo)) {
+
+			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
+
+				let h = new clazz (params, ok, fail)
+
+				this.log ('launching request ' + h.uuid)
+
+				h.run ()
+
+			})
+
+		}
 		
 		if (typeof o.todo != 'function') throw new Error ("No valid `todo` set. Got options: " + JSON.stringify (o))
 		
@@ -39,7 +61,6 @@ module.exports = class {
 	}
 	
 	clear () {
-		this.log ('clear () called')
 		if (!this.t) return
 		clearTimeout (this.t)
 		delete this.t
