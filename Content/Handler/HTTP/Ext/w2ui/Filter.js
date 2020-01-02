@@ -15,6 +15,24 @@ module.exports = class {
     }}
 
     adjust_term (s) {
+    
+        if (s.operator == 'between') {
+        
+        	let [from, to] = s.value || []
+
+        	if (!from && !to) {
+        		s.value = null
+        	}
+        	else if (from && !to) {
+        		s.operator = 'more'
+        		s.value = from
+        	}
+        	else if (!from && to) {
+        		s.operator = 'less'
+        		s.value = to
+        	}
+        	        
+        }
 
         if (s.operator == 'null') {
             s.operator = 'is'
@@ -25,19 +43,29 @@ module.exports = class {
         	s.expr = s.field + this.op (s.operator)
         	if (s.value == null) s.value = undefined
         }
-        
+
         let dt_iso = (dt) => dt.substr (0, 10)
         
         if (Array.isArray (s.value)) {
         
-            s.value = s.value.map (s.type == 'date' ? dt_iso : (o) => typeof o == 'object' ? o.id : o)            
+        	if (s.type == 'date') {        	
+				s.value = s.value.map (dt_iso)
+				s.value [1] += 'T23:59:59.999'        	
+        	}
+        	else {        	
+	            s.value = s.value.map ((o) => typeof o == 'object' ? o.id : o)
+        	}
             
         }
         else if (s.value !== null) {
         
             s.value = String (s.value).trim ()            
             if (s.expr.indexOf ('LIKE') > -1) s.value = s.value.replace (/[\*\s]+/g, '%')
-            if (s.type == 'date') s.value = dt_iso (s)
+            
+            if (s.type == 'date') {
+            	s.value  = dt_iso (s.value)
+				if (s.operator = 'less') s.value += 'T23:59:59.999'        	
+            }
         
         }
     
