@@ -4,7 +4,7 @@ module.exports = class {
         case 'is':       return ' = ?'        
         case 'less':     return ' <= ?'        
         case 'more':     return ' >= ?'        
-        case 'between':  return 'BETWEEN ? AND ?'
+        case 'between':  return ' BETWEEN ? AND ?'
         case 'begins':   return ' ILIKE ?%'
         case 'ends':     return ' ILIKE %?'
         case 'contains': return ' ILIKE %?%'
