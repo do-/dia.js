@@ -101,12 +101,12 @@ module.exports = class extends Dia.DB.Client {
         let def = this.model.tables [table]
         if (!def) throw 'Table not found: ' + table
 
-        if (!key) key = [def.pk]
+        if (!key) key = def.p_k
         if (!Array.isArray (key)) key = [key]
         
         let where = ''
         
-        if (key [0] != def.pk) {
+        if ('' + key != '' + def.p_k) {
         
             let keys = def.keys
             if (!keys) throw 'Keys are not defined for ' + table
@@ -146,7 +146,11 @@ module.exports = class extends Dia.DB.Client {
             if (key.indexOf (k) < 0) set.push (`${k}=COALESCE(EXCLUDED.${k},${table}.${k})`)
         }
 
-        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) ${where || ''} DO UPDATE SET ${set} RETURNING ${def.pk}`
+        let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) ${where || ''} DO`
+
+        sql += set.length ? ` UPDATE SET ${set}` : ' NOTHING'
+
+        if (def.p_k.length == 1) sql += ` RETURNING ${def.pk}`
 
         return this.select_scalar (sql, params)
         
@@ -178,7 +182,7 @@ module.exports = class extends Dia.DB.Client {
         let sql = `INSERT INTO ${table} (${fields}) VALUES (${args})`
         
         let pk = def.pk
-        if (!data [pk]) sql += ` RETURNING ${pk}`
+        if (def.p_k.length == 1 && !data [pk]) sql += ` RETURNING ${pk}`
 
         return this.select_scalar (sql, params)
 
@@ -186,6 +190,8 @@ module.exports = class extends Dia.DB.Client {
     
     async insert_if_absent (table, data) {
     
+        if (def.p_k.length > 1) throw 'Composite PK not supported'
+
         let def = this.model.tables [table]
         if (!def) throw 'Table not found: ' + table
 
@@ -434,7 +440,9 @@ module.exports = class extends Dia.DB.Client {
             let v = r.indexdef
             
             if (re_pk.test (k)) {
-                t.existing.pk = /\((.*)\)/.exec (v) [1].trim ()
+                let p_k = /\((.*)\)/.exec (v) [1].trim ().replace (/\s/g, '').split (',')
+                t.existing.p_k = p_k
+                t.existing.pk = p_k.length == 1 ? p_k [0] : p_k
             } 
             else {
                 t.existing.keys [k] = v

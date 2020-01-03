@@ -92,12 +92,11 @@ module.exports = class extends require ('../Pool.js') {
     
     gen_sql_add_table (table) {
     
-        let pk = table.pk
-        
-        let df = table.columns [pk]
-        
+        let p_k = table.p_k
+		let col = table.columns
+
         return {
-            sql: `CREATE TABLE "${table.name}" (${pk} ${this.gen_sql_column_definition (df)} PRIMARY KEY)`, 
+            sql: `CREATE TABLE "${table.name}" (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}, PRIMARY KEY (${p_k}))`,
             params: []
         }
 
@@ -127,11 +126,13 @@ module.exports = class extends require ('../Pool.js') {
         let result = []
 
         for (let table of Object.values (this.model.tables)) if (!table.existing) {
+        
+			let existing = {columns: {}, keys: {}, triggers: {}}
 
-            let pk = table.pk
-            let df = table.columns [pk]
+			for (let k of ['pk', 'p_k']) existing         [k] = clone (table [k])
+			for (let k of     table.p_k) existing.columns [k] = clone (table.columns [k])
             
-            table.existing = {pk, columns: {[pk]: df}, keys: {}, triggers: {}}
+            table.existing = existing
             table._is_just_added = 1
 
             result.push (this.gen_sql_add_table (table))
@@ -174,8 +175,8 @@ module.exports = class extends require ('../Pool.js') {
                 
                     f.push (k)
                     v.push (record [k])
-                    
-                    if (k != table.pk) s.push (`${k}=EXCLUDED.${k}`)
+
+                    if (!table.p_k.includes (k)) s.push (`${k}=EXCLUDED.${k}`)
 
                 }
                 
@@ -208,11 +209,27 @@ module.exports = class extends require ('../Pool.js') {
         
             let table = this.model.tables [table_name]
             
-            if (!table.existing) continue;
+            if (!table.existing) continue
 
-            if (table.pk == table.existing.pk) continue;
-                        
+            if ('' + table.p_k == '' + table.existing.p_k) continue
+            
+            let on = table.on_before_recreate_table; if (on) {
+            	
+            	if (typeof on === 'function') on = on (table)
+            	
+            	if (on == null) on = []
+            	
+            	if (!Array.isArray (on)) on = [on]
+            	
+            	result.push (...on)
+
+            }
+            
+            delete table.model
+
             let tmp_table = clone (table)
+            
+            for (let t of [table, tmp_table]) t.model = this.model
             
             tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
                         
@@ -228,47 +245,50 @@ module.exports = class extends require ('../Pool.js') {
 
                 cols.push (col_name)
 
-                if (col_name != tmp_table.pk) {
-                
-                    delete col.COLUMN_DEF
-                    delete table.existing.columns [col_name].COLUMN_DEF
-                
-                    result.push (this.gen_sql_add_column (tmp_table, col))
-                    
-                }
+                if (tmp_table.p_k.includes (col_name)) continue
+
+                delete col.COLUMN_DEF
+                delete table.existing.columns [col_name].COLUMN_DEF
+
+                result.push (this.gen_sql_add_column (tmp_table, col))
 
             }
 
             result.push ({sql: `INSERT INTO ${tmp_table.name} (${cols}) SELECT ${cols} FROM ${table.name}`, params: []})
 
-            let TYPE_NAME = tmp_table.columns [tmp_table.pk].TYPE_NAME
+			if (tmp_table.p_k.length == 1) {
+				
+				let TYPE_NAME = tmp_table.columns [tmp_table.pk].TYPE_NAME
 
-            for (let ref_table_name in this.model.tables) {
-            
-                let ref_table = ref_table_name == table.name ? tmp_table : this.model.tables [ref_table_name]
-                
-                for (let col of Object.values (ref_table.columns)) {
-                
-                    if (col.ref != table.name) continue
-                    
-                    let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
+				for (let ref_table_name in this.model.tables) {
 
-                    result.push (this.gen_sql_add_column (ref_table, tmp_col))
-                    result.push ({sql: `UPDATE ${ref_table.name} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
-                    result.push ({sql: `ALTER TABLE ${ref_table.name} DROP COLUMN ${col.name}`, params: []})
-                    result.push ({sql: `ALTER TABLE ${ref_table.name} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
-                    
-                    ref_table.columns [col.name].TYPE_NAME = TYPE_NAME
-                
-                }
+					let ref_table = ref_table_name == table.name ? tmp_table : this.model.tables [ref_table_name]
 
-            }
+					for (let col of Object.values (ref_table.columns)) {
+
+						if (col.ref != table.name) continue
+
+						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
+
+						result.push (this.gen_sql_add_column (ref_table, tmp_col))
+						result.push ({sql: `UPDATE ${ref_table.name} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
+						result.push ({sql: `ALTER TABLE ${ref_table.name} DROP COLUMN ${col.name}`, params: []})
+						result.push ({sql: `ALTER TABLE ${ref_table.name} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
+
+						ref_table.columns [col.name].TYPE_NAME = TYPE_NAME
+
+					}
+
+				}
+				
+			}
 
             result.push ({sql: `DROP TABLE ${table.name}`, params: []})
             result.push ({sql: `ALTER TABLE ${tmp_table.name} RENAME TO ${table.name}`, params: []})
             
-            table.existing.pk = table.pk
-            table.existing.columns [table.pk] = table.columns [table.pk]
+            table.existing.pk  = table.pk
+            table.existing.p_k = table.p_k
+            for (let name of table.p_k) table.existing.columns [name] = table.columns [name]
 
         }        
         
@@ -285,23 +305,21 @@ module.exports = class extends require ('../Pool.js') {
             let existing_columns = table.existing.columns
 
             let after = table.on_after_add_column
-        
+
             for (let col of Object.values (table.columns)) {
-            
-                let ex = existing_columns [col.name]
-                
-                if (ex) continue
+
+            	let name = col.name; if (table.p_k.includes (name) || existing_columns [name]) continue
 
                 result.push (this.gen_sql_add_column (table, col))
                                 
                 if (after) {
-                    let a = after [col.name]
+                    let a = after [name]
                     if (a) for (let i of a) result.push (i)
                 }                
 
-                existing_columns [col.name] = clone (col)
+                existing_columns [name] = clone (col)
                 
-                delete existing_columns [col.name].REMARK
+                delete existing_columns [name].REMARK
 
             }
 
@@ -320,6 +338,8 @@ module.exports = class extends require ('../Pool.js') {
             let existing_columns = table.existing.columns
 
             for (let col of Object.values (table.columns)) {
+            
+            	if (table.p_k.includes (col.name)) continue
             
                 let d = col.COLUMN_DEF
 
@@ -340,17 +360,13 @@ module.exports = class extends require ('../Pool.js') {
                 
                 }
                 
-                if (col.name != table.pk) {
+                let n = col.NULLABLE
 
-                    let n = col.NULLABLE
+                if (n != existing_columns [col.name].NULLABLE) {
 
-                    if (n != existing_columns [col.name].NULLABLE) {
+                    result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
 
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
-
-                    }
-
-                }                
+                }
 
             }
 
@@ -372,7 +388,7 @@ module.exports = class extends require ('../Pool.js') {
             
                 let label = col.REMARK
 
-                if (label == existing_columns [col.name].REMARK) continue
+                if (label == (existing_columns [col.name] || {}).REMARK) continue
                 
                 result.push ({sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
 

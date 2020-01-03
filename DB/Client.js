@@ -116,8 +116,8 @@ module.exports = class {
             return
         }
         
-        if (key == null) key = [def.pk]
-        if (!Array.isArray (key)) throw 'THe key must be an array of field names, got ' + JSON.stringify (key)
+        if (key == null) key = def.p_k
+        if (!Array.isArray (key)) throw 'The key must be an array of field names, got ' + JSON.stringify (key)
         if (!key.length) throw 'Empty update key supplied for ' + table
 
         let [fields, filter, params] = [[], [], []]
@@ -137,7 +137,7 @@ module.exports = class {
             params.unshift (v)
         }
         
-        if (!fields.length) throw 'Nothig to update in ' + table + ', only key fields supplied: '  + JSON.stringify ([filter, params])
+        if (!fields.length) return new Promise ((ok, fail) => ok (darn ('Nothig to update in ' + table + ', only key fields supplied: '  + JSON.stringify ([filter, params]))))
 
         return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')}`, params)
 

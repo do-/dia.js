@@ -20,6 +20,7 @@ module.exports = class {
             let name = fn.split ('.') [0]
             let table = this.load_file (p + '/' + fn, name)
             if (!table.pk) throw 'No primary key defined for ' + name
+            table.p_k = Array.isArray (table.pk) ? table.pk : [table.pk]
             this [table.sql ? 'views' : 'tables'] [name] = table
         }
     }

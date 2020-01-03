@@ -43,6 +43,7 @@ console.log = function () {
 }
 
 global.clone = (o) => {
+	if (typeof o != 'object') return o
     return JSON.parse (JSON.stringify (o))
 }
 
