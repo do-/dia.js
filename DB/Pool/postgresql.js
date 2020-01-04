@@ -105,10 +105,39 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_recreate_views () {
 
         let result = []
-
-        for (let view of Object.values (this.model.views)) {            
         
-            result.push ({sql: `DROP VIEW IF EXISTS "${view.name}"`, params: []})
+        for (let name in this.model.views) {
+        
+        	let view = this.model.views [name]; view.depends = {}
+        	
+        	for (let word of view.sql.split (/\b/))
+        	
+        		if (this.model.views [word])
+
+        			view.depends [word] = 1
+
+        }
+        
+        let names = [], idx = {}
+        
+        let assert = name => {
+        
+        	if (idx [name]) return
+        
+        	for (let k in this.model.views [name].depends) assert (k)
+        	
+        	idx [name] = names.push (name)
+
+        }
+        
+        for (let name in this.model.views) assert (name)
+
+		let views = names.map (i => this.model.views [i])
+
+        for (let view of views) result.push ({sql: `DROP VIEW IF EXISTS "${view.name}" CASCADE`, params: []})
+
+        for (let view of views) {
+            
             result.push ({sql: `CREATE VIEW "${view.name}" AS ${view.sql}`, params: []})            
             result.push ({sql: `COMMENT ON VIEW "${view.name}" IS ` + this.gen_sql_quoted_literal (view.label), params: []})
 
