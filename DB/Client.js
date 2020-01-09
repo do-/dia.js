@@ -144,23 +144,15 @@ module.exports = class {
     }
 
     async delete (table, data) {
-
-        let [fields, params] = [[], []]
-
-        let def = this.model.tables [table]
-        if (!def) throw 'Table not found: ' + table
-
-        for (let k in data) {
-            let v = data [k]
-            if (!(k in def.columns) || typeof v === 'undefined') continue
-            fields.unshift (`${k}=?`)
-            params.unshift (v)
-        }
-
-        if (fields.length == 0) throw 'DELETE without a filter? If you are sure, use this.db.do directlty'
-
-        return this.do (`DELETE FROM ${table} WHERE ${fields.join (' AND ')}`, params)
-
+    
+		let {sql, params} = this.query ({[table]: data})
+		
+		if (params.length == 0) throw 'DELETE without a filter? If sure, use this.db.do directly.'
+		
+		sql = 'DELETE ' + sql.slice (sql.indexOf ('FROM'))
+		
+		return this.do (sql, params)
+		
     }    
 
     async load_schema () {
