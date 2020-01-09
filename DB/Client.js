@@ -154,6 +154,40 @@ module.exports = class {
 		return this.do (sql, params)
 		
     }    
+    
+    async delepsert (table, data, items, key) {
+
+    	let todo = []
+
+    	let del = clone (data)
+
+    	if (items.length > 0) {
+
+	        let def = this.model.tables [table]
+	        
+	        if (!key) {
+	        
+	        	let fields = def.p_k.filter (k => !(k in data))
+
+	        	if (fields.length != 1) throw `Can't guess the distinction key for ${table} ${JSON.stringify (data)}`
+	        	
+	        	key = fields [0]
+	        	
+	        }
+
+			del [key + ' NOT IN'] = items.map (i => i [key])
+
+	        let u_k = [key]; for (let k in data) u_k.push (k)
+
+	        todo.push (this.upsert (table, items.map (i => Object.assign ({}, i, data)), u_k))
+
+    	}
+
+    	todo.push (this.delete (table, del))
+
+    	return Promise.all (todo)
+
+    }
 
     async load_schema () {
     

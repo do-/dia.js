@@ -90,11 +90,8 @@ module.exports = class extends Dia.DB.Client {
     
     async upsert (table, data, key) {
 
-        if (Array.isArray (data)) {
-            for (let d of data) await this.upsert (table, d, key)
-            return
-        }
-        
+        if (Array.isArray (data)) return Promise.all (data.map (d => this.upsert (table, d, key)))
+
         if (typeof data !== 'object') throw 'upsert called with wrong argument: ' + JSON.stringify ([table, data])
         if (data === null) throw 'upsert called with null argument: ' + JSON.stringify ([table, data])
 
@@ -106,7 +103,11 @@ module.exports = class extends Dia.DB.Client {
         
         let where = ''
         
-        if ('' + key != '' + def.p_k) {
+        let inv = k => ('' + k).split (',').map (s => s.trim ()).sort ().join (',')
+        
+        if (inv (key) != inv (def.p_k)) {
+        
+        	darn (inv (key) + '!=' + inv (def.p_k))
         
             let keys = def.keys
             if (!keys) throw 'Keys are not defined for ' + table
