@@ -142,7 +142,27 @@ module.exports = class {
         return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')}`, params)
 
     }
-    
+
+    async delete (table, data) {
+
+        let [fields, params] = [[], []]
+
+        let def = this.model.tables [table]
+        if (!def) throw 'Table not found: ' + table
+
+        for (let k in data) {
+            let v = data [k]
+            if (!(k in def.columns) || typeof v === 'undefined') continue
+            fields.unshift (`${k}=?`)
+            params.unshift (v)
+        }
+
+        if (fields.length == 0) throw 'DELETE without a filter? If you are sure, use this.db.do directlty'
+
+        return this.do (`DELETE FROM ${table} WHERE ${fields.join (' AND ')}`, params)
+
+    }    
+
     async load_schema () {
     
         await this.load_schema_tables ()
