@@ -191,10 +191,9 @@ module.exports = class extends Dia.DB.Client {
     
     async insert_if_absent (table, data) {
     
-        if (def.p_k.length > 1) throw 'Composite PK not supported'
-
         let def = this.model.tables [table]
         if (!def) throw 'Table not found: ' + table
+        if (def.p_k.length > 1) throw 'Composite PK not supported'
 
         if (Array.isArray (data)) {
             for (let d of data) await this.insert_if_absent (table, d)
