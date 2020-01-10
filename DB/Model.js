@@ -69,7 +69,7 @@ module.exports = class {
         
         let col = {
             REMARK: comment,
-            NULLABLE: !!!column_def,
+            NULLABLE: !column_def,
         }
         
         function set (k, v) {if (v) col [k] = v}

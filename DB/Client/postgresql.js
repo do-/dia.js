@@ -398,7 +398,7 @@ module.exports = class extends Dia.DB.Client {
                 name,
                 TYPE_NAME : r.typname.toUpperCase (),
                 REMARK    : r.description,
-                NULLABLE  : !!!r.attnotnull,
+                NULLABLE  : !r.attnotnull,
                 COLUMN_DEF: undefined,
             }                        
 
