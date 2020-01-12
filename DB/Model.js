@@ -154,8 +154,17 @@ module.exports = class {
 
     trg_check_column_value_max_date (col, table) {
     
-    	return `Значение поля "${col.REMARK}" не может быть позднее ${col.MAX.split ('-').reverse ().join ('.')}`
+    	let v = col.MAX
+    	
+    	if (v == 'NOW') {
+    		v = 'сегодняшнего числа'
+    	}
+    	else {
+    		v = v.split ('-').reverse ().join ('.')
+    	}
     
+    	return `Значение поля "${col.REMARK}" не может быть позднее ${v}`
+
     }
 
     trg_check_column_value_min_length (col, table) {

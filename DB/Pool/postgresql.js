@@ -646,16 +646,22 @@ module.exports = class extends require ('../Pool.js') {
     `}
 
     trg_check_column_value_max_num (col, table) {return `
-		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < ${col.MAX} THEN
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} > ${col.MAX} THEN
 			RAISE '#${col.name}#: ${table.model.trg_check_column_value_max_num (col, table)}';
 		END IF;
     `}
 
-    trg_check_column_value_max_date (col, table) {return `
-		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < '${col.MAX}' THEN
-			RAISE '#${col.name}#: ${table.model.trg_check_column_value_max_date (col, table)}';
-		END IF;
-    `}
+    trg_check_column_value_max_date (col, table) {
+    
+    	let v = `'${col.MAX}'`; if (v == "'NOW'") v = 'now()'
+
+		return `
+			IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} > '${v}' THEN
+				RAISE '#${col.name}#: ${table.model.trg_check_column_value_max_date (col, table)}';
+			END IF;
+		`
+
+    }
     
     trg_check_column_value_min_length (col, table) {return `
 		IF NEW.${col.name} IS NOT NULL AND LENGTH (NEW.${col.name}) < ${col.MIN_LENGTH} THEN
