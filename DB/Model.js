@@ -102,5 +102,38 @@ module.exports = class {
 		return fs.readFileSync ('./Model/data/' + name + '.txt', 'utf-8').split ("\n")
 	
 	}
+	
+    trg_check_column_values (table) {
+
+    	let sql = ''
+
+    		for (let name in table.columns) sql += this.trg_check_column_value (table, name)
+
+    	return sql
+
+    }
+    
+    trg_check_column_value (table, name) {
+    
+    	let sql = ''
+
+			let col = table.columns [name]
+
+			if (col.PATTERN) sql += this.trg_check_column_value_pattern (col)
+
+    	return sql
+
+    }
+
+    trg_check_column_value_pattern (col) {
+
+    	return `
+			IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} !~ '${col.PATTERN}' THEN
+				RAISE '#${col.name}#: Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK}"';
+			END IF;
+    	`
+    
+    }
+	
 
 }
