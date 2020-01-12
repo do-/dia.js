@@ -594,9 +594,9 @@ module.exports = class extends require ('../Pool.js') {
 			let col = table.columns [name]
 			
 			if (col) {
-
-				if (col.MIN_LENGTH) sql += this.trg_check_column_value_min_length (col)
-				if (col.PATTERN) sql += this.trg_check_column_value_pattern (col)
+			
+				if (col.MIN_LENGTH) sql += this.trg_check_column_value_min_length (col, table)
+				if (col.PATTERN)    sql += this.trg_check_column_value_pattern    (col, table)			
 			
 			}
 			else {
@@ -609,31 +609,17 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
-    trg_check_column_value_min_length (col) {
-    
-    	return `
-			IF NEW.${col.name} IS NOT NULL AND LENGTH (NEW.${col.name}) < ${col.MIN_LENGTH} THEN
-				RAISE '#${col.name}#: Значение поля "${col.REMARK}" не может быть короче ${col.MIN_LENGTH} символов';
-			END IF;
-    	`
-    
-    }
+    trg_check_column_value_min_length (col, table) {return `
+		IF NEW.${col.name} IS NOT NULL AND LENGTH (NEW.${col.name}) < ${col.MIN_LENGTH} THEN
+			RAISE '#${col.name}#: ${table.model.trg_check_column_value_min_length (col, table)}';
+		END IF;
+    `}
 
-    trg_check_column_value_pattern (col) {
-
-    	return `
-			IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} !~ '${col.PATTERN}' THEN
-				RAISE '#${col.name}#: Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK}"';
-			END IF;
-    	`
-    
-    }
-    
-    
-    
-    
-    
-    
+    trg_check_column_value_pattern (col, table) {return `
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} !~ '${col.PATTERN}' THEN
+			RAISE '#${col.name}#: ${table.model.trg_check_column_value_pattern (col, table)}';
+		END IF;
+	`}
     
     normalize_model_table_column (table, col) {
         

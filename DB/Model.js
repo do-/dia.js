@@ -127,5 +127,18 @@ module.exports = class {
 		return false
 
 	}
+	
+    trg_check_column_value_min_length (col, table) {
+    
+    	return `Значение поля "${col.REMARK}" не может быть короче ${col.MIN_LENGTH} символов`
+    
+    }
+
+    trg_check_column_value_pattern (col, table) {
+
+    	return `Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK}"`
+    
+    }
+	
 
 }
