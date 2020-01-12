@@ -562,10 +562,42 @@ module.exports = class extends require ('../Pool.js') {
         let src = table.triggers [k].replace (/\s+/g, ' ').trim ()
 
         if (!src.match (/^DECLARE/)) src = `BEGIN ${src} END;`
+        
+        const re_pseudocomment_validate = new RegExp ('\\/\\*\\+\\s*VALIDATE\\s+(\\w+)\\s*\\*\\/', 'mg')
+
+        src = src.replace (re_pseudocomment_validate, (m, name) => this.trg_check_column_value (table, name))
 
         table.triggers [k] = src
 
     }
+        
+    trg_check_column_value (table, name) {
+    
+    	let sql = ''
+
+			let col = table.columns [name]
+
+			if (col.PATTERN) sql += this.trg_check_column_value_pattern (col)
+
+    	return sql
+
+    }
+
+    trg_check_column_value_pattern (col) {
+
+    	return `
+			IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} !~ '${col.PATTERN}' THEN
+				RAISE '#${col.name}#: Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK}"';
+			END IF;
+    	`
+    
+    }
+    
+    
+    
+    
+    
+    
     
     normalize_model_table_column (table, col) {
         
