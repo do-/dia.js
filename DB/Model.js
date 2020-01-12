@@ -103,9 +103,21 @@ module.exports = class {
 	
 	}
 
-	has_validation (col) {
-		for (let k of ['COLUMN_SIZE', 'MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in col) return true
+	has_validation (tab_or_col) {
+
+		let columns = tab_or_col.columns; if (columns) {		
+
+			for (let name in columns) if (this.has_validation (columns [name])) return true
+
+		}
+		else {
+
+			for (let k of ['COLUMN_SIZE', 'MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in tab_or_col) return true
+
+		}	
+
 		return false
+
 	}
 
 }
