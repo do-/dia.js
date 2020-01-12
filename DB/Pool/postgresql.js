@@ -565,7 +565,23 @@ module.exports = class extends require ('../Pool.js') {
         
         const re_pseudocomment_validate = new RegExp ('\\/\\*\\+\\s*VALIDATE\\s+(\\w+)\\s*\\*\\/', 'mg')
 
-        src = src.replace (re_pseudocomment_validate, (m, name) => this.trg_check_column_value (table, name))
+        src = src.replace (re_pseudocomment_validate, (m, name) => {
+        
+        	if (name != 'ALL') return this.trg_check_column_value (table, name)
+        	
+        	let sql = ''; for (let name in table.columns) {
+        	
+        		let column = table.columns [name]
+
+        		if (!table.model.has_validation (column)) continue
+        		
+        		sql += this.trg_check_column_value (table, name)
+        	
+        	}
+
+       		return sql
+        
+        })
 
         table.triggers [k] = src
 
@@ -576,8 +592,17 @@ module.exports = class extends require ('../Pool.js') {
     	let sql = ''
 
 			let col = table.columns [name]
-
-			if (col.PATTERN) sql += this.trg_check_column_value_pattern (col)
+			
+			if (col) {
+			
+				if (col.PATTERN) sql += this.trg_check_column_value_pattern (col)
+			
+			}
+			else {
+			
+				darn (`trg_check_column_value: column ${table.name}.${name} not found`)
+			
+			}
 
     	return sql
 

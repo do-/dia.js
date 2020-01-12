@@ -101,6 +101,11 @@ module.exports = class {
 	
 		return fs.readFileSync ('./Model/data/' + name + '.txt', 'utf-8').split ("\n")
 	
-	}	
+	}
+
+	has_validation (col) {
+		for (let k of ['COLUMN_SIZE', 'MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in col) return true
+		return false
+	}
 
 }
