@@ -594,7 +594,8 @@ module.exports = class extends require ('../Pool.js') {
 			let col = table.columns [name]
 			
 			if (col) {
-			
+
+				if (col.MIN_LENGTH) sql += this.trg_check_column_value_min_length (col)
 				if (col.PATTERN) sql += this.trg_check_column_value_pattern (col)
 			
 			}
@@ -606,6 +607,16 @@ module.exports = class extends require ('../Pool.js') {
 
     	return sql
 
+    }
+    
+    trg_check_column_value_min_length (col) {
+    
+    	return `
+			IF NEW.${col.name} IS NOT NULL AND LENGTH (NEW.${col.name}) < ${col.MIN_LENGTH} THEN
+				RAISE '#${col.name}#: Значение поля "${col.REMARK}" не может быть короче ${col.MIN_LENGTH} символов';
+			END IF;
+    	`
+    
     }
 
     trg_check_column_value_pattern (col) {

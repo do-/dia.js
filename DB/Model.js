@@ -87,12 +87,20 @@ module.exports = class {
             col.ref = type.replace (/[\(\)]/g, '')
         }
         else {
-            let [t, s, p] = type.split (/[\[\,\]]/)
+
+			let [, t, len] = /(\w+)(?:\[(.*?)\])?/.exec (type)
+
             set ('TYPE_NAME', t)
-            set ('COLUMN_SIZE', s)
-            set ('DECIMAL_DIGITS', p)
+            
+            if (len) {
+				let [, min_length, column_size, decimal_digits] = /(?:(\d+)..)?(\d+)(?:,(\d+))?/.exec (type)
+				if (min_length)     set ('MIN_LENGTH', min_length)
+				if (column_size)    set ('COLUMN_SIZE', column_size)
+				if (decimal_digits) set ('DECIMAL_DIGITS', decimal_digits)
+            }
+            
         }
-        
+
         return col
         
     }
