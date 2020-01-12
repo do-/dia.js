@@ -595,6 +595,8 @@ module.exports = class extends require ('../Pool.js') {
 			
 			if (col) {
 			
+				if (col.MIN)        sql += this.trg_check_column_value_min        (col, table)
+				if (col.MAX)        sql += this.trg_check_column_value_max        (col, table)
 				if (col.MIN_LENGTH) sql += this.trg_check_column_value_min_length (col, table)
 				if (col.PATTERN)    sql += this.trg_check_column_value_pattern    (col, table)			
 			
@@ -608,6 +610,52 @@ module.exports = class extends require ('../Pool.js') {
     	return sql
 
     }
+
+    trg_check_column_value_min (col, table) {
+    
+    	let type = col.TYPE_NAME.toUpperCase ()
+    
+    	if (/(INT|NUM|DEC)/.test (type)) return this.trg_check_column_value_min_num (col, table)
+    	if (/(DATE|TIME)/.test (type)) return this.trg_check_column_value_min_date (col, table)
+    	
+		throw `Can't check MIN condition for ${type} type: ${table.name}.${col.name}`
+    	
+    }
+
+    trg_check_column_value_max (col, table) {
+    
+    	let type = col.TYPE_NAME.toUpperCase ()
+    
+    	if (/(INT|NUM|DEC)/.test (type)) return this.trg_check_column_value_max_num (col, table)
+    	if (/(DATE|TIME)/.test (type)) return this.trg_check_column_value_max_date (col, table)
+    	
+		throw `Can't check MAX condition for ${type} type: ${table.name}.${col.name}`
+    	
+    }
+
+    trg_check_column_value_min_num (col, table) {return `
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < ${col.MIN} THEN
+			RAISE '#${col.name}#: ${table.model.trg_check_column_value_min_num (col, table)}';
+		END IF;
+    `}
+
+    trg_check_column_value_min_date (col, table) {return `
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < '${col.MIN}' THEN
+			RAISE '#${col.name}#: ${table.model.trg_check_column_value_min_date (col, table)}';
+		END IF;
+    `}
+
+    trg_check_column_value_max_num (col, table) {return `
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < ${col.MAX} THEN
+			RAISE '#${col.name}#: ${table.model.trg_check_column_value_max_num (col, table)}';
+		END IF;
+    `}
+
+    trg_check_column_value_max_date (col, table) {return `
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < '${col.MAX}' THEN
+			RAISE '#${col.name}#: ${table.model.trg_check_column_value_max_date (col, table)}';
+		END IF;
+    `}
     
     trg_check_column_value_min_length (col, table) {return `
 		IF NEW.${col.name} IS NOT NULL AND LENGTH (NEW.${col.name}) < ${col.MIN_LENGTH} THEN

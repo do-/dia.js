@@ -88,17 +88,23 @@ module.exports = class {
         }
         else {
 
-			let [, t, len] = /(\w+)(?:\[(.*?)\])?/.exec (type)
+			let [, t, len, mm] = /(\w+)(?:\[(.*?)\])?(?:\{(.*?)\})?/.exec (type)
 
             set ('TYPE_NAME', t)
             
             if (len) {
-				let [, min_length, column_size, decimal_digits] = /(?:(\d+)..)?(\d+)(?:,(\d+))?/.exec (type)
+				let [, min_length, column_size, decimal_digits] = /(?:(\d+)..)?(\d+)(?:,(\d+))?/.exec (len)
 				if (min_length)     set ('MIN_LENGTH', min_length)
 				if (column_size)    set ('COLUMN_SIZE', column_size)
 				if (decimal_digits) set ('DECIMAL_DIGITS', decimal_digits)
             }
-            
+
+            if (mm) {            
+				let [, min, max] = /^(.*?)\.\.(.*?)$/.exec (mm)
+				if (min) set ('MIN', min)
+				if (max) set ('MAX', max)
+            }
+
         }
 
         return col
@@ -128,6 +134,30 @@ module.exports = class {
 
 	}
 	
+    trg_check_column_value_min_num (col, table) {
+    
+    	return `Значение поля "${col.REMARK}" не может быть менее ${col.MIN}`
+    
+    }
+
+    trg_check_column_value_min_date (col, table) {
+    
+    	return `Значение поля "${col.REMARK}" не может быть ранее ${col.MIN.split ('-').reverse ().join ('.')}`
+    
+    }
+
+    trg_check_column_value_max_num (col, table) {
+    
+    	return `Значение поля "${col.REMARK}" не может быть более ${col.MAX}`
+    
+    }
+
+    trg_check_column_value_max_date (col, table) {
+    
+    	return `Значение поля "${col.REMARK}" не может быть позднее ${col.MAX.split ('-').reverse ().join ('.')}`
+    
+    }
+
     trg_check_column_value_min_length (col, table) {
     
     	return `Значение поля "${col.REMARK}" не может быть короче ${col.MIN_LENGTH} символов`
