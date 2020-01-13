@@ -670,7 +670,7 @@ module.exports = class extends require ('../Pool.js') {
     `}
 
     trg_check_column_value_pattern (col, table) {return `
-		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} !~ '${col.PATTERN}' THEN
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name}::text !~ '${col.PATTERN}' THEN
 			RAISE '#${col.name}#: ${table.model.trg_check_column_value_pattern (col, table)}';
 		END IF;
 	`}
