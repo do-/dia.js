@@ -126,7 +126,7 @@ module.exports = class {
 		}
 		else {
 
-			for (let k of ['COLUMN_SIZE', 'MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in tab_or_col) return true
+			for (let k of ['MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in tab_or_col) return true
 
 		}	
 
