@@ -93,7 +93,7 @@ module.exports = class {
             set ('TYPE_NAME', t)
             
             if (len) {
-				let [, min_length, column_size, decimal_digits] = /(?:(\d+)..)?(\d+)(?:,(\d+))?/.exec (len)
+				let [, min_length, column_size, decimal_digits] = /(?:(\d+)\.\.)?(\d+)(?:\,(\d+))?$/.exec (len)
 				if (min_length)     set ('MIN_LENGTH', min_length)
 				if (column_size)    set ('COLUMN_SIZE', column_size)
 				if (decimal_digits) set ('DECIMAL_DIGITS', decimal_digits)
