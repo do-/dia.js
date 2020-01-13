@@ -220,23 +220,23 @@ module.exports = class extends Dia.DB.Client {
 
     }
 
-    async do (original_sql, params = []) {
-    
-        let sql = this.fix_sql (original_sql)
-        
+    async do (sql, params = []) {
+
+    	if (params.length > 0) sql = this.fix_sql (sql)
+
         let label = (this.log_prefix || '') + sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-        
+
         console.time (label)
-        
+
         try {
             return await this.backend.query (sql, params)
         }
         finally {
             console.timeEnd (label)
         }
-        
+
     }
-    
+
     async load (is, table, cols, o = {NULL: ''}) {
 
 		return new Promise ((ok, fail) => {
