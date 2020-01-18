@@ -385,7 +385,7 @@ module.exports = class extends Dia.DB.Client {
                 pg_namespace.nspname = current_schema()
 
         `, [])
-//darn (rs)        
+
         let tables = this.model.tables
         for (let r of rs) {        
 
@@ -402,7 +402,11 @@ module.exports = class extends Dia.DB.Client {
                 COLUMN_DEF: undefined,
             }                        
 
-            if (r.adsrc != null) col.COLUMN_DEF = String (r.adsrc)
+            if (r.adsrc != null) {
+            	let d = '' + r.adsrc
+            	if (/::"bit"$/.test (d)) [, d] = d.split ("'")
+            	col.COLUMN_DEF = d            	
+            }
 
             if (col.TYPE_NAME == 'NUMERIC') {
                 col.COLUMN_SIZE = r.numeric_precision
