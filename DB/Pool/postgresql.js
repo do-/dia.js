@@ -22,16 +22,31 @@ module.exports = class extends require ('../Pool.js') {
 
 			try {
 			
-				await new Promise ((ok, fail) => {
+				if (o.timers) {
 				
-					let h = new o.handler (Object.assign ({rq: JSON.parse (e.payload)}, o.params), ok, fail)
+					let timer = o.timers [e.payload]
 					
-					darn (sql + ': ' + e.payload + ' -> ' + h.uuid)
-					
-					h.run ()
-					
-				})
+					if (!timer) throw 'Timer not found: ' + e.payload
 
+					darn (sql + ': ' + e.payload + ' -> ' + timer.uuid)
+
+					timer.on ()
+				
+				}
+				else {
+
+					await new Promise ((ok, fail) => {
+
+						let h = new o.handler (Object.assign ({rq: JSON.parse (e.payload)}, o.params), ok, fail)
+
+						darn (sql + ': ' + e.payload + ' -> ' + h.uuid)
+
+						h.run ()
+
+					})
+
+				}
+			
 			}
 			catch (x) {
 
