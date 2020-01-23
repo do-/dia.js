@@ -1,5 +1,6 @@
 const url = require ('url')
 const http = require ('http')
+const https = require ('https')
 
 module.exports = class {
 
@@ -69,7 +70,7 @@ module.exports = class {
 
 						let rp_body = ''
 
-						let rq = http.request (o, rp => {
+						let rq = (/^https/.test (o.protocol) ? https : http).request (o, rp => {
 
 							rp.setEncoding ('utf8')	
 
