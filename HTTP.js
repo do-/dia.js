@@ -55,6 +55,42 @@ module.exports = class {
 			}
 
 			async response (o, body) {
+
+				let rp_body = ''
+				
+				try {
+
+					let rp = await this.responseStream (o, body)
+
+					return new Promise ((ok, fail) => {
+
+						rp.on ('end', () => {
+
+							darn (this.log_prefix + ' HTTP rp b ' + JSON.stringify ([rp_body]))
+
+							switch (rp.statusCode) {
+								case 200 : return ok   (rp_body)
+								default  : return fail (this.to_error (rp, rp_body))
+							}
+
+						})
+
+						rp.setEncoding ('utf8')							
+
+						rp.on ('data', s => rp_body += s)
+					
+					})
+
+				}
+				catch (x) {
+
+					fail (x)
+
+				}
+
+			}
+			
+			async responseStream (o, body) {
 			
 				let has_body = body != null
 			
@@ -68,27 +104,23 @@ module.exports = class {
 
 					try {
 
-						let rp_body = ''
+						let rq = (/^https/.test (o.protocol) ? https : http).request (o, async rp => {
+						
+							let code    = rp.statusCode							
+							let headers = rp.headers
 
-						let rq = (/^https/.test (o.protocol) ? https : http).request (o, rp => {
+							darn (this.log_prefix + ' HTTP rp h ' + JSON.stringify ([code, headers]))
 
-							rp.setEncoding ('utf8')	
-
-							rp.on ('error', x => fail (x))	
+							rp.on ('error', x => fail (x))
 							
-							rp.on ('data', s => rp_body += s)	
+							let {location} = headers; if (!location) return ok (rp)
+							
+				    		let u = url.parse (location)
 
-							rp.on ('end', () => {
+				    		for (let k of ['protocol', 'hostname', 'port', 'path']) if (u [k]) o [k] = u [k]
 
-								darn (this.log_prefix + ' HTTP rp ' + JSON.stringify ([rp.headers, rp_body]))
-								
-								switch (rp.statusCode) {
-									case 200 : return ok   (rp_body)
-									default  : return fail (this.to_error (rp, rp_body))
-								}
-
-							})
-
+				    		ok (await this.responseStream (o, body))
+							
 						})
 
 						rq.on ('error', x => fail (x))	
