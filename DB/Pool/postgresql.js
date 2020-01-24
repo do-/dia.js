@@ -22,7 +22,7 @@ module.exports = class extends require ('../Pool.js') {
 
 			try {
 			
-				if (o.timers) {
+				if (o.timers && e.payload.charAt (0) != '{') {
 				
 					let timer = o.timers [e.payload]
 					
