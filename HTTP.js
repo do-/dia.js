@@ -58,35 +58,26 @@ module.exports = class {
 
 				let rp_body = ''
 				
-				try {
+				let rp = await this.responseStream (o, body)
 
-					let rp = await this.responseStream (o, body)
+				return new Promise ((ok, fail) => {
 
-					return new Promise ((ok, fail) => {
+					rp.on ('end', () => {
 
-						rp.on ('end', () => {
+						darn (this.log_prefix + ' HTTP rp b ' + JSON.stringify ([rp_body]))
 
-							darn (this.log_prefix + ' HTTP rp b ' + JSON.stringify ([rp_body]))
+						switch (rp.statusCode) {
+							case 200 : return ok   (rp_body)
+							default  : return fail (this.to_error (rp, rp_body))
+						}
 
-							switch (rp.statusCode) {
-								case 200 : return ok   (rp_body)
-								default  : return fail (this.to_error (rp, rp_body))
-							}
-
-						})
-
-						rp.setEncoding ('utf8')							
-
-						rp.on ('data', s => rp_body += s)
-					
 					})
 
-				}
-				catch (x) {
+					rp.setEncoding ('utf8')							
 
-					fail (x)
-
-				}
+					rp.on ('data', s => rp_body += s)
+				
+				})
 
 			}
 			
