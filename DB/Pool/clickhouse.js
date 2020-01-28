@@ -1,34 +1,39 @@
-const genericPool    = require ("generic-pool")
-const { ClickHouse } = require ('clickhouse')
-const wrapper        = require ('../Client/clickhouse.js')
-
 module.exports = class extends require ('../Pool.js') {
 
     constructor (o) {
     
         super (o)
-                
-        let factory = {
-			create  : () => new ClickHouse (o),
-			destroy : (db) => {}
-		}
+        	
+		let [url, auth] = o.connectionString.slice ('clickhouse://'.length).split ('@').reverse ()
 		
-		this.backend = genericPool.createPool (factory, o);
+		let p = url.split ('/')
+		
+		this.database = p.pop ()
+
+		if (p.length < 2 || p [1]) p.unshift ('http://')
+
+		url = p.join ('/')
+		
+		this.http = new (require ('../../HTTP.js')) ({url, auth})
+
+        this.c = new (require ('../Client/clickhouse.js')) (this.http)
+
+darn (this)		
+
+throw 'Boo!'
+        
+
+//		this.backend = genericPool.createPool (factory, o);
 		
     }
     
-    async acquire () {  
-        let raw = await this.backend.acquire ()
-        let c = new wrapper (raw)
-        c.model = this.model
-        c.pool = this
+    async acquire () {
         return c
     }
 
     async release (client) {
-        return await this.backend.release (client.backend)
     }
-/*    
+
     gen_sql_quoted_literal (s) {
         if (s == null) s = ''
         return "'" + String (s).replace(/'/g, "''") + "'"
@@ -50,44 +55,49 @@ module.exports = class extends require ('../Pool.js') {
             sql += ' DEFAULT ' + def
         }
         
-        if (col.NULLABLE === false) sql += ' NOT NULL'
+//        if (col.NULLABLE === false) sql += ' NOT NULL'
         
         return sql
 
     }
     
-    gen_sql_add_table (table) {
-    
-        let pk = table.pk
+    normalize_model_table_column (table, col) {
         
-        let df = table.columns [pk]
-        
-        return {
-            sql: `CREATE TABLE "${table.name}" (${pk} ${this.gen_sql_column_definition (df)} PRIMARY KEY)`, 
-            params: []
+        super.normalize_model_table_column (table, col) 
+                
+        if (/INT$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'UInt32'
         }
+        else if (col.TYPE_NAME == 'CHAR') {
+            col.TYPE_NAME = 'FixedString'
+        }
+        else if (/(BINARY|BLOB|CHAR|STRING|TEXT)$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'String'
+        }
+        else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER') {
+            col.TYPE_NAME = 'Decimal'
+        }
+        else if (/TIME$/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'DateTime'
+        }
+        else if (col.TYPE_NAME == 'CHECKBOX') {
+            col.TYPE_NAME = 'UInt8'
+            col.COLUMN_DEF = '0'
+        }
+        
+        if (col.TYPE_NAME == 'Decimal') {
+            if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
+            if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
+        }                
+        
+        if (col.NULLABLE) col.TYPE_NAME = 'Nullable(' + col.TYPE_NAME + ')'
 
     }
-    
-    gen_sql_recreate_views () {
 
-        let result = []
-
-        for (let view of Object.values (this.model.views)) {            
-        
-            result.push ({sql: `DROP VIEW IF EXISTS "${view.name}"`, params: []})
-            result.push ({sql: `CREATE VIEW "${view.name}" AS ${view.sql}`, params: []})            
-            result.push ({sql: `COMMENT ON VIEW "${view.name}" IS ` + this.gen_sql_quoted_literal (view.label), params: []})
-
-            for (let col of Object.values (view.columns))                             
-                result.push ({sql: `COMMENT ON COLUMN "${view.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK), params: []})
-            
-        }
-
-        return result
-
+    gen_sql_recreate_tables () {
+        return [] // TODO: recreate table
     }
-
+    
     gen_sql_add_tables () {
 
         let result = []
@@ -108,130 +118,23 @@ module.exports = class extends require ('../Pool.js') {
 
     }
 
+    gen_sql_add_table (table) {
+
+        let p_k = table.p_k
+		let col = table.columns
+
+		let sql = `CREATE TABLE ${table.name} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}) ENGINE=${table.engine} ORDER BY (${p_k})`
+
+		let p = table.partition_by; if (p) sql += ' PARTITION BY ' + p
+
+        return {sql, params: []}
+
+    }
+
     gen_sql_comment_tables () {
 		return []
     }
 
-    gen_sql_upsert_data () {
-
-        let result = []
-        
-        for (let table of Object.values (this.model.tables)) {
-        
-            let data = table.data
-            
-            if (!data) continue
-            
-            for (let record of data) {
-            
-                let [f, s, v] = [[], [], []]
-                            
-                for (let k in record) {
-                
-                    f.push (k)
-                    v.push (record [k])
-                    
-                    if (k != table.pk) s.push (`${k}=EXCLUDED.${k}`)
-
-                }
-                
-                let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
-                            
-                result.push ({sql: `INSERT INTO "${table.name}" (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO ${something}`, params: v})
-
-            }
-        
-        }
-
-        return result
-
-    }
-    
-    gen_sql_add_column (table, col) {
-    
-        return {
-            sql: `ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col), 
-            params: []
-        }
-    
-    }
-    
-    gen_sql_recreate_tables () {
-    
-        let result = []
-return result        
-        for (let table_name in this.model.tables) {
-        
-            let table = this.model.tables [table_name]
-            
-            if (!table.existing) continue;
-
-            if (table.pk == table.existing.pk) continue;
-
-            let tmp_table = clone (table)
-            
-            tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
-                        
-            result.push (this.gen_sql_add_table (tmp_table))
-            
-            let cols = []
-
-            for (let col of Object.values (tmp_table.columns)) {
-
-                let col_name = col.name
-
-                if (!table.existing.columns [col_name]) continue
-
-                cols.push (col_name)
-
-                if (col_name != tmp_table.pk) {
-                
-                    delete col.COLUMN_DEF
-                    delete table.existing.columns [col_name].COLUMN_DEF
-                
-                    result.push (this.gen_sql_add_column (tmp_table, col))
-                    
-                }
-
-            }
-
-            result.push ({sql: `INSERT INTO ${tmp_table.name} (${cols}) SELECT ${cols} FROM ${table.name}`, params: []})
-
-            let TYPE_NAME = tmp_table.columns [tmp_table.pk].TYPE_NAME
-
-            for (let ref_table_name in this.model.tables) {
-            
-                let ref_table = ref_table_name == table.name ? tmp_table : this.model.tables [ref_table_name]
-                
-                for (let col of Object.values (ref_table.columns)) {
-                
-                    if (col.ref != table.name) continue
-                    
-                    let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
-
-                    result.push (this.gen_sql_add_column (ref_table, tmp_col))
-                    result.push ({sql: `UPDATE ${ref_table.name} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
-                    result.push ({sql: `ALTER TABLE ${ref_table.name} DROP COLUMN ${col.name}`, params: []})
-                    result.push ({sql: `ALTER TABLE ${ref_table.name} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
-                    
-                    ref_table.columns [col.name].TYPE_NAME = TYPE_NAME
-                
-                }
-
-            }
-
-            result.push ({sql: `DROP TABLE ${table.name}`, params: []})
-            result.push ({sql: `ALTER TABLE ${tmp_table.name} RENAME TO ${table.name}`, params: []})
-            
-            table.existing.pk = table.pk
-            table.existing.columns [table.pk] = table.columns [table.pk]
-
-        }        
-        
-        return result
-
-    }
-    
     gen_sql_add_columns () {
     
         let result = []
@@ -243,10 +146,8 @@ return result
             let after = table.on_after_add_column
         
             for (let col of Object.values (table.columns)) {
-            
-                let ex = existing_columns [col.name]
-                
-                if (ex) continue
+
+            	let name = col.name; if (table.p_k.includes (name) || existing_columns [name]) continue
 
                 result.push (this.gen_sql_add_column (table, col))
                                 
@@ -266,8 +167,33 @@ return result
         return result
     
     }
-
+    
+    gen_sql_add_column (table, col) {
+    
+        return {
+            sql: `ALTER TABLE ${table.name} ADD COLUMN ${col.name} ` + this.gen_sql_column_definition (col), 
+            params: []
+        }
+    
+    }
+    
     gen_sql_set_default_columns () {
+        return [] // TODO ALTER COLUMN
+    }   
+    
+    gen_sql_update_keys () {
+        return [] 
+    }
+
+    gen_sql_update_triggers () {
+        return [] 
+    }
+    
+    gen_sql_upsert_data () {
+        return [] 
+    }
+    
+    gen_sql_comment_columns () {
 
         let result = []
 
@@ -277,36 +203,11 @@ return result
 
             for (let col of Object.values (table.columns)) {
             
-                let d = col.COLUMN_DEF
+                let label = col.REMARK
 
-                if (d != existing_columns [col.name].COLUMN_DEF) {
+                if (label == (existing_columns [col.name] || {}).REMARK) continue
                 
-                    if (d == null) {
-
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
-
-                    }
-                    else {
-
-                        if (d.indexOf ('(') < 0) result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${d} WHERE "${col.name}" IS NULL`, params: []})
-
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
-
-                    }
-                
-                }
-                
-                if (col.name != table.pk) {
-
-                    let n = col.NULLABLE
-
-                    if (n != existing_columns [col.name].NULLABLE) {
-
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
-
-                    }
-
-                }                
+                result.push ({sql: `ALTER TABLE ${table.name} COMMENT COLUMN ${col.name} ` + this.gen_sql_quoted_literal (label), params: []})
 
             }
 
@@ -316,149 +217,48 @@ return result
 
     }    
     
-    gen_sql_comment_columns () {
-		return []
-    }    
-    
-    gen_sql_update_triggers () {
-		return []
-    }
-    
-    normalize_model_table_key (table, k) {
+    gen_sql_recreate_views () {
 
-        let glob = `ix_${table.name}_${k}`
-    
-        let src = table.keys [k]
+        let result = []
         
-        if (src != null) {
+        for (let name in this.model.views) {
         
-        	let unique = ''
+        	let view = this.model.views [name]; view.depends = {}
         	
-        	let um = /^\s*(UNIQUE)\s*\((.*?)\)\s*$/.exec (src); if (um) [unique, src] = um.slice (1)
-        
-        	src = `CREATE ${unique} INDEX ${glob} ON ${table.name} (${src.trim ()})`
+        	for (let word of view.sql.split (/\b/))
         	
+        		if (this.model.views [word])
+
+        			view.depends [word] = 1
+
         }
         
-        delete table.keys [k]
-        table.keys [glob] = src
-
-    }
-
-    gen_sql_update_keys () {
-    
-        let result = []
+        let names = [], idx = {}
         
-        for (let table of Object.values (this.model.tables)) {
+        let assert = name => {
         
-            let keys = table.keys
-
-            if (!keys) continue
+        	if (idx [name]) return
         
-            let existing_keys = (table.existing || {keys: {}}).keys
+        	for (let k in this.model.views [name].depends) assert (k)
+        	
+        	idx [name] = names.push (name)
 
-            for (let name in keys) {
-            
-                let src = keys [name]
-                
-                let old_src = existing_keys [name]
-                
-                function invariant (s) {
-                    if (s == null) return ''
-                    return s.replace (/[\s\(\)]/g, '').toLowerCase ()
-                }
+        }
+        
+        for (let name in this.model.views) assert (name)
 
-                if (invariant (src) == invariant (old_src)) continue
+		let views = names.map (i => this.model.views [i])
 
-                if (old_src) result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
-                
-                if (src != null) result.push ({sql: src, params: []})
+        for (let view of views) {
+        	result.push ({sql: `DROP TABLE IF EXISTS ${view.name}`, params: []})
+        }
 
-            }
-
+        for (let view of views) {           
+            result.push ({sql: `CREATE VIEW "${view.name}" AS ${view.sql}`, params: []})            
         }
 
         return result
 
     }
-
-    normalize_model_table_trigger (table, k) {
-        
-    }
     
-    normalize_model_table_column (table, col) {
-        
-        super.normalize_model_table_column (table, col) 
-                
-        if (/INT$/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'INTEGER'
-        }
-        else if (/(CHAR|STRING|TEXT)$/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'TEXT'
-        }
-        else if (/BINARY$/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'BLOB'
-        }
-        else if (/BLOB$/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'BLOB'
-        }
-        else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER') {
-            col.TYPE_NAME = 'NUMERIC'
-        }
-        else if (/^DATE/.test (col.TYPE_NAME) || /TIME$/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'TEXT'
-        }
-        else if (col.TYPE_NAME == 'CHECKBOX') {
-            col.TYPE_NAME = 'INTEGER'
-            col.COLUMN_DEF = '0'
-        }
-        
-        if (col.TYPE_NAME == 'NUMERIC') {
-            if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
-            if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
-        }                
-        
-    }
-*/
-
-    gen_sql_recreate_tables () {
-    
-        let result = []
-
-        return result
-
-    }
-    
-    gen_sql_add_tables () {
-
-        let result = []
-
-        for (let table of Object.values (this.model.tables)) if (!table.existing) {
-
-            let pk = table.pk
-            let df = table.columns [pk]
-            
-            table.existing = {pk, columns: {[pk]: df}, keys: {}, triggers: {}}
-            table._is_just_added = 1
-
-            result.push (this.gen_sql_add_table (table))
-
-        }
-
-        return result
-
-    }
-
-    gen_sql_add_table (table) {
-    
-        let p_k = table.p_k
-		let col = table.columns
-
-        return {
-            sql: `CREATE TABLE "${table.name}" (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}) ENGINE=${table.engine} ORDER BY ${p_k})`,
-            params: []
-        }
-
-    }
-
 }
