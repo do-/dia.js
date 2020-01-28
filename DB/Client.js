@@ -55,6 +55,12 @@ module.exports = class {
         ])
     
     }
+    
+    async select_scalar (sql, params = []) {
+        let r = await this.select_hash (sql, params)
+        for (let k in r) return r [k]
+        return null
+    }
 
     async add_all_cnt (data, def, limit, offset) {
 

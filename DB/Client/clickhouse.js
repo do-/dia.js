@@ -1,4 +1,5 @@
 const Dia = require ('../../Dia.js')
+const readline = require ('readline')
 
 module.exports = class extends Dia.DB.Client {
     
@@ -18,43 +19,33 @@ module.exports = class extends Dia.DB.Client {
     
     }
     
-/*    
-
     async select_loop (sql, params, callback, data) {
-    
-        let label = this.log_label (sql, params)
+    	
+    	sql = this.bind (sql, params)
+    	
+    	let label = this.log_label (sql)
         
-        console.time (label)
+        try {
         
-        return new Promise ((ok, fail) => {
-        
-        	this.backend.each (sql, params, 
-        		(x, one) => callback (one, data), 
-        		(x, cnt) => x ? fail (x) : ok (data)
-        	)
-        
-        }).finally (() => console.timeEnd (label))
-    
-    }
+        	console.time (label)        
 
-    async select_hash (sql, params) {
-    
-        let label = this.log_label (sql, params)
-        
-        console.time (label)
-        
-        return new Promise ((ok, fail) => {
-        
-        	this.backend.get (sql, params, (x, d) => x ? fail (x) : ok (d || {}))
-        
-        }).finally (() => console.timeEnd (label))
+        	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
 
-    }
-    
-    async select_scalar (sql, params) {
-        let r = await this.select_hash (sql, params)
-        for (let k in r) return r [k]
-        return null
+        	return new Promise ((ok, fail) => {
+
+				readline.createInterface ({input})
+					.on ('line', s => callback (JSON.parse (s), data))
+					.on ('close', () => ok (data))
+        	
+        	})
+
+        }
+        finally {        
+        
+        	console.timeEnd (label)        
+        	
+        }
+
     }
 
     async get (def) {
@@ -63,7 +54,6 @@ module.exports = class extends Dia.DB.Client {
         let getter = q.parts [0].cols.length == 1 ? this.select_scalar : this.select_hash
         return getter.call (this, q.sql, q.params)
     }
-*/    
 
     carp_write_only () {
     	throw new Error ('Data modification not supported')
@@ -146,24 +136,18 @@ module.exports = class extends Dia.DB.Client {
 
     async select_all (sql, params = []) {
     
-    	sql = this.bind (sql, params)
-            
-        let label = this.log_label (sql)
-        
-        console.time (label)
-
-        try {
-			return (await this.backend.response ({}, sql + ' FORMAT JSONEachRow'))
-				.slice (0, -1).split ('\n').map (s => JSON.parse (s))
-        }
-        finally {
-
-        	console.timeEnd (label)
-
-        }
+    	return this.select_loop (sql, params, (d, a) => a.push (d), [])
 
     }
+    
+    async select_hash (sql, params = []) {
 
+		let [h] = await this.select_all (sql, params)
+		
+		return h || {}
+
+    }
+    
     async load_schema_tables () {
     
         let tables = this.model.tables

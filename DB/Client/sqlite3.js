@@ -120,12 +120,6 @@ module.exports = class extends Dia.DB.Client {
         }).finally (() => console.timeEnd (label))
 
     }
-    
-    async select_scalar (sql, params) {
-        let r = await this.select_hash (sql, params)
-        for (let k in r) return r [k]
-        return null
-    }
 
     async get (def) {
         let q =  this.query (def)
