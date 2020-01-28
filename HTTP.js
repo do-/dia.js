@@ -38,6 +38,8 @@ module.exports = class {
 					case '{':
 					case '[':
 						return 'application/json'
+					default:
+						return 'text/plain'
 				}
 				
 			}

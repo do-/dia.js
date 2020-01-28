@@ -3,7 +3,6 @@ const Dia = require ('../../Dia.js')
 module.exports = class extends Dia.DB.Client {
     
     async release (success) {   
-        return this.pool.release (this)
     }
     
     to_limited_sql_params (original_sql, original_params, limit, offset) {
@@ -161,12 +160,19 @@ module.exports = class extends Dia.DB.Client {
         let label = this.log_label (sql)
         
         console.time (label)
-                
-        return new Promise ((ok, fail) => {
 
-        	this.backend.query (sql).exec ((x, d) => x ? fail (x) : ok (d))
+        try {
 
-        }).finally (() => console.timeEnd (label))
+			return (await this.backend.response ({}, sql + ' FORMAT JSONEachRow'))
+
+				.slice (0, -1).split ('\n').map (s => JSON.parse (s))
+
+        }
+        finally {
+
+        	console.timeEnd (label)
+
+        }
 
     }
 
@@ -174,7 +180,7 @@ module.exports = class extends Dia.DB.Client {
     
         let tables = this.model.tables
 
-		let rs = await this.select_all ("SELECT * FROM system.tables WHERE database=?", [this.backend.opts.database])
+		let rs = await this.select_all ("SELECT * FROM system.tables WHERE database=?", [this.database])
 
         for (let r of rs) {
             let t = tables [r.name]
@@ -188,7 +194,7 @@ module.exports = class extends Dia.DB.Client {
     
     async load_schema_table_columns () {
     
-		let rs = await this.select_all ("SELECT * FROM system.columns WHERE database=?", [this.backend.opts.database])
+		let rs = await this.select_all ("SELECT * FROM system.columns WHERE database=?", [this.database])
 
         let tables = this.model.tables
         

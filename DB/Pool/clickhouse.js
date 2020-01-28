@@ -1,3 +1,5 @@
+const wrapper = require ('../Client/clickhouse.js')
+
 module.exports = class extends require ('../Pool.js') {
 
     constructor (o) {
@@ -14,21 +16,19 @@ module.exports = class extends require ('../Pool.js') {
 
 		url = p.join ('/')
 		
-		this.http = new (require ('../../HTTP.js')) ({url, auth})
+		this.http = new (require ('../../HTTP.js')) ({url, auth, method: 'POST'})
 
-        this.c = new (require ('../Client/clickhouse.js')) (this.http)
-
-darn (this)		
-
-throw 'Boo!'
-        
-
-//		this.backend = genericPool.createPool (factory, o);
-		
     }
     
     async acquire () {
+
+    	let c = new wrapper (await this.http.acquire ())
+
+        c.database = this.database
+    	c.model = this.model
+    	
         return c
+        
     }
 
     async release (client) {
