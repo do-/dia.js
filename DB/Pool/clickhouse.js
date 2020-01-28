@@ -11,6 +11,8 @@ module.exports = class extends require ('../Pool.js') {
 		let p = url.split ('/')
 		
 		this.database = p.pop ()
+		
+		p.push ('?database=' + this.database)
 
 		if (p.length < 2 || p [1]) p.unshift ('http://')
 

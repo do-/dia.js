@@ -20,20 +20,6 @@ module.exports = class extends Dia.DB.Client {
     
 /*    
 
-    async select_all (sql, params = []) {
-            
-        let label = this.log_label (sql, params)
-        
-        console.time (label)
-        
-        return new Promise ((ok, fail) => {
-        
-        	this.backend.all (sql, params, (x, d) => x ? fail (x) : ok (d))
-        
-        }).finally (() => console.timeEnd (label))
-
-    }
-    
     async select_loop (sql, params, callback, data) {
     
         let label = this.log_label (sql, params)
@@ -103,11 +89,19 @@ module.exports = class extends Dia.DB.Client {
 
         let fields = Object.keys (data [0]).filter (k => def.columns [k]); if (!fields.length) throw 'No known values provided to insert in ' + table + ': ' + JSON.stringify (data)
         
-        let ws = this.backend.insert (`INSERT INTO ${table} (${fields})`).stream ()
-      
-		for (let r of data) await ws.writeRow (JSON.stringify (fields.map (k => k [k])))
-		
-		return ws.exec ()
+        return this.do (
+        
+        	`INSERT INTO ${table} (${fields}) FORMAT JSONEachRow` + 
+        	
+        	data.map (r => {
+
+        		let d = {}; for (let k of fields) d [k] = r [k]
+
+        		return JSON.stringify (d)
+
+        	}).join ('\n')
+
+        )
 
     }
 
@@ -138,12 +132,9 @@ module.exports = class extends Dia.DB.Client {
     	
     	let label = this.log_label (sql)
         
-        try {
-        
-        	console.time (label)
-        
-			await this.backend.query (sql).toPromise ()
-			
+        try {        
+        	console.time (label)        
+			await this.backend.response ({}, sql)			
         }
         finally {
         
@@ -162,11 +153,8 @@ module.exports = class extends Dia.DB.Client {
         console.time (label)
 
         try {
-
 			return (await this.backend.response ({}, sql + ' FORMAT JSONEachRow'))
-
 				.slice (0, -1).split ('\n').map (s => JSON.parse (s))
-
         }
         finally {
 
