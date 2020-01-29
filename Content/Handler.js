@@ -40,6 +40,7 @@ module.exports = class {
         catch (x) {
             console.log (this.uuid, x)
             this.is_failed = true
+            this.error = x
             this.send_out_error (x)
         }
         finally {
