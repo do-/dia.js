@@ -134,7 +134,7 @@ module.exports = class extends Dia.DB.Client {
 				
 				l += (v => {
 				
-					if (v == null) return '\\N'
+					if (v == null || v === '') return '\\N'
 
 					if (typeof v != 'string') v = '' + v
 
