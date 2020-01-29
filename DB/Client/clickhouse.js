@@ -1,6 +1,9 @@
 const  Dia          = require ('../../Dia.js')
 const  readline     = require ('readline')
-const {Transform}   = require ('stream')
+const {
+	Transform,
+	PassThrough
+}   				= require ('stream')
 
 module.exports = class extends Dia.DB.Client {
     
@@ -71,6 +74,39 @@ module.exports = class extends Dia.DB.Client {
     async delete () {
     	this.carp_write_only ()
     }
+    
+    async load (is, table, fields) {
+    
+    	let sql = `INSERT INTO ${table} (${fields})`
+
+    	let label = this.log_label (sql)
+    	
+        try {        
+        
+        	console.time (label)        
+        	
+        	let body = new Transform ({transform (chunk, encoding, callback) {
+				
+				if (sql) {this.push (sql + ' FORMAT TSV\n'); sql = null}
+									
+				callback (null, chunk)			
+					
+			}})        	
+			
+			let res_promise = this.backend.response ({}, body)
+			
+			is.pipe (body)
+			
+			await res_promise
+    	
+        }
+        finally {
+        
+        	console.timeEnd (label)
+        
+        }
+    
+    }    
 
     async insert (table, data) {
     
@@ -79,78 +115,42 @@ module.exports = class extends Dia.DB.Client {
         if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
 
         let fields = Object.keys (data [0]).filter (k => def.columns [k]); if (!fields.length) throw 'No known values provided to insert in ' + table + ': ' + JSON.stringify (data)
-      
-    	let sql = `INSERT INTO ${table} (${fields}) FORMAT TSV\n`
-    	
-    	let label = this.log_label (sql)
-       
-        try {        
         
-        	console.time (label)        
-        	
-        	let body = new Transform ({
-        	
-				transform (chunk, encoding, callback) {
-				
-					if (sql) {
-					
-						this.push (sql)
-						
-						sql = null
-					
-					}
-				
-					this.push (chunk)
-					
-					callback ()			
-					
-				}        	
-				
-			})
-        	
-			let res_promise = this.backend.response ({}, body)
-
-			for (let r of data) {
-
-				let l = ''
+        let body = new PassThrough ()
+        
+        let res_promise = this.load (body, table, fields)
+        
+        const esc = {
+			'\\': '\\\\',
+			'\n': '\\n',
+			'\t': '\\t',
+        }
+        
+        for (let r of data) body.write ((r => {
+        
+			let l = ''; for (let k of fields) {
 			
-				for (let k of fields) {
+				if (l) l += '\t'
 				
-					if (l) l += '\t'
-					
-					l += (v => {
-					
-						if (v == null) return '\\N'
+				l += (v => {
+				
+					if (v == null) return '\\N'
 
-						if (typeof v != 'string') v = '' + v
+					if (typeof v != 'string') v = '' + v
 
-						return v.replace (/[\\\n\t]/g, (match, p1) => {switch (p1) {
-							case '\\': return '\\\\'
-							case '\n': return '\\n'
-							case '\t': return '\\t'
-						}})
+					return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
 
-					}) (r [k])
+				}) (r [k])
 
-				}
-			
-				l += '\n'
-
-				body.write (l)
-					
 			}
-			
-			body.end ()
-			
-			await res_promise
-
-        }
-        finally {
+		
+			return l += '\n'
         
-        	console.timeEnd (label)
-        
-        }
+        }) (r)) 
+        			
+		body.end ()
 
+		return res_promise
 
     }
 
