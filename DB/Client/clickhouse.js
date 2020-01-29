@@ -1,5 +1,6 @@
-const Dia = require ('../../Dia.js')
-const readline = require ('readline')
+const  Dia          = require ('../../Dia.js')
+const  readline     = require ('readline')
+const {Transform}   = require ('stream')
 
 module.exports = class extends Dia.DB.Client {
     
@@ -78,20 +79,56 @@ module.exports = class extends Dia.DB.Client {
         if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
 
         let fields = Object.keys (data [0]).filter (k => def.columns [k]); if (!fields.length) throw 'No known values provided to insert in ' + table + ': ' + JSON.stringify (data)
+      
+    	let sql = `INSERT INTO ${table} (${fields}) FORMAT JSONEachRow\n`
+    	
+    	let label = this.log_label (sql)
+       
+        try {        
         
-        return this.do (
-        
-        	`INSERT INTO ${table} (${fields}) FORMAT JSONEachRow` + 
+        	console.time (label)        
         	
-        	data.map (r => {
+        	let body = new Transform ({
+        	
+				transform (chunk, encoding, callback) {
+				
+					if (sql) {
+					
+						this.push (sql)
+						
+						sql = null
+					
+					}
+				
+					this.push (chunk)
+					
+					callback ()			
+					
+				}        	
+				
+			})
+        	
+			let res_promise = this.backend.response ({}, body)
+			
+			for (let r of data) {
 
-        		let d = {}; for (let k of fields) d [k] = r [k]
+				let d = {}; for (let k of fields) d [k] = r [k]
+				
+				body.write (JSON.stringify (d) + '\n')
 
-        		return JSON.stringify (d)
+			}
+			
+			body.end ()
+			
+			await res_promise
 
-        	}).join ('\n')
+        }
+        finally {
+        
+        	console.timeEnd (label)
+        
+        }
 
-        )
 
     }
 
