@@ -1,6 +1,7 @@
-const url = require ('url')
-const http = require ('http')
-const https = require ('https')
+const url    = require ('url')
+const http   = require ('http')
+const https  = require ('https')
+const stream = require ('stream')
 
 module.exports = class {
 
@@ -86,10 +87,12 @@ module.exports = class {
 			async responseStream (o, body) {
 			
 				let has_body = body != null
+				
+				let is_body_stream = has_body && body instanceof stream.Readable
 			
 				o = Object.assign ({method: has_body ? 'POST' : 'GET'}, this.o, o)
 				
-				if (has_body && !o.headers && body.length > 1) o.headers = {'Content-Type': this.guess_content_type (body.charAt (0))}
+				if (has_body && !is_body_stream && !o.headers && body.length > 1) o.headers = {'Content-Type': this.guess_content_type (body.charAt (0))}
 
 				return new Promise ((ok, fail) => {
 
@@ -118,7 +121,7 @@ module.exports = class {
 
 						rq.on ('error', x => fail (x))	
 
-						has_body ? rq.end (body) : rq.end ()
+						is_body_stream ? body.pipe (rq) : has_body ? rq.end (body) : rq.end ()
 
 					}
 					catch (x) {
