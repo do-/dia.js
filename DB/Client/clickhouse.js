@@ -80,7 +80,7 @@ module.exports = class extends Dia.DB.Client {
 
         let fields = Object.keys (data [0]).filter (k => def.columns [k]); if (!fields.length) throw 'No known values provided to insert in ' + table + ': ' + JSON.stringify (data)
       
-    	let sql = `INSERT INTO ${table} (${fields}) FORMAT JSONEachRow\n`
+    	let sql = `INSERT INTO ${table} (${fields}) FORMAT TSV\n`
     	
     	let label = this.log_label (sql)
        
@@ -109,13 +109,35 @@ module.exports = class extends Dia.DB.Client {
 			})
         	
 			let res_promise = this.backend.response ({}, body)
-			
+
 			for (let r of data) {
 
-				let d = {}; for (let k of fields) d [k] = r [k]
+				let l = ''
+			
+				for (let k of fields) {
 				
-				body.write (JSON.stringify (d) + '\n')
+					if (l) l += '\t'
+					
+					l += (v => {
+					
+						if (v == null) return '\\N'
 
+						if (typeof v != 'string') v = '' + v
+
+						return v.replace (/[\\\n\t]/g, (match, p1) => {switch (p1) {
+							case '\\': return '\\\\'
+							case '\n': return '\\n'
+							case '\t': return '\\t'
+						}})
+
+					}) (r [k])
+
+				}
+			
+				l += '\n'
+
+				body.write (l)
+					
 			}
 			
 			body.end ()
