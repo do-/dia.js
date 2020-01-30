@@ -67,7 +67,7 @@ module.exports = class extends require ('../Pool.js') {
         
         super.normalize_model_table_column (table, col) 
                 
-        if (/INT$/.test (col.TYPE_NAME)) {
+        if (/INT/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'UInt32'
         }
         else if (col.TYPE_NAME == 'CHAR') {
