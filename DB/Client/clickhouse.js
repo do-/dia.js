@@ -127,7 +127,7 @@ module.exports = class extends Dia.DB.Client {
         }
         
         for (let r of data) body.write ((r => {
-        
+
 			let l = ''; for (let k of fields) {
 			
 				if (l) l += '\t'
@@ -135,17 +135,27 @@ module.exports = class extends Dia.DB.Client {
 				l += (v => {
 				
 					if (v == null || v === '') return '\\N'
-
-					if (typeof v != 'string') v = '' + v
+					
+					if (v instanceof Date) return v.toJSON ().slice (0, 19)
+					
+					switch (typeof v) {
+						case 'boolean': 
+							return v ? '1' : '0'
+						case 'number': 
+						case 'bigint': 
+							return '' + v
+						case 'object': 
+							v = JSON.stringify (v)
+					}
 
 					return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
 
 				}) (r [k])
 
 			}
-		
+
 			return l += '\n'
-        
+
         }) (r)) 
         			
 		body.end ()
