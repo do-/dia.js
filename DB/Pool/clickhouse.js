@@ -73,13 +73,13 @@ module.exports = class extends require ('../Pool.js') {
         else if (col.TYPE_NAME == 'CHAR') {
             col.TYPE_NAME = 'FixedString'
         }
-        else if (/(BINARY|BLOB|CHAR|STRING|TEXT)$/.test (col.TYPE_NAME)) {
+        else if (/(BINARY|BLOB|CHAR|JSON|STRING|TEXT)$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'String'
         }
         else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER') {
             col.TYPE_NAME = 'Decimal'
         }
-        else if (/TIME$/.test (col.TYPE_NAME)) {
+        else if (/TIME/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'DateTime'
         }
         else if (col.TYPE_NAME == 'CHECKBOX') {
@@ -91,6 +91,8 @@ module.exports = class extends require ('../Pool.js') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
             if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
         }                
+        
+        if (table.p_k.includes (col.name)) col.NULLABLE = false
         
         if (col.NULLABLE) col.TYPE_NAME = 'Nullable(' + col.TYPE_NAME + ')'
 
