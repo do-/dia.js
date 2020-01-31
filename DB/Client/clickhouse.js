@@ -178,11 +178,31 @@ module.exports = class extends Dia.DB.Client {
     }
 
     bind (original_sql, params) {
+    
     	if (!params.length) return original_sql
+    	
 		let [sql, ...parts] = original_sql.split ('?')
-        let esc = s => "'" + s.replace (/[\\']/g, s => "\\" + s) + "'"
+		
+		let esc = v => {
+
+			if (v == null) return 'NULL'
+		
+			switch (typeof v) {
+				case 'boolean': 
+					return v ? '1' : '0'
+				case 'number': 
+				case 'bigint': 
+					return v
+				default: 
+					return "'" + ('' + v).replace (/[\\']/g, s => "\\" + s) + "'"
+			}
+		
+		}
+
         for (let part of parts) sql += `${esc (params.shift ())}${part}`        
+        
         return sql    
+
     }
     
     async do (sql, params = []) {
