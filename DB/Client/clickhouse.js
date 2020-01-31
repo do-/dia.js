@@ -2,7 +2,8 @@ const  Dia          = require ('../../Dia.js')
 const  readline     = require ('readline')
 const {
 	Transform,
-	PassThrough
+	PassThrough,
+	Readable,
 }   				= require ('stream')
 
 module.exports = class extends Dia.DB.Client {
@@ -127,53 +128,78 @@ module.exports = class extends Dia.DB.Client {
     
         let def = this.model.tables [table]; if (!def) throw 'Table not found: ' + table
 
-        if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
+		if (!(data instanceof Readable)) {
+		
+	        if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
+	        
+	        let _data = clone (data); data = new Readable ({
+	        
+	        	objectMode: true,
+	        	
+				read () {this.push (_data.shift () || null)}
+				
+			})
 
-        let fields = Object.keys (data [0]).filter (k => def.columns [k]); if (!fields.length) throw 'No known values provided to insert in ' + table + ': ' + JSON.stringify (data)
-        
-        let body = new PassThrough ()
-        
-        let res_promise = this.load (body, table, fields)
-        
+		}
+
         const esc = {
 			'\\': '\\\\',
 			'\n': '\\n',
 			'\t': '\\t',
         }
         
-        for (let r of data) body.write ((r => {
+        function safe (v) {
+        
+			if (v == null || v === '') return '\\N'
+			
+			if (v instanceof Date) return v.toJSON ().slice (0, 19)
+			
+			switch (typeof v) {
+				case 'boolean': 
+					return v ? '1' : '0'
+				case 'number': 
+				case 'bigint': 
+					return '' + v
+				case 'object': 
+					v = JSON.stringify (v)
+			}
 
-			let l = ''; for (let k of fields) {
+			return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
+			
+        }
+        
+		let first = data.read (1)
+		
+		let {columns} = def
+
+		let fields = Object.keys (first).filter (k => columns [k])
+
+        let body = new PassThrough (), res_promise = this.load (body, table, fields)
+
+        function line (r) {
+
+        	let l = ''; 
+        	
+        	for (let k of fields) {
 			
 				if (l) l += '\t'
 				
-				l += (v => {
+				let s = safe (r [k])
 				
-					if (v == null || v === '') return '\\N'
-					
-					if (v instanceof Date) return v.toJSON ().slice (0, 19)
-					
-					switch (typeof v) {
-						case 'boolean': 
-							return v ? '1' : '0'
-						case 'number': 
-						case 'bigint': 
-							return '' + v
-						case 'object': 
-							v = JSON.stringify (v)
-					}
+				if (columns [k].TYPE_NAME == 'DateTime' && s.length > 19) s = s.slice (0, 19)
 
-					return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
-
-				}) (r [k])
-
+				l += s
+				
 			}
-
+		
 			return l += '\n'
 
-        }) (r)) 
-        			
-		body.end ()
+		}
+		
+		body.write (line (first))
+		
+		data.on ('end',  () => body.end ())
+		data.on ('data',  r => body.write (line (r)))
 
 		return res_promise
 
