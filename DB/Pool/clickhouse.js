@@ -45,6 +45,8 @@ module.exports = class extends require ('../Pool.js') {
     
         let sql = col.TYPE_NAME
         
+        if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
+
         if (col.COLUMN_SIZE > 0) {
             sql += '(' + col.COLUMN_SIZE
             if (col.DECIMAL_DIGITS) sql += ',' + col.DECIMAL_DIGITS
@@ -56,8 +58,6 @@ module.exports = class extends require ('../Pool.js') {
             if (def.indexOf (')') < 0) def = this.gen_sql_quoted_literal (def)
             sql += ' DEFAULT ' + def
         }
-
-        if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
 
         return sql
 
