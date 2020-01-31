@@ -56,9 +56,9 @@ module.exports = class extends require ('../Pool.js') {
             if (def.indexOf (')') < 0) def = this.gen_sql_quoted_literal (def)
             sql += ' DEFAULT ' + def
         }
-        
-//        if (col.NULLABLE === false) sql += ' NOT NULL'
-        
+
+        if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
+
         return sql
 
     }
@@ -86,15 +86,22 @@ module.exports = class extends require ('../Pool.js') {
             col.TYPE_NAME = 'UInt8'
             col.COLUMN_DEF = '0'
         }
+        else if (col.TYPE_NAME == 'BIT' && col.COLUMN_SIZE == 1) {
+            col.TYPE_NAME = 'UInt8'
+            col.COLUMN_DEF = '0'
+            delete col.COLUMN_SIZE
+        }
         
         if (col.TYPE_NAME == 'Decimal') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
             if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
         }                
         
-        if (table.p_k.includes (col.name)) col.NULLABLE = false
+        if (col.TYPE_NAME == 'String') {
+            delete col.COLUMN_SIZE
+        }                
         
-        if (col.NULLABLE) col.TYPE_NAME = 'Nullable(' + col.TYPE_NAME + ')'
+        if (table.p_k.includes (col.name)) col.NULLABLE = false
 
     }
 
