@@ -34,13 +34,28 @@ module.exports = class extends Dia.DB.Client {
         	console.time (label)        
 
         	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
-
+  
+  			let is_ok = input.statusCode == 200; if (!is_ok) data = 'Clickhouse server returned ' + input.statusCode + ' '
+  
         	return new Promise ((ok, fail) => {
 
 				readline.createInterface ({input})
-					.on ('line', s => callback (JSON.parse (s), data))
-					.on ('close', () => ok (data))
-        	
+				
+				.on ('close', () => is_ok ? ok (data) : fail (data))
+
+				.on ('line', s => {
+				
+					if (!is_ok) return data += s
+
+					try {
+						callback (JSON.parse (s), data)
+					}
+					catch (e) {						
+						darn (e)							
+					}
+
+				})
+
         	})
 
         }
