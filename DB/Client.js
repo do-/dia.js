@@ -99,6 +99,18 @@ module.exports = class {
         await this.select_loop (q.sql, q.params, callback, data)
         return data
     }
+
+    async select_loop (sql, params, cb, data) {
+    
+    	let rs = await this.select_stream (sql, params)
+        	
+    	return new Promise ((ok, fail) => {rs
+	    	.on ('error', x  => fail (x))
+	    	.on ('end',   () => ok (data))
+	    	.on ('data',  r  => cb (r, data))
+    	})
+    
+    }
     
     async insert_if_absent (table, data) {
     

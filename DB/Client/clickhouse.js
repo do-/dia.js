@@ -24,7 +24,7 @@ module.exports = class extends Dia.DB.Client {
     
     }
     
-    async select_stream (sql, params) {
+    async select_stream (sql, params, o = {}) {
 
     	sql = this.bind (sql, params)
 
@@ -47,8 +47,10 @@ module.exports = class extends Dia.DB.Client {
 			reader.on ('close', () => fail (new Error (x))).on ('line', s => x += ' ' + s)
 			
 		})
+		
+		o.objectMode = true
 
-		let result = new PassThrough ({objectMode: true})
+		let result = new PassThrough (o)
 
 		input.on ('error', x => result.destroy (x))
 
@@ -67,18 +69,6 @@ module.exports = class extends Dia.DB.Client {
 
     }
     
-    async select_loop (sql, params, cb, data) {
-    
-    	let rs = await this.select_stream (sql, params)
-        	
-    	return new Promise ((ok, fail) => {rs
-	    	.on ('error', x  => fail (x))
-	    	.on ('end',   () => ok (data))
-	    	.on ('data',  r  => cb (r, data))
-    	})
-    
-    }
-
     async get (def) {
         let q =  this.query (def)
         let [limited_sql, limited_params] = this.to_limited_sql_params (q.sql, q.params, 1)
@@ -174,41 +164,61 @@ module.exports = class extends Dia.DB.Client {
 			return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
 			
         }
-        
-		let first = data.read (1)
 		
-		let {columns} = def
-
-		let fields = Object.keys (first).filter (k => columns [k])
-
-        let body = new PassThrough (), res_promise = this.load (body, table, fields)
-
-        function line (r) {
-
-        	let l = ''; 
-        	
-        	for (let k of fields) {
-			
-				if (l) l += '\t'
+		let body = new PassThrough ()
 				
-				let s = safe (r [k])
-				
-				if (columns [k].TYPE_NAME == 'DateTime' && s.length > 19) s = s.slice (0, 19)
+		data.on ('end', () => body.end ())
+		
+		return await new Promise ((ok, fail) => {
 
-				l += s
-				
+			let fields = null, {columns} = def
+
+			function line (r) {
+
+				let l = ''
+
+				for (let k of fields) {
+
+					if (l) l += '\t'
+
+					let s = safe (r [k])
+
+					if (columns [k].TYPE_NAME == 'DateTime' && s.length > 19) s = s.slice (0, 19)
+
+					l += s
+
+				}
+
+				return l += '\n'
+
 			}
-		
-			return l += '\n'
 
-		}
-		
-		body.write (line (first))
-		
-		data.on ('end',  () => body.end ())
-		data.on ('data',  r => body.write (line (r)))
+			data.on ('data', r => {
 
-		return res_promise
+				if (!fields) {
+									
+					try {
+					
+						fields = Object.keys (r).filter (k => columns [k])
+						
+						if (!fields.length) fail (new Error ('No known fields found in 1st record'))
+					
+						ok (this.load (body, table, fields))
+					
+					}
+					catch (x) {
+					
+						fail (x)
+					
+					}
+
+				}
+
+				body.write (line (r))
+
+			})
+
+		})
 
     }
 
