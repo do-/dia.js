@@ -132,13 +132,7 @@ module.exports = class extends Dia.DB.Client {
 		
 	        if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
 	        
-	        let _data = clone (data); data = new Readable ({
-	        
-	        	objectMode: true,
-	        	
-				read () {this.push (_data.shift () || null)}
-				
-			})
+	        let _data = data; i = 0; data = new Readable ({objectMode: true, read () {this.push (_data [i ++] || null)}})
 
 		}
 
