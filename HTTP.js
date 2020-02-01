@@ -95,8 +95,13 @@ module.exports = class {
 				if (has_body && !is_body_stream && !o.headers && body.length > 1) o.headers = {'Content-Type': this.guess_content_type (body.charAt (0))}
 
 				return new Promise ((ok, fail) => {
+					
+					let oo = o; if (o.auth) {
+						oo = clone (o)
+						oo.auth = oo.auth.split (':') [0] + ':XXXXXX'
+					}
 
-					darn (this.log_prefix + ' HTTP rq ' + JSON.stringify ([o, body]))
+					darn (this.log_prefix + ' HTTP rq ' + JSON.stringify ([oo, body]))
 
 					try {
 
