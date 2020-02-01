@@ -64,7 +64,26 @@ module.exports = class extends Dia.DB.Client {
         
     }
     
+    async select_stream (original_sql, params, o) {
+    	
+        let sql = this.fix_sql (original_sql)
+
+        let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
+        
+        console.time (label)
+        
+        let qs = require ('pg-query-stream')
+
+    	let stream = this.backend.query (new qs (sql, params, o))
+    	
+    	stream.on ('end', () => console.timeEnd (label))
+    	
+    	return stream
+
+    }
+    
     async select_loop (sql, params, callback, data) {
+    	if (require ('pg-query-stream')) return super.select_loop (sql, params, callback, data)
         let all = await this.select_all (sql, params)
         for (let one of all) callback (one, data)
         return data
