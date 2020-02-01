@@ -91,15 +91,15 @@ module.exports = class {
         
             let pool = this.pools [k]
 
-            this [k] = pool.acquire ? await this.acquire_resource (pool) : pool
+            this [k] = pool.acquire ? await this.acquire_resource (pool, k) : pool
 
         }
 
     }
 
-    async acquire_resource (pool) {
+    async acquire_resource (pool, k) {
         let db = await pool.acquire ()
-        db.log_prefix = this.uuid + ':  '
+        db.log_prefix = this.uuid + ' ' + k + ':  '
         this.__resources.push (db)
         if (db.begin && this.is_transactional ()) await db.begin ()
         return db
