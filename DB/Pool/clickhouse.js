@@ -214,7 +214,7 @@ module.exports = class extends require ('../Pool.js') {
 
             for (let col of Object.values (table.columns)) {
             
-                let label = col.REMARK
+                let label = col.REMARK || ''
 
                 if (label == (existing_columns [col.name] || {}).REMARK) continue
                 
