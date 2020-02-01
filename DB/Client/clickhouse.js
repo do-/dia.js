@@ -29,6 +29,8 @@ module.exports = class extends Dia.DB.Client {
     	sql = this.bind (sql, params)
 
     	let label = this.log_label (sql); console.time (label)        
+
+        this.backend.log_prefix = this.log_prefix
        	       	
        	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
 
@@ -118,6 +120,8 @@ module.exports = class extends Dia.DB.Client {
 					
 			}})        	
 			
+	        this.backend.log_prefix = this.log_prefix
+	        
 			let res_promise = this.backend.response ({}, body)
 			
 			is.pipe (body)
@@ -257,6 +261,7 @@ module.exports = class extends Dia.DB.Client {
         
         try {        
         	console.time (label)        
+	        this.backend.log_prefix = this.log_prefix        	
 			await this.backend.response ({}, sql)			
         }
         finally {
