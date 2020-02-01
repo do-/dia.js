@@ -549,7 +549,11 @@ module.exports = class extends require ('../Pool.js') {
                 
                 function invariant (s) {
                     if (s == null) return ''
-                    return s.replace (/[\s\(\)]/g, '').toLowerCase ()
+                    return s
+                    	.replace (/B'/g, "'")
+                    	.replace (/[\s\(\)]/g, '')
+                    	.replace (/::\"\w+\"/g, '')
+                    	.toLowerCase ()
                 }
                 
                 if (invariant (src) == invariant (old_src)) continue
