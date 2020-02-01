@@ -24,48 +24,57 @@ module.exports = class extends Dia.DB.Client {
     
     }
     
-    async select_loop (sql, params, callback, data) {
-    	
+    async select_stream (sql, params) {
+
     	sql = this.bind (sql, params)
-    	
-    	let label = this.log_label (sql)
-        
-        try {
-        
-        	console.time (label)        
 
-        	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
-  
-  			let is_ok = input.statusCode == 200; if (!is_ok) data = 'Clickhouse server returned ' + input.statusCode + ' '
-  
-        	return new Promise ((ok, fail) => {
+    	let label = this.log_label (sql); console.time (label)        
+       	       	
+       	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
 
-				readline.createInterface ({input})
+		input.on ('end', () => console.timeEnd (label))
+
+		let reader = readline.createInterface ({input})
+
+		if (input.statusCode != 200) return new Promise ((ok, fail) => {
+
+			input.on ('error', fail)
+			
+			let x = 'Clickhouse server returned ' + input.statusCode
 				
-				.on ('close', () => is_ok ? ok (data) : fail (data))
+			reader.on ('close', () => fail (new Error (x))).on ('line', s => x += ' ' + s)
+			
+		})
 
-				.on ('line', s => {
-				
-					if (!is_ok) return data += s
+		let result = new PassThrough ({objectMode: true})
 
-					try {
-						callback (JSON.parse (s), data)
-					}
-					catch (e) {						
-						darn (e)							
-					}
+		input.on ('error', x => result.destroy (x))
 
-				})
+		reader.on ('close', () => result.end ()).on ('line', s => {
 
-        	})
+			try {
+				result.write (JSON.parse (s))
+			}
+			catch (x) {
+				darn (x)
+			}
 
-        }
-        finally {        
-        
-        	console.timeEnd (label)        
+		})
+			
+		return result
+
+    }
+    
+    async select_loop (sql, params, cb, data) {
+    
+    	let rs = await this.select_stream (sql, params)
         	
-        }
-
+    	return new Promise ((ok, fail) => {rs
+	    	.on ('error', x  => fail (x))
+	    	.on ('end',   () => ok (data))
+	    	.on ('data',  r  => cb (r, data))
+    	})
+    
     }
 
     async get (def) {
