@@ -133,7 +133,7 @@ module.exports = class {
                             
                             for (let i = 0; i <= max_i; i ++) {
                                                         
-                                let is_special = (c) => c == "'" && c == "."   
+                                let is_special = (c) => c == "'" || c == "."   
                                 
                                 if (i > 0) {
                                     let prev = chunks [i - 1]
