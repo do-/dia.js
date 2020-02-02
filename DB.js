@@ -11,6 +11,7 @@ exports.Pool = (o, m) => {
     let pool = new clazz (o)
     
     pool.model = m
+    pool.product = product
     
     return pool
 

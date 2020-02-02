@@ -100,6 +100,7 @@ module.exports = class {
     async acquire_resource (pool, k) {
         let db = await pool.acquire ()
         db.log_prefix = this.uuid + ' ' + k + ':  '
+        let {product} = pool; if (product) db.product = product
         this.__resources.push (db)
         if (db.begin && this.is_transactional ()) await db.begin ()
         return db

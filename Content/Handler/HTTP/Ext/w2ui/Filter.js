@@ -114,7 +114,7 @@ module.exports = class {
             
     }
 
-    constructor (q) {  
+    constructor (q, db) {  
         this.set_sort (q.sort)
         this.set_search (q.search, q.searchLogic)
         if (q.limit > 0) this.LIMIT = [q.limit, q.offset]
