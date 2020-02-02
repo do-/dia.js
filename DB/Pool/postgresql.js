@@ -1,5 +1,6 @@
 const {Pool} = require ('pg')
 const wrapper = require ('../Client/postgresql.js')
+const crypto  = require ('crypto')
 
 module.exports = class extends require ('../Pool.js') {
 
@@ -8,11 +9,44 @@ module.exports = class extends require ('../Pool.js') {
         this.backend = new Pool (o)
     }
     
-    listen (o) {
+    async listen (o) {
 
 		let db = new (require ('pg')).Client (this.options.connectionString)		
 		
 		db.connect ()
+		
+		if (o.timers) for (let name in o.timers) {
+		
+			let key = 'timer_' + name
+		
+			let hash = crypto.createHash ('sha256')
+			
+			hash.update (key)
+			
+			let digest = hash.digest ('hex').slice (0, 16)
+			
+			darn (`Trying to aquire cluster wide lock for ${key} (${digest})...`)
+			
+			let sql = `SELECT pg_try_advisory_lock (x'${digest}'::int8) AS ok`
+			
+			darn (sql)			
+
+			let rs = await db.query (sql)
+			
+			if (rs && rs.rows && rs.rows.length == 1 && rs.rows [0].ok) {
+			
+				darn (`... lock for ${key} (${digest}) acquired.`)
+			
+			}
+			else {
+						
+				darn (rs)
+				
+				throw new Error (`... can't acquire lock for ${key} (${digest}), bailing out.`)
+			
+			}
+			
+		}
 		
 		let sql = 'LISTEN ' + o.name
 		
