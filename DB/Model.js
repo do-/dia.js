@@ -6,7 +6,12 @@ module.exports = class {
     constructor (o) {
         if (!o.paths) o.paths = o.path ? [o.path] : []
         this.o = o
+        this.todo = []
         this.reload ()
+    }
+    
+    async pending () {
+    	return Promise.all (this.todo)
     }
     
     reload () {
@@ -43,7 +48,11 @@ module.exports = class {
 
         this.on_after_parse_table_columns (m)
 
-        for (let k of ['data', 'init_data']) if (typeof m [k] === "function") ((async () => {m [k] = await m [k].apply (m)})) ()
+        for (let k of ['data', 'init_data']) 
+        	if (typeof m [k] === "function")
+        		this.todo.push ((
+        			async () => {m [k] = await m [k].apply (m)}
+        		) ())
 
         return m
 

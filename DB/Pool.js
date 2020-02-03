@@ -21,7 +21,9 @@ module.exports = class {
     }    
 
     async load_schema () {
-    
+
+    	await this.model.pending ()
+
         try {
             var db = await this.acquire ()
             db.log_prefix = '[LOADING SCHEMA] '
