@@ -241,9 +241,9 @@ module.exports = class extends require ('../Pool.js') {
         
         for (let table of Object.values (this.model.tables)) {
         
-            let data = table.data
+            let data = table._data_modified
             
-            if (!data) continue
+            if (!data || !data.length) continue
             
             for (let record of data) {
             

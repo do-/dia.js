@@ -213,7 +213,44 @@ module.exports = class {
         await this.load_schema_table_columns ()
         await this.load_schema_table_keys ()
         await this.load_schema_table_triggers ()
+        await this.load_schema_table_data ()
 
     }
+
+    async load_schema_table_data () {
+
+    	for (let table of Object.values (this.model.tables)) {
+
+    		let data = table.data
+
+    		if (!data || !data.length) continue
+
+    		let idx = {}, f = {}, pk = table.pk; for (let r of Object.values (table.data)) {
+
+    			for (let k in r) if (!(k in f)) f [k] = 1
+    		
+    			idx ['' + r [pk]] = clone (r)
+    			
+    		}
+    		
+    		let ids = Object.keys (idx)
+    		
+			await this.select_loop (`SELECT ${Object.keys (f)} FROM ${table.name} WHERE ${pk} IN (${ids.map (i => '?')})`, ids, r => {
+			
+				let id = r [pk]
+
+				let d = idx [id]; if (!d) return
+				
+				for (let k in d) if ('' + d [k] != '' + r [k]) return
+				
+				delete idx [id]
+				
+			})
+
+			table._data_modified = Object.values (idx)
+
+    	}
+
+    }    
 
 }
