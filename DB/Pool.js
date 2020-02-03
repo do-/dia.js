@@ -5,13 +5,20 @@ module.exports = class {
     }
     
     async update_model () {
-        return this.run (this.gen_sql_patch ())
+    
+    	let patch = this.gen_sql_patch ()
+    	
+    	if (!patch.length) return
+    	
+        return this.run (patch)
+        
     }
     
     async run (list) {
 
         try {
             var db = await this.acquire ()
+            db.log_prefix = '[RUNNING BATCH] '
             for (let i of list) await db.do (i.sql, i.params)
         }
         finally {
