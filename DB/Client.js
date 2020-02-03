@@ -221,7 +221,7 @@ module.exports = class {
 
     	for (let table of Object.values (this.model.tables)) {
 
-    		let data = table.data
+    		let {data} = table
 
     		if (!data || !data.length) continue
 
@@ -233,20 +233,26 @@ module.exports = class {
     			
     		}
     		
-    		let ids = Object.keys (idx)
+    		let {existing} = table; if (existing) {
     		
-			await this.select_loop (`SELECT ${Object.keys (f)} FROM ${table.name} WHERE ${pk} IN (${ids.map (i => '?')})`, ids, r => {
-			
-				let id = r [pk]
+    			let cols = Object.keys (f).filter (n => existing.columns [n]); if (cols.length) {
 
-				let d = idx [id]; if (!d) return
-				
-				for (let k in d) if ('' + d [k] != '' + r [k]) return
-				
-				delete idx [id]
-				
-			})
+					let ids = Object.keys (idx); await this.select_loop (`SELECT ${cols} FROM ${table.name} WHERE ${pk} IN (${ids.map (i => '?')})`, ids, r => {
 
+						let id = r [pk]
+
+						let d = idx [id]; if (!d) return
+
+						for (let k in d) if ('' + d [k] != '' + r [k]) return
+
+						delete idx [id]
+
+					})
+
+    			}    			
+    			
+    		}
+    		
 			table._data_modified = Object.values (idx)
 
     	}
