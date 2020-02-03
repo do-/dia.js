@@ -315,29 +315,62 @@ module.exports = class extends Dia.DB.Client {
             SELECT 
                 pg_class.relname AS name
                 , pg_description.description AS label
+                , pg_views.definition AS sql
             FROM 
                 pg_namespace
                 LEFT JOIN pg_class ON (
                     pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind = 'r'
+                    AND pg_class.relkind IN ('r', 'v')
                 )
                 LEFT JOIN pg_description ON (
                     pg_description.objoid = pg_class.oid
                     AND pg_description.objsubid = 0
                 )
+                LEFT JOIN pg_views ON (
+                	pg_views.viewname = pg_class.relname
+                	AND pg_views.viewowner = current_user
+                )
+                
             WHERE
                 pg_namespace.nspname = current_schema()
 
         `, [])
         
-        let tables = this.model.tables
+        let {tables, views} = this.model
+        
         for (let r of rs) {
-            let t = tables [r.name]
-            if (!t) continue
-            r.columns = {}
-            r.keys = {}
-            r.triggers = {}
+        
+			let t = (r.sql ? views : tables) [r.name]; if (!t) continue
+        
+        	for (let k of ['columns', 'keys', 'triggers']) r [k] = {}
+            
             t.existing = r
+
+        }
+        
+        for (let view of Object.values (views)) {
+        
+			let {existing} = view; if (!existing) continue
+			
+			let name = '_tmp_' + ('' + Math.random ()).replace (/\D/g, '')
+			
+			try {
+
+				await this.do (`CREATE VIEW ${name} AS ${view.sql}`)
+
+				let sql = await this.select_scalar ('SELECT definition FROM pg_views WHERE viewowner = current_user AND viewname = ?', [name])
+
+				await this.do (`DROP VIEW ${name}`)
+				
+				if (sql == existing.sql) view._no_recreate = 1
+
+			}
+			catch (x) {
+
+				darn (x)
+
+			}
+
         }
 
     }
@@ -352,6 +385,7 @@ module.exports = class extends Dia.DB.Client {
                 , pg_attrdef.adsrc
                 , pg_description.description
                 , pg_class.relname
+                , pg_class.relkind
                 , CASE atttypid
                     WHEN 21 /*int2*/ THEN 16
                     WHEN 23 /*int4*/ THEN 32
@@ -378,7 +412,7 @@ module.exports = class extends Dia.DB.Client {
                 pg_namespace
                 LEFT JOIN pg_class ON (
                     pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind = 'r'
+                    AND pg_class.relkind IN ('r', 'v')
                 )
                 LEFT JOIN pg_attribute ON (
                     pg_attribute.attrelid = pg_class.oid
@@ -399,10 +433,10 @@ module.exports = class extends Dia.DB.Client {
 
         `, [])
 
-        let tables = this.model.tables
+        let {tables, views} = this.model
         for (let r of rs) {        
 
-            let t = tables [r.relname]
+            let t = (r.relkind == 'v' ? views : tables) [r.relname]
             if (!t) continue
             
             let name = r.attname

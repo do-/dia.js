@@ -183,6 +183,8 @@ module.exports = class extends require ('../Pool.js') {
 
 		let views = names.map (i => this.model.views [i])
 
+        while (views.length && views [0]._no_recreate) views.shift ()
+
         for (let view of views) result.push ({sql: `DROP VIEW IF EXISTS "${view.name}" CASCADE`, params: []})
 
         for (let view of views) {
@@ -230,6 +232,12 @@ module.exports = class extends require ('../Pool.js') {
             if (table.label != table.existing.label)
 
                 result.push ({sql: `COMMENT ON TABLE "${table.name}" IS ` + this.gen_sql_quoted_literal (table.label), params: []})
+
+        for (let view of Object.values (this.model.views)) 
+        
+            if (view._no_recreate && view.label != view.existing.label)
+
+                result.push ({sql: `COMMENT ON VIEW "${view.name}" IS ` + this.gen_sql_quoted_literal (view.label), params: []})
 
         return result
 
@@ -458,7 +466,10 @@ module.exports = class extends require ('../Pool.js') {
 
         let result = []
 
-        for (let table of Object.values (this.model.tables)) {
+        for (let table of [
+        	...Object.values (this.model.tables),
+        	...Object.values (this.model.views).filter (v => v._no_recreate),
+        ]) {
 
             let existing_columns = table.existing.columns
 
