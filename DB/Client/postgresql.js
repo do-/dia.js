@@ -1,5 +1,7 @@
 const Dia = require ('../../Dia.js')
 
+let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {}
+
 module.exports = class extends Dia.DB.Client {
 
     is_pk_violation (e) {
@@ -83,7 +85,7 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async select_loop (sql, params, callback, data) {
-    	if (require ('pg-query-stream')) return super.select_loop (sql, params, callback, data)
+    	if (pg_query_stream) return super.select_loop (sql, params, callback, data)
         let all = await this.select_all (sql, params)
         for (let one of all) callback (one, data)
         return data
