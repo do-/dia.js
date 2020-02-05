@@ -55,25 +55,29 @@ module.exports = class extends require ('../Pool.js') {
 		db.on ('notification', async e => {
 
 			try {
-			
-				if (o.timers && e.payload.charAt (0) != '{') {
-				
-					let timer = o.timers [e.payload]
-					
-					if (!timer) throw 'Timer not found: ' + e.payload
 
-					darn (sql + ': ' + e.payload + ' -> ' + timer.uuid)
+				let {payload} = e; if (payload.charAt (0) != '{') {
 
-					timer.on ()
-				
+					if (o.timers) {
+
+						let timer = o.timers [payload]; if (timer) {
+						
+							darn (sql + ': ' + payload + ' -> ' + timer.uuid)
+
+							timer.on ()
+
+						}
+
+					}				
+
 				}
 				else {
 
 					await new Promise ((ok, fail) => {
 
-						let h = new o.handler (Object.assign ({rq: JSON.parse (e.payload)}, o.params), ok, fail)
+						let h = new o.handler (Object.assign ({rq: JSON.parse (payload)}, o.params), ok, fail)
 
-						darn (sql + ': ' + e.payload + ' -> ' + h.uuid)
+						darn (sql + ': ' + payload + ' -> ' + h.uuid)
 
 						h.run ()
 
