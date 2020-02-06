@@ -257,7 +257,7 @@ module.exports = class extends Dia.DB.Client {
 		
 		}
 
-        for (let part of parts) sql += `${esc (params.shift ())}${part}`        
+		for (let i = 0; i < parts.length; i ++) sql += `${esc (params [i])}${parts[i]}`
         
         return sql    
 
