@@ -127,6 +127,8 @@ module.exports = class {
 				    		let u = url.parse (location)
 
 				    		for (let k of ['protocol', 'hostname', 'port', 'path']) if (u [k]) o [k] = u [k]
+				    		
+				    		delete o.url
 
 				    		ok (await this.responseStream (o, body))
 							
