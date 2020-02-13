@@ -85,7 +85,15 @@ module.exports = class {
 			}
 			
 			async responseStream (o, body) {
-			
+
+				if (o.url) {
+
+					let u = url.parse (o.url)
+
+					for (let k of ['protocol', 'hostname', 'port', 'path']) o [k] = u [k]
+
+				}
+
 				let has_body = body != null
 				
 				let is_body_stream = has_body && body instanceof stream.Readable
