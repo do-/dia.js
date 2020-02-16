@@ -45,13 +45,13 @@ module.exports = class extends require ('../Pool.js') {
     
         let sql = col.TYPE_NAME
         
-        if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
-
         if (col.COLUMN_SIZE > 0) {
             sql += '(' + col.COLUMN_SIZE
             if (col.DECIMAL_DIGITS) sql += ',' + col.DECIMAL_DIGITS
             sql += ')'
         }
+
+        if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
         
         let def = col.COLUMN_DEF
         if (def != undefined) {
