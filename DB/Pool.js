@@ -83,9 +83,17 @@ module.exports = class {
     normalize_model_table_column (table, col) {
 
         if (!col.TYPE_NAME && col.ref) {
+
             let t = this.model.tables [col.ref]
-            if (!t) throw new Error (`${table.name}.${col.name} references ${col.ref}, but no such table found in the model`)
-            col.TYPE_NAME = t.columns [t.pk].TYPE_NAME
+
+        	if (!t) throw new Error (`${table.name}.${col.name} references ${col.ref}, but no such table found in the model`)
+
+			let tpk = t.columns [t.pk]; for (let k of ['TYPE_NAME', 'COLUMN_SIZE']) {
+			
+            	let v = tpk [k]; if (v) col [k] = v
+
+            }
+
         }
 
         col.TYPE_NAME = col.TYPE_NAME.toUpperCase ()
