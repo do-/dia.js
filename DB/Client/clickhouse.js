@@ -164,6 +164,13 @@ module.exports = class extends Dia.DB.Client {
 			return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
 			
         }
+        
+		const lens = {					
+			"DATE":      10,
+			"DATETIME":  19,
+			"Date":      10,
+			"DateTime":  19,
+		}        
 		
 		let body = new PassThrough ()
 				
@@ -183,7 +190,7 @@ module.exports = class extends Dia.DB.Client {
 
 					let s = safe (r [k])
 
-					if (columns [k].TYPE_NAME == 'DateTime' && s.length > 19) s = s.slice (0, 19)
+					let len = lens [columns [k].TYPE_NAME]; if (len && s.length > len) s = s.slice (0, len)
 
 					l += s
 
