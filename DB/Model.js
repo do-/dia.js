@@ -8,6 +8,7 @@ module.exports = class {
         this.o = o
         this.todo = []
         this.reload ()
+        this.on_after_reload ()
     }
     
     async pending () {
@@ -60,6 +61,7 @@ module.exports = class {
 
     on_before_parse_table_columns (table) {}
     on_after_parse_table_columns (table) {}
+    on_after_reload (model) {}
     
     parse_columns (columns) {
         for (let name in columns) {
