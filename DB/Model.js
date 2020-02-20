@@ -18,8 +18,22 @@ module.exports = class {
         this.tables = {}
         this.views = {}
         for (let p of this.o.paths) this.load_dir (p)
+        this.adjust_triggers ()
     }
-    
+
+    adjust_triggers () {
+        for (let name in this.tables) {
+            let table = this.tables [name]
+            let triggers = table.triggers
+            if (triggers) {
+                for (let k in triggers) {
+                    let v = triggers [k]
+                    if (typeof v === 'function') triggers [k] = v.apply (table)
+                }
+            }
+        }
+    }
+
     load_dir (p) {
         for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
             let name = fn.split ('.') [0]
@@ -40,11 +54,6 @@ module.exports = class {
         this.on_before_parse_table_columns (m)
 
         if (m.columns) this.parse_columns (m.columns)
-
-        let triggers = m.triggers; if (triggers) {for (let k in triggers) {
-        	let v = triggers [k]
-        	if (typeof v === 'function') triggers [k] = v.apply (m)
-        }}
 
         this.on_after_parse_table_columns (m)
 
