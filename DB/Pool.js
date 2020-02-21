@@ -113,7 +113,7 @@ module.exports = class {
 
 				let a = table.on_after_add_table; if (a) result.push (a)
 
-				let data = table.init_data; if (data) table._data_modified = data
+				let data = table.init_data; if (data) table._data_modified = table.data = data
 
 			}
 			else {
