@@ -418,6 +418,36 @@ module.exports = class extends require ('../Pool.js') {
         return result
     
     }
+    
+    gen_sql_create_foreign_keys () {
+    
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) {
+
+            let existing_columns = table.existing.columns
+
+            for (let col of Object.values (table.columns)) {
+
+            	let {ref} = col; if (!ref) continue
+            	
+				let xc = existing_columns [col.name]; if (xc && xc.ref) {
+				
+					if (xc.ref == ref) continue
+					
+					result.push ({sql: `ALTER TABLE "${table.name}" DROP CONSTRAINT ${xc.ref_name}`, params: []})					
+
+				}
+
+				result.push ({sql: `ALTER TABLE "${table.name}" ADD FOREIGN KEY (${col.name}) REFERENCES ${ref} NOT VALID`, params: []})
+
+            }
+
+		}
+
+        return result
+    
+    }
 
     gen_sql_set_default_columns () {
 

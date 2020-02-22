@@ -61,6 +61,7 @@ module.exports = class {
             .concat (this.gen_sql_after_add_tables ())
             .concat (this.gen_sql_upsert_data ())
             .concat (this.gen_sql_recreate_views ())
+            .concat (this.gen_sql_create_foreign_keys ())
             
         let m = this.model
         let [t, v] = [m.tables, m.views]
@@ -124,6 +125,12 @@ module.exports = class {
 
         return result
 
+    }
+    
+    gen_sql_create_foreign_keys () {
+    
+    	return []
+    
     }
 
 }
