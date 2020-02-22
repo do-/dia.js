@@ -479,11 +479,9 @@ module.exports = class extends require ('../Pool.js') {
 
             for (let col of Object.values (table.columns)) {
             
-                let label = col.REMARK
+                let label = col.REMARK || '', old_label = (existing_columns [col.name] || {}).REMARK || ''
 
-                if (label == (existing_columns [col.name] || {}).REMARK) continue
-                
-                result.push ({sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
+                if (label != old_label) result.push ({sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
 
             }
 
