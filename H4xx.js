@@ -56,3 +56,5 @@ global.suicide = (x) => {
     darn ('[ERROR] ' + x)
     process.exit (1)
 }
+
+global.not_off = (i) => !i.off
