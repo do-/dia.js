@@ -425,21 +425,19 @@ module.exports = class extends require ('../Pool.js') {
 
         for (let table of Object.values (this.model.tables)) {
 
-            let existing_columns = table.existing.columns
+            let existing_columns = table.existing.columns, add = s => result.push ({sql: `ALTER TABLE "${table.name}" ${s}`, params: []})
 
-            for (let col of Object.values (table.columns)) {
-
-            	let {ref} = col; if (!ref) continue
-            	
-				let xc = existing_columns [col.name]; if (xc && xc.ref) {
-				
-					if (xc.ref == ref) continue
+            for (let nw of Object.values (table.columns)) {
+            
+            	let ol = existing_columns [nw.name]; if (ol) {
 					
-					result.push ({sql: `ALTER TABLE "${table.name}" DROP CONSTRAINT ${xc.ref_name}`, params: []})					
-
+					if (nw.ref == ol.ref) continue
+					
+					let {ref_name} = ol; if (ref_name) add (`DROP CONSTRAINT ${ref_name}`)
+				
 				}
 
-				result.push ({sql: `ALTER TABLE "${table.name}" ADD FOREIGN KEY (${col.name}) REFERENCES ${ref} NOT VALID`, params: []})
+            	let {ref} = nw; if (ref) add (`ADD FOREIGN KEY (${nw.name}) REFERENCES ${ref} NOT VALID`)
 
             }
 
