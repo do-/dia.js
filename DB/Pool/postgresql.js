@@ -470,7 +470,9 @@ module.exports = class extends require ('../Pool.js') {
                     }
                     else {
 
-                        if (d.indexOf ('(') < 0) result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${d} WHERE "${col.name}" IS NULL`, params: []})
+                		let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
+
+                        result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
 
                         result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
 
@@ -478,9 +480,7 @@ module.exports = class extends require ('../Pool.js') {
                 
                 }
                 
-                let n = col.NULLABLE
-
-                if (n != existing_columns [col.name].NULLABLE) {
+                let n = col.NULLABLE; if (n != existing_columns [col.name].NULLABLE) {
 
                     result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
 
