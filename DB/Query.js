@@ -82,6 +82,8 @@ module.exports = class {
                         parse_col_etc_other (col_etc_other) {
 
                             let [_, col, etc, other] = col_etc_other
+                            
+                            this.cols = [col]
 
                             if (this.is_null) other = other.trim () == '<>' ? ' IS NOT NULL' : ' IS NULL'
 
@@ -131,6 +133,8 @@ module.exports = class {
 
                             let max_i = chunks.length - 1
                             
+                            this.cols = []
+
                             for (let i = 0; i <= max_i; i ++) {
                                                         
                                 let is_special = (c) => c == "'" || c == "."   
@@ -143,6 +147,8 @@ module.exports = class {
                                 if (i < max_i && is_special (chunks [i + 1].charAt (0))) continue
 
                                 if (!re_name.test (chunks [i])) continue
+                                
+                                this.cols.push ('' + chunks[i])
 
                                 chunks [i] = `${part.alias}.${chunks[i]}`
 
@@ -186,8 +192,10 @@ module.exports = class {
                     }
 
                     this.filters = []
+                    
+                    let def = model.tables [this.table]
 
-                    if (typeof v !== 'object') v = {[model.tables [this.table].pk]: v}
+                    if (typeof v !== 'object') v = {[def.pk]: v}
 
                     for (let fs in v) {
                     
@@ -195,18 +203,25 @@ module.exports = class {
 
                         if (typeof val === 'undefined') continue
                         
-                        switch (fs) {                        
+                        switch (fs) {
+                        
                             case 'ORDER':
                                 query.order = val.trim ()
                                 	.split (/\s*,\s*/)
                                 	.map (i => i.indexOf ('.') > 0 ? i : this.alias + '.' + i)
                                 	.join (',')
                                 break
-                            case 'LIMIT':
+                                
+                            case 'LIMIT':                            
                                 query.set_limit (val)
                                 break
+                                
                             default:                            
-                                this.filters.push (new this.Filter (fs, val))
+                            	let filter = new this.Filter (fs, val)
+                            	let existing = def.columns
+                            	if (0 == filter.cols.filter (name => !existing [name]).length) 
+                            		this.filters.push (filter)
+
                         }
                         
                     }
