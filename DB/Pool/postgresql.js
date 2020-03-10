@@ -641,7 +641,15 @@ module.exports = class extends require ('../Pool.js') {
                     if (b) for (let i of b) result.push (i)
                 }
                 
-                if (src != null) result.push ({sql: src, params: []})
+                if (src != null) {
+                
+                	result.push ({sql: src, params: []})
+
+                	let [, cols] = src.split (/[\(\)]/)
+
+                	result.push ({sql: `VACUUM ANALYZE ${table.name} (${cols})`, params: []})
+
+                }
 
             }
 
