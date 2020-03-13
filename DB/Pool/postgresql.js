@@ -398,7 +398,17 @@ module.exports = class extends require ('../Pool.js') {
 
             for (let col of Object.values (table.columns)) {
 
-            	let name = col.name; if (table.p_k.includes (name) || existing_columns [name]) continue
+            	let {name} = col
+            	
+            	if (table.p_k.includes (name)) continue
+            	
+            	if (name in existing_columns) {
+            	
+            		if (after && name in after) darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
+            	
+            		continue
+            		
+            	}
 
                 result.push (this.gen_sql_add_column (table, col))
                                 
