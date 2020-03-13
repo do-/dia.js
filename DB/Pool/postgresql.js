@@ -632,6 +632,10 @@ module.exports = class extends require ('../Pool.js') {
                 
                 let old_src = existing_keys [name]
                 
+                let original_name = name.split (table.name + '_') [1]
+                
+           		if (old_src && before && name in before) darn (`[SCHEMA WARNING] REDUNDANT on_before_create_index: ${table.name}.${original_name}`)
+                
                 function invariant (s) {
                     if (s == null) return ''
                     return s
@@ -644,7 +648,7 @@ module.exports = class extends require ('../Pool.js') {
                 if (invariant (src) == invariant (old_src)) continue
                 
                 darn (`[SCHEMA WARNING] INDEX REDEFINED: ${name} (see below)`)
-                darn ([table.name + '.' + name.split (table.name + '_') [1], old_src, src])
+                darn ([table.name + '.' + original_name, old_src, src])
 
                 if (old_src) {
                 	result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
