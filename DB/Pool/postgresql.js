@@ -545,7 +545,12 @@ module.exports = class extends require ('../Pool.js') {
             
                 let src = triggers [name]
                 
-                if (src == existing_triggers [name]) continue
+                let old_src = existing_triggers [name]; if (src == old_src) continue
+                
+                if (old_src) {                
+					darn (`[SCHEMA WARNING] TRIGGER REDEFINED (see below)`)
+					darn ([table.name + '.' + name, old_src, src])                
+                }
                 
                 let [phase, ...events] = name.toUpperCase ().split ('_')
                 
