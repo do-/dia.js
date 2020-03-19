@@ -651,9 +651,11 @@ module.exports = class extends require ('../Pool.js') {
                 }
                 
                 if (invariant (src) == invariant (old_src)) continue
-                
-                darn (`[SCHEMA WARNING] INDEX REDEFINED: ${name} (see below)`)
-                darn ([table.name + '.' + original_name, old_src, src])
+
+                if (old_src) {
+					darn (`[SCHEMA WARNING] INDEX REDEFINED: ${name} (see below)`)
+					darn ([table.name + '.' + original_name, old_src, src])
+                }
 
                 if (old_src) {
                 	result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
