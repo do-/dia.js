@@ -229,11 +229,13 @@ module.exports = class {
 
     		if (!data || !data.length) continue
 
-    		let idx = {}, f = {}, pk = table.pk; for (let r of Object.values (table.data)) {
+    		let idx = {}, f = {}, {p_k} = table, pk = r => p_k.map (k => '' + r [k]).join (' ')
+    		
+    		for (let r of Object.values (table.data)) {
 
     			for (let k in r) if (!(k in f)) f [k] = 1
     		
-    			idx ['' + r [pk]] = clone (r)
+    			idx [pk (r)] = clone (r)
     			
     		}
     		
@@ -241,9 +243,9 @@ module.exports = class {
     		
     			let cols = Object.keys (f).filter (n => existing.columns [n]); if (cols.length) {
 
-					let ids = Object.keys (idx); await this.select_loop (`SELECT ${cols} FROM ${table.name} WHERE ${pk} IN (${ids.map (i => '?')})`, ids, r => {
+					let ids = Object.keys (idx); await this.select_loop (`SELECT ${cols} FROM ${table.name} WHERE ${p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")})`} IN (${ids.map (i => '?')})`, ids, r => {
 
-						let id = r [pk]
+						let id = pk (r)
 
 						let d = idx [id]; if (!d) return
 
