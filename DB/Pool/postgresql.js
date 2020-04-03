@@ -601,7 +601,7 @@ module.exports = class extends require ('../Pool.js') {
             src = src.trim ()
             if (src.indexOf ('(') < 0) src = `(${src})`
             if (src.indexOf ('USING') < 0) src = src.replace ('(', 'USING btree (')
-            src = src.replace ('USING', `INDEX ${glob} ON ${table.name} USING`)
+            src = src.replace ('USING', ` INDEX ${glob} ON ${table.name} USING`).trim ()
             src = 'CREATE ' + src
         }
 
