@@ -483,8 +483,8 @@ module.exports = class extends require ('../Pool.js') {
                 		let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
 
                         result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
-
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
+                        
+                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" SET DEFAULT ${this.gen_sql_quoted_literal (d)}`, params: []})
 
                     }
                 
