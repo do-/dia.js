@@ -140,11 +140,24 @@ module.exports = class {
                                 let is_special = (c) => c == "'" || c == "."   
                                 
                                 if (i > 0) {
+                                
                                     let prev = chunks [i - 1]
-                                    if (is_special (prev.charAt (prev.length - 1))) continue
+                                
+                                	if (is_special (prev.charAt (prev.length - 1))) continue
+
+                                	if (/::$/.test (prev)) continue
+                                
                                 }
 
-                                if (i < max_i && is_special (chunks [i + 1].charAt (0))) continue
+                                if (i < max_i) {
+                                
+                                	let next = chunks [i + 1]
+
+                                	if (is_special (next.charAt (0))) continue
+
+                                	if (/^\s*\(/.test (next)) continue
+                                
+                                }
 
                                 if (!re_name.test (chunks [i])) continue
                                 
@@ -152,7 +165,7 @@ module.exports = class {
 
                                 chunks [i] = `${part.alias}.${chunks[i]}`
 
-                            } 
+                            }
 
                             return chunks.join ('')
                             
