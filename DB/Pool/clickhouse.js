@@ -68,7 +68,7 @@ module.exports = class extends require ('../Pool.js') {
         super.normalize_model_table_column (table, col) 
                 
         if (/INT/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'UInt32'
+            col.TYPE_NAME = 'Int32'
         }
         else if (col.TYPE_NAME == 'CHAR') {
             col.TYPE_NAME = 'FixedString'
@@ -158,7 +158,24 @@ module.exports = class extends require ('../Pool.js') {
         
             for (let col of Object.values (table.columns)) {
 
-            	let name = col.name; if (table.p_k.includes (name) || existing_columns [name]) continue
+            	let name = col.name
+
+            	if (table.p_k.includes (name)) continue
+
+            	let ex = existing_columns [name]; if (ex) {
+
+					if (/UInt32/.test (ex.TYPE_NAME) && !/UInt32/.test (col.TYPE_NAME)) {
+
+		                result.push ({
+							sql: `ALTER TABLE ${table.name} MODIFY COLUMN ${col.name} ` + this.gen_sql_column_definition (col), 
+							params: []
+						})
+						
+					}
+					
+					continue
+
+            	}
 
                 result.push (this.gen_sql_add_column (table, col))
                                 
