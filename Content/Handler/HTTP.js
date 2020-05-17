@@ -14,6 +14,10 @@ exports.Handler = class extends Handler {
         if (!this.http.response) throw 'Empty http_response'
     }
 
+    get_ttl () {
+    	return 10
+    }
+
     async get_http_request_body (rq) {
 
     	let charset = this.get_charset ()
