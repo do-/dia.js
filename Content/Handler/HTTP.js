@@ -15,7 +15,7 @@ exports.Handler = class extends Handler {
     }
 
     get_ttl () {
-    	return 10
+    	return 10000
     }
 
     async get_http_request_body (rq) {

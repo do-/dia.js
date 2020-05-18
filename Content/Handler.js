@@ -56,7 +56,7 @@ module.exports = class {
 
     				fail (new Error ('Dia handler timeout expired: ' + ttl + ' ms elapsed'))
 
-    				, ttl
+    				, ttl + 1
     			
     			)
 
