@@ -237,7 +237,13 @@ module.exports = class extends Dia.DB.Client {
 
     async do (sql, params = []) {
 
-    	if (params.length > 0) sql = this.fix_sql (sql)
+    	if (params.length > 0) {
+
+    		sql = this.fix_sql (sql)
+
+    		params = params.map (v => typeof v == 'object' && v != null ? JSON.stringify (v) : v)
+
+    	}
 
         let label = (this.log_prefix || '') + sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
 
