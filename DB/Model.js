@@ -6,8 +6,23 @@ module.exports = class {
     constructor (o) {
         if (!o.paths) o.paths = o.path ? [o.path] : []
         this.o = o
-        this.todo = []
-        this.reload ()
+        this.voc_options = {
+        
+        	id:         'id',
+        	id_name:    'id',
+        	
+        	label:      'label',
+        	label_name: 'label',
+        	
+        	order:      '2',
+        	
+        	columns:    ['is_deleted'],
+
+        	...(o.voc_options || {})
+
+        }
+        this.todo = []        
+        this.reload ()        
     }
     
     async pending () {
