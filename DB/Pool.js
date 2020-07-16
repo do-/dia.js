@@ -50,6 +50,7 @@ module.exports = class {
         this.normalize_model ()
 
         let patch = []
+
             .concat (this.gen_sql_recreate_tables ())
             .concat (this.gen_sql_add_tables ())
             .concat (this.gen_sql_comment_tables ())
@@ -62,6 +63,7 @@ module.exports = class {
             .concat (this.gen_sql_upsert_data ())
             .concat (this.gen_sql_recreate_views ())
             .concat (this.gen_sql_create_foreign_keys ())
+            .concat (this.gen_sql_recreate_proc ())
             
         let m = this.model
         let [t, v] = [m.tables, m.views]
@@ -128,6 +130,12 @@ module.exports = class {
     }
     
     gen_sql_create_foreign_keys () {
+    
+    	return []
+    
+    }
+
+    gen_sql_recreate_proc () {
     
     	return []
     

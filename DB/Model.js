@@ -30,10 +30,13 @@ module.exports = class {
     }
     
     reload () {
-        this.tables = {}
-        this.views = {}
+
+    	for (let k of ['tables', 'views', 'procedures', 'functions']) this [k] = {}
+
         for (let p of this.o.paths) this.load_dir (p)
+
         this.adjust_triggers ()
+
     }
 
     adjust_triggers () {
@@ -50,13 +53,15 @@ module.exports = class {
     }
 
     load_dir (p) {
+    
         for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
-            let name = fn.split ('.') [0]
-            let table = this.load_file (p + '/' + fn, name)
-            if (!table.pk) throw 'No primary key defined for ' + name
-            table.p_k = Array.isArray (table.pk) ? table.pk : [table.pk]
-            this [table.sql ? 'views' : 'tables'] [name] = table
+        
+            let [name] = fn.split ('.'), m = this.load_file (p + '/' + fn, name)
+                        
+            this [m.type + 's'] [name] = m
+
         }
+        
     }
     
     load_file (p, name) {
@@ -65,18 +70,35 @@ module.exports = class {
 
         m.name = name
         m.model = this
+        
+        if (m.columns) {
 
-        this.on_before_parse_table_columns (m)
+			this.on_before_parse_table_columns (m)
 
-        if (m.columns) this.parse_columns (m.columns)
+			this.parse_columns (m.columns)
 
-        this.on_after_parse_table_columns (m)
+			this.on_after_parse_table_columns (m)
+			
+            m.type = m.sql ? 'view' : 'table'
 
-        for (let k of ['data', 'init_data']) 
+            let {pk} = m; if (!pk) throw `No primary key defined for the ${type} named "${name}"`
+            
+            m.p_k = Array.isArray (pk) ? pk : [pk]
+            
+        }
+        else {
+
+            m.type = m.returns ? 'function' : 'procedure'
+            
+            if (!m.body) throw `No SQL body defined for the ${type} named "${name}"`
+
+        }
+
+        for (let k of ['data', 'init_data', 'sql', 'body']) 
+        
         	if (typeof m [k] === "function")
-        		this.todo.push ((
-        			async () => {m [k] = await m [k].apply (m)}
-        		) ())
+        	
+        		this.todo.push ((async () => {m [k] = await m [k].apply (m)}) ())
 
         return m
 

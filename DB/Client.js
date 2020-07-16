@@ -225,10 +225,14 @@ module.exports = class {
         await this.load_schema_table_triggers ()
         await this.load_schema_table_data ()
         await this.load_schema_foreign_keys ()
+        await this.load_schema_proc ()
 
     }
     
     async load_schema_foreign_keys () {
+    }
+
+    async load_schema_proc () {
     }
 
     async load_schema_table_data () {

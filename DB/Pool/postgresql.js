@@ -845,5 +845,43 @@ module.exports = class extends require ('../Pool.js') {
         }                
         
     }
+    
+    gen_sql_recreate_proc () {
+
+        let result = []
+        
+        for (let type of ['function', 'procedure']) {
+        
+        	let is_fun = type == 'function'
+        
+			for (let {name, returns, arg, declare, body, label, existing} of Object.values (this.model [type + 's'])) {
+
+				function vars (o, t = '') {return Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
+
+				let src = (!declare ? '' : 'DECLARE ' + vars (declare, ';').join ('')) + `BEGIN ${body} END;`
+
+				if (existing && existing.src == src) continue
+
+				name += '(' + vars (arg) + ')'
+
+				result.push ({sql: `DROP ${type} IF EXISTS ${name}`, params: []})
+
+				let sql = `CREATE ${type} ${name}`
+
+				if (is_fun) sql += ' RETURNS ' + returns
+
+				sql += ` AS $$${src}$$ LANGUAGE plpgsql`
+
+				result.push ({sql, params: []})
+
+				if (is_fun) result.push ({sql: `COMMENT ON ${type} ${name} IS ` + this.gen_sql_quoted_literal (label), params: []})
+
+			}
+			
+		}
+
+        return result
+
+    }
 
 }

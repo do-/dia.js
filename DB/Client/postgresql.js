@@ -576,4 +576,31 @@ module.exports = class extends Dia.DB.Client {
     
     }
 
+    async load_schema_proc () {
+    
+        let rs = await this.select_all (`
+
+            SELECT 
+                pg_proc.proname AS name
+                , pg_proc.prosrc AS src
+            FROM
+				pg_namespace
+                INNER JOIN pg_proc ON pg_proc.pronamespace = pg_namespace.oid
+            WHERE
+                pg_namespace.nspname = current_schema()
+				AND pg_proc.oid NOT IN (SELECT tgfoid FROM pg_trigger)
+        `, [])          
+        
+        let {procedures, functions} = this.model
+
+        for (let {name, src} of rs) {
+        
+			let proc = procedures [name] || functions [name]
+			
+			if (proc) proc.existing = {src}
+        
+        }
+    
+    }
+
 }
