@@ -12,7 +12,9 @@ module.exports = class {
 
     async select_vocabulary (t, o = {}) {
 
-        let {data, columns, pk} = this.model.tables [t]
+        let def = this.model.tables [t]; if (!def) throw new Error (`Table "${t}" not found in model`)
+
+        let {data, columns, pk} = def
 
         if (data && !Object.keys (o).length) return data
         
