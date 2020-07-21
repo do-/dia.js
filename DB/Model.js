@@ -55,8 +55,8 @@ module.exports = class {
     load_dir (p) {
     
         for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
-        
-            let [name] = fn.split ('.'), m = this.load_file (p + '/' + fn, name)
+ 
+ 			let name = fn.slice (0, fn.lastIndexOf ('.')), m = this.load_file (p + '/' + fn, name)
                         
             this [m.type + 's'] [name] = m
 
