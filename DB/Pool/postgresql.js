@@ -846,6 +846,24 @@ module.exports = class extends require ('../Pool.js') {
         
     }
     
+    gen_sql_recreate_foreign_tables () {
+
+        let result = []
+
+        for (let {name, label, foreign_server, foreign_schema, foreign_name, columns} of Object.values (this.model.foreign_tables)) {
+
+        	result.push ({sql: `DROP FOREIGN TABLE IF EXISTS "${name}"`, params: []})
+
+        	result.push ({sql: `CREATE FOREIGN TABLE "${name}" (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) SERVER ${foreign_server} OPTIONS (schema_name '${foreign_schema}', table_name '${foreign_name}')`, params: []})
+
+			result.push ({sql: `COMMENT ON FOREIGN TABLE "${name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
+
+        }
+
+        return result
+
+    }    
+    
     gen_sql_recreate_proc () {
 
         let result = []

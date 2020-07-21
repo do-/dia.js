@@ -50,7 +50,7 @@ module.exports = class {
         this.normalize_model ()
 
         let patch = []
-
+			.concat (this.gen_sql_recreate_foreign_tables ())
             .concat (this.gen_sql_recreate_tables ())
             .concat (this.gen_sql_add_tables ())
             .concat (this.gen_sql_comment_tables ())
@@ -74,7 +74,13 @@ module.exports = class {
     }
 
     normalize_model () {
-        for (let table of Object.values (this.model.tables)) this.normalize_model_table (table)
+
+    	for (let type of ['tables', 'views', 'foreign_tables'])
+
+        	for (let table of Object.values (this.model [type]))
+
+        		this.normalize_model_table (table)
+
     }
     
     normalize_model_table (table) {
@@ -139,6 +145,12 @@ module.exports = class {
     
     	return []
     
+    }
+    
+    gen_sql_recreate_foreign_tables () {
+
+    	return []
+
     }
 
 }

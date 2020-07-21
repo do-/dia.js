@@ -31,7 +31,7 @@ module.exports = class {
     
     reload () {
 
-    	for (let k of ['tables', 'views', 'procedures', 'functions']) this [k] = {}
+    	for (let k of ['tables', 'views', 'procedures', 'functions', 'foreign_tables']) this [k] = {}
 
         for (let p of this.o.paths) this.load_dir (p)
 
@@ -79,12 +79,21 @@ module.exports = class {
 
 			this.on_after_parse_table_columns (m)
 			
-            m.type = m.sql ? 'view' : 'table'
+			if (m.foreign_server) {
 
-            let {pk} = m; if (!pk) throw `No primary key defined for the ${type} named "${name}"`
-            
-            m.p_k = Array.isArray (pk) ? pk : [pk]
-            
+	            m.type = 'foreign_table'
+
+			}
+			else {
+
+				m.type = m.sql ? 'view' : 'table'
+
+				let {pk} = m; if (!pk) throw `No primary key defined for the ${type} named "${name}"`
+
+				m.p_k = Array.isArray (pk) ? pk : [pk]
+
+			}
+
         }
         else {
 
