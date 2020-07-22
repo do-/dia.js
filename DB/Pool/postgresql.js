@@ -876,7 +876,7 @@ module.exports = class extends require ('../Pool.js') {
         
 			for (let {name, returns, arg, declare, body, label, existing} of Object.values (this.model [type + 's'])) {
 
-				function vars (o, t = '') {return Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
+				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
 
 				let src = (!declare ? '' : 'DECLARE ' + vars (declare, ';').join ('')) + `BEGIN ${body} END;`
 
