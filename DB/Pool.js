@@ -152,5 +152,59 @@ module.exports = class {
     	return []
 
     }
+    
+    gen_sql_recreate_tables () {
 
+    	return []
+
+    }
+
+    gen_sql_add_tables () {
+
+    	return []
+
+    }
+
+    gen_sql_comment_tables () {
+
+    	return []
+
+    }
+
+    gen_sql_add_columns () {
+
+    	return []
+
+    }
+    
+	gen_sql_set_default_columns () {
+
+    	return []
+
+    }
+
+	gen_sql_comment_columns () {
+
+    	return []
+
+    }
+    
+	gen_sql_update_keys () {
+
+    	return []
+
+    }
+    
+    gen_sql_update_triggers () {
+
+    	return []
+
+    }
+    
+    gen_sql_upsert_data () {
+
+    	return []
+
+    }
+	
 }

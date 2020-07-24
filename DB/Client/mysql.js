@@ -23,6 +23,26 @@ module.exports = class extends Dia.DB.Client {
     	return (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
     
     }
+    
+    async do (sql, params = []) {
+
+        let label = (this.log_prefix || '') + sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
+
+        console.time (label)
+
+    	return new Promise ((ok, fail) => {
+    	
+			this.backend.query (sql, params, function (x) {
+			
+				console.timeEnd (label)
+						
+				return x ? fail (x) : ok ()
+
+			})
+
+    	})
+
+    }    
 
     async select_hash (sql, params) {
     
@@ -62,7 +82,7 @@ module.exports = class extends Dia.DB.Client {
 
     	})
     
-    }
+    }       
 
 /*    
     async select_stream (sql, params, o) {

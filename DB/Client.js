@@ -280,5 +280,13 @@ module.exports = class {
     	}
 
     }    
+    
+    async load_schema_tables () {}
+    
+    async load_schema_table_columns () {}
+    
+    async load_schema_table_keys () {}
+    
+    async load_schema_table_triggers () {}
 
 }
