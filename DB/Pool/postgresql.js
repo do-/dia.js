@@ -118,6 +118,7 @@ module.exports = class extends require ('../Pool.js') {
     
     gen_sql_quoted_literal (s) {
         if (s == null) s = ''
+        if (/\(|\)/.test (s)) return s
         return "'" + String (s).replace(/'/g, "''") + "'"
     }
     
