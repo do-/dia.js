@@ -79,7 +79,7 @@ module.exports = class {
 
 			this.on_after_parse_table_columns (m)
 			
-			if (m.foreign_server) {
+			if (m.db_link) {
 
 	            m.type = 'foreign_table'
 

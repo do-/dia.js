@@ -850,14 +850,18 @@ module.exports = class extends require ('../Pool.js') {
 
         let result = []
 
-        for (let {name, label, foreign_server, foreign_schema, foreign_name, columns} of Object.values (this.model.foreign_tables)) {
+        for (let {name, label, db_link, columns} of Object.values (this.model.foreign_tables)) {
+        
+        	for (let [foreign_server, options] of Object.entries (db_link)) {
 
-        	result.push ({sql: `DROP FOREIGN TABLE IF EXISTS "${name}" CASCADE`, params: []})
+				result.push ({sql: `DROP FOREIGN TABLE IF EXISTS "${name}" CASCADE`, params: []})
 
-        	result.push ({sql: `CREATE FOREIGN TABLE "${name}" (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) SERVER ${foreign_server} OPTIONS (schema_name '${foreign_schema}', table_name '${foreign_name}')`, params: []})
+				result.push ({sql: `CREATE FOREIGN TABLE "${name}" (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) SERVER ${foreign_server} OPTIONS (${Object.entries (options).map (i => `${i[0]} '${i[1]}'`)})`, params: []})
 
-			result.push ({sql: `COMMENT ON FOREIGN TABLE "${name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
+				result.push ({sql: `COMMENT ON FOREIGN TABLE "${name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
 
+        	}
+        	
         }
         
         if (result.length) for (let view of Object.values (this.model.views)) delete view._no_recreate
