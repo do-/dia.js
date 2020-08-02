@@ -390,6 +390,11 @@ module.exports = class {
             for (let filter of filters) for (let param of filter.params) this.params.push (param)
         }
         
+        if (this.limit) {
+        	this.sql_cnt = 'SELECT COUNT(*) FROM ' + this.parts.filter (p => p.is_root || p.is_inner	).map (get_sql).join ('')
+	        if (filters.length) this.sql_cnt += ' WHERE ' + filters.map (get_sql).join (' AND ')
+        }
+
         if (this.order) this.sql += `\nORDER BY \n\t ${this.order}`
 
     }

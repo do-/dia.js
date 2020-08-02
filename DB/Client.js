@@ -84,7 +84,10 @@ module.exports = class {
         if (offset == undefined) offset = q.offset
         if (offset == undefined) offset = 0
 
-        let [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
+        let [all, cnt] = await Promise.all ([
+        	this.select_all    (q.sql,     q.params, limit, offset),
+        	this.select_scalar (q.sql_cnt, q.params),
+        ])
 
         data [q.parts [0].alias] = all
         data.cnt = cnt
