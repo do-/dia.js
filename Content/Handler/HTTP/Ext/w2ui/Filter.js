@@ -33,15 +33,23 @@ module.exports = class {
         	}
         	        
         }
-
-        if (s.operator == 'null') {
-            s.operator = 'is'
-            s.value = null
-            s.expr = s.field
-        }
-        else {
-        	s.expr = s.field + this.op (s.operator)
-        	if (s.value == null) s.value = undefined
+        
+        switch (s.operator) {
+        
+        	case 'null':
+				s.value = null
+				s.expr = s.field
+        		break
+        		
+        	case 'not null':
+				s.value = null
+				s.expr = s.field + ' <>'
+        		break
+        		
+        	default:
+				s.expr = s.field + this.op (s.operator)
+				if (s.value == null) s.value = undefined
+        
         }
 
         let dt_iso = (dt) => dt.substr (0, 10)
