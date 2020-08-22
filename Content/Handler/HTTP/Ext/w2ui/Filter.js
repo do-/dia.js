@@ -8,6 +8,7 @@ module.exports = class {
         case 'begins':   return ' ILIKE ?%'
         case 'ends':     return ' ILIKE %?'
         case 'contains': return ' ILIKE %?%'
+        case 'misses':   return ' NOT ILIKE %?%'
         case 'in':       return ' IN '
         case 'not in':   return ' NOT IN '
         case 'null': throw '"null" must be replaced by "is" null'
