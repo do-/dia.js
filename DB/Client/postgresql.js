@@ -1,4 +1,5 @@
 const Dia = require ('../../Dia.js')
+const {Readable, Transform, PassThrough} = require ('stream')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {}
 
@@ -260,6 +261,54 @@ module.exports = class extends Dia.DB.Client {
 
     async load (is, table, cols, o = {NULL: ''}) {
 
+    	if (is._readableState.objectMode) is = is.pipe (new Transform ({
+			
+			readableObjectMode: false,
+			
+			writableObjectMode: true, 		
+			
+			transform (r, encoding, callback) {
+
+				function safe (v) {
+
+					const esc = {
+						'\\': '\\\\',
+						'\r': '\\r',
+						'\n': '\\n',
+						'\t': '\\t',
+					}
+
+					if (v == null || v === '') return ''
+
+					if (v instanceof Date) return v.toJSON ().slice (0, 19)
+
+					switch (typeof v) {
+						case 'boolean': 
+							return v ? '1' : '0'
+						case 'number': 
+						case 'bigint': 
+							return '' + v
+						case 'object': 
+							v = JSON.stringify (v)
+					}
+
+					return v.replace (/[\\\n\r\t]/g, m => esc [m])
+
+				}
+				
+				const lenm1 = cols.length - 1
+
+				for (let i = 0; i <= lenm1; i ++) {
+					this.push (safe (r [cols [i]]))
+					this.push (i < lenm1 ? '\t' : '\n')
+				}
+
+				callback ()
+			
+			}
+			
+    	}))
+
 		return new Promise ((ok, fail) => {
 
 			let sql = ''; for (let k in o) {
@@ -282,7 +331,7 @@ module.exports = class extends Dia.DB.Client {
 
 			let os = this.backend.query (require ('pg-copy-streams').from (sql))
 
-			os.on ('end', () => ok (console.timeEnd (label)))
+			is.on ('end', () => ok (console.timeEnd (label)))
 
 			os.on ('error', fail)
 			is.on ('error', fail)
