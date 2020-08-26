@@ -179,8 +179,8 @@ module.exports = class extends Dia.DB.Client {
         if (!def) throw 'Table not found: ' + table
 
         if (Array.isArray (data)) {
-            for (let d of data) await this.insert (table, d)
-            return
+        	if (!data.length) return
+			return this.load (Readable.from (data), table, Object.keys (data [0]))
         }
         
         let [fields, args, params] = [[], [], []]
