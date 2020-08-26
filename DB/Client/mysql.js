@@ -84,7 +84,6 @@ module.exports = class extends Dia.DB.Client {
     
     }       
 
-/*    
     async select_stream (sql, params, o) {
     	
         let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
@@ -98,5 +97,5 @@ module.exports = class extends Dia.DB.Client {
     	return stream
 
     }
-*/
+
 }
