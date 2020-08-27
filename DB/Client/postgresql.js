@@ -104,6 +104,16 @@ module.exports = class extends Dia.DB.Client {
         return getter.call (this, q.sql, q.params)
     }
     
+    async create_temp_as (src, cols = '*', name = '_') {
+
+    	await this.do ('DROP TABLE IF EXISTS ' + name)
+
+    	await this.do ('CREATE TEMP TABLE ' + name + ' ON COMMIT DROP AS SELECT ' + cols + ' FROM ' + src + ' WHERE 0=1')
+
+    	return name
+
+    }
+    
     async upsert (table, data, key) {
 
         if (Array.isArray (data)) return Promise.all (data.map (d => this.upsert (table, d, key)))
