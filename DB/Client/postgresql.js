@@ -290,6 +290,8 @@ module.exports = class extends Dia.DB.Client {
 
 					if (v == null || v === '') return ''
 
+					if (v instanceof Buffer) return '\\\\x' + v.toString ('hex')
+
 					if (v instanceof Date) return v.toJSON ().slice (0, 19)
 
 					switch (typeof v) {
