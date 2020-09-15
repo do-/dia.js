@@ -810,7 +810,11 @@ module.exports = class extends require ('../Pool.js') {
     normalize_model_table_column (table, col) {
         
         super.normalize_model_table_column (table, col) 
-        
+
+        if (col.ref && col.TYPE_NAME === 'SERIAL') {
+            col.TYPE_NAME = 'INT'
+        }
+
         function get_int_type_name (prefix) {switch (prefix) {
             case 'MEDIUM': 
             case 'BIG': 
