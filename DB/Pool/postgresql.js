@@ -466,9 +466,11 @@ module.exports = class extends require ('../Pool.js') {
             let existing_columns = table.existing.columns
 
             for (let col of Object.values (table.columns)) {
-            
-            	if (table.p_k.includes (col.name)) continue
-            
+
+                if (table.p_k.includes (col.name)) continue
+
+                if (col.TYPE_NAME == 'SERIAL') continue
+
                 let d = col.COLUMN_DEF
 
                 if (d != existing_columns [col.name].COLUMN_DEF) {
