@@ -167,10 +167,12 @@ module.exports = class extends Dia.DB.Client {
         let [fields, args, set, params] = [[], [], [], []]
         
         for (let k in data) {
+            let v = data [k]
+            if (typeof v === 'undefined') continue            
             fields.push (k)
             args.push ('?')
-            params.push (data [k])
-            if (key.indexOf (k) < 0) set.push (`${k}=COALESCE(EXCLUDED.${k},${table}.${k})`)
+            params.push (v)
+            if (key.indexOf (k) < 0) set.push (`${k}=EXCLUDED.${k}`)
         }
 
         let sql = `INSERT INTO ${table} (${fields}) VALUES (${args}) ON CONFLICT (${key}) ${where || ''} DO`
