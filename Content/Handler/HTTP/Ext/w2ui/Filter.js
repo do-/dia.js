@@ -52,8 +52,6 @@ module.exports = class {
 				if (s.value == null) s.value = undefined
         
         }
-
-        let dt_iso = (dt) => dt.substr (0, 10)
         
         if (Array.isArray (s.value)) {
         
