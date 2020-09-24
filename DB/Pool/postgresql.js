@@ -447,7 +447,7 @@ module.exports = class extends require ('../Pool.js') {
 				
 				}
 
-            	let {ref} = nw; if (ref) add (`ADD FOREIGN KEY (${nw.name}) REFERENCES ${ref} NOT VALID`)
+            	let {ref} = nw; if (ref && this.model.tables [ref]) add (`ADD FOREIGN KEY (${nw.name}) REFERENCES ${ref} NOT VALID`)
 
             }
 
