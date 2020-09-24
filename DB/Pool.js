@@ -93,7 +93,7 @@ module.exports = class {
 
         if (!col.TYPE_NAME && col.ref) {
 
-            let t = this.model.tables [col.ref]
+            let t = this.model.tables [col.ref] || this.model.views [col.ref]
 
         	if (!t) throw new Error (`${table.name}.${col.name} references ${col.ref}, but no such table found in the model`)
 
