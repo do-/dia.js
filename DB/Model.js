@@ -99,7 +99,7 @@ module.exports = class {
 
             m.type = m.returns ? 'function' : 'procedure'
             
-            if (!m.body) throw `No SQL body defined for the ${type} named "${name}"`
+            if (!m.body) throw `No SQL body defined for the ${m.type} named "${name}"`
 
         }
 
