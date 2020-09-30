@@ -104,6 +104,10 @@ module.exports = class extends Dia.DB.Client {
         return getter.call (this, q.sql, q.params)
     }
     
+    async call (name, params = []) {
+    	return this.select_scalar (`SELECT ${name}(${params.map (i => '?')})`, params)
+    }
+    
     async create_temp_as (src, cols = '*', name = '_') {
 
     	await this.do ('DROP TABLE IF EXISTS ' + name)
