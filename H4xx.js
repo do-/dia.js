@@ -64,3 +64,5 @@ global.dt_iso = (dt) => {
 	if (ymd [0].length == 2) ymd.reverse ()
 	return ymd.join ('-')
 }
+
+global.is_uuid = s => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test (s)
