@@ -526,7 +526,7 @@ module.exports = class extends Dia.DB.Client {
 
             if (r.adsrc != null) {
             	let d = '' + r.adsrc
-            	if (/::"bit"$/.test (d)) [, d] = d.split ("'")
+            	if (/::/.test (d)) [, d] = d.split ("'")
             	col.COLUMN_DEF = d            	
             }
 
