@@ -72,6 +72,10 @@ module.exports = class {
         return patch
     
     }
+    
+    quote_name (s) {
+        return s
+    }
 
     normalize_model () {
 
@@ -82,8 +86,13 @@ module.exports = class {
         		this.normalize_model_table (table)
 
     }
+
+	normalize_model_table_name (table) {
+		table.qname = this.quote_name (table.name)
+	}
     
     normalize_model_table (table) {
+	    this.normalize_model_table_name (table)
         if (table.columns)  for (let col of Object.values (table.columns)) this.normalize_model_table_column (table, col)
         if (table.keys)     for (let k in table.keys)     this.normalize_model_table_key     (table, k)
         if (table.triggers) for (let k in table.triggers) this.normalize_model_table_trigger (table, k)
