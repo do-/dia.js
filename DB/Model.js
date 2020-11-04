@@ -58,7 +58,7 @@ module.exports = class {
  
  			let name = fn.slice (0, fn.lastIndexOf ('.')), m = this.load_file (p + '/' + fn, name)
                         
-            this [m.type + 's'] [name] = m
+            this [m.type + 's'] [m.name] = m
 
         }
         
@@ -68,7 +68,7 @@ module.exports = class {
 
         let m = require (path.resolve (p))
 
-        m.name = name
+        if (!('name' in m)) m.name = name
         m.model = this
         
         if (m.columns) {
