@@ -272,7 +272,7 @@ return result
 
                 result.push (this.gen_sql_add_column (table, col))
                                 
-                if (after) {
+                if (!table._is_just_added && after) {
                     let a = after [col.name]
                     if (a) for (let i of a) result.push (i)
                 }                
