@@ -50,11 +50,12 @@ module.exports = class {
         this.normalize_model ()
 
         let patch = []
-			.concat (this.gen_sql_recreate_foreign_tables ())
+            .concat (this.gen_sql_recreate_foreign_tables ())
             .concat (this.gen_sql_recreate_tables ())
             .concat (this.gen_sql_add_tables ())
             .concat (this.gen_sql_comment_tables ())
             .concat (this.gen_sql_add_columns ())
+            .concat (this.gen_sql_alter_columns ())
             .concat (this.gen_sql_set_default_columns ())
             .concat (this.gen_sql_comment_columns ())
             .concat (this.gen_sql_update_keys ())
@@ -181,6 +182,12 @@ module.exports = class {
     }
 
     gen_sql_add_columns () {
+
+    	return []
+
+    }
+    
+    gen_sql_alter_columns () {
 
     	return []
 

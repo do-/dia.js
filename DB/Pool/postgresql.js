@@ -391,6 +391,108 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    is_type_int (t) {
+    
+    	return /^INT/.test (t)
+    
+    }
+    
+    is_column_to_alter_to_int (ex_col, col) {
+    
+    	if (!this.is_type_int (ex_col.TYPE_NAME)) return false
+    	
+    	let len = c => parseInt (c.TYPE_NAME.slice (3))
+    	
+    	return len (col) > len (ex_col)
+
+    }
+    
+    is_column_to_alter_to_numeric (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+    	if (this.is_type_int (TYPE_NAME)) return true
+
+    	if (TYPE_NAME != 'NUMERIC') return false
+    	
+    	for (let k of ['COLUMN_SIZE', 'DECIMAL_DIGITS']) if (col [k] > ex_col [k]) return true
+    	
+    	return false
+
+    }
+        
+    is_column_to_alter_to_text (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+		if (/CHAR$/.test (TYPE_NAME)) return true
+    	
+    	return false
+
+    }
+    
+    is_column_to_alter_to_timestamp (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+		if (TYPE_NAME == 'DATE') return true
+    	
+    	return false
+
+    }
+
+    is_column_to_alter (ex_col, col) {
+    
+    	if (
+    		ex_col.TYPE_NAME == col.TYPE_NAME && 
+    		ex_col.COLUMN_SIZE == col.COLUMN_SIZE && 
+    		ex_col.DECIMAL_DIGITS == col.DECIMAL_DIGITS
+    	) return false
+    	
+    	let {TYPE_NAME} = col
+
+		if (this.is_type_int (TYPE_NAME)) return this.is_column_to_alter_to_int (ex_col, col)
+		
+		switch (TYPE_NAME) {
+			case 'NUMERIC':   return this.is_column_to_alter_to_numeric   (ex_col, col)
+			case 'TEXT':      return this.is_column_to_alter_to_text      (ex_col, col)
+			case 'TIMESTAMP': return this.is_column_to_alter_to_timestamp (ex_col, col)
+			default:          return false
+		}
+
+    }
+    
+    gen_sql_alter_columns () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) {
+
+            let existing_columns = table.existing.columns
+
+            for (let col of Object.values (table.columns)) {
+            
+            	let {name} = col, ex_col = existing_columns [name]; 
+            	
+            	if (!ex_col || !this.is_column_to_alter (ex_col, col)) continue
+            
+				if (ex_col.COLUMN_DEF) {
+					result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
+					delete ex_col.COLUMN_DEF
+				}
+				
+				result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0], params: []})
+
+		    	for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
+            
+            }
+
+        }
+        
+        return result
+        
+    }
+    
     gen_sql_add_columns () {
     
         let result = []
@@ -863,6 +965,7 @@ module.exports = class extends require ('../Pool.js') {
         if (col.TYPE_NAME == 'NUMERIC') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
             if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
+            for (let k of ['COLUMN_SIZE', 'DECIMAL_DIGITS']) col [k] = parseInt (col [k])
         }                
         
     }
