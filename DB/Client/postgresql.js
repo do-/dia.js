@@ -452,90 +452,76 @@ module.exports = class extends Dia.DB.Client {
     
     async load_schema_table_columns () {
     
-        let rs = await this.select_all (`
-
-            SELECT 
-                pg_attribute.*
-                , pg_type.typname
-                , pg_attrdef.adsrc
-                , pg_description.description
-                , pg_class.relname
-                , pg_class.relkind
-                , CASE atttypid
-                    WHEN 21 /*int2*/ THEN 16
-                    WHEN 23 /*int4*/ THEN 32
-                    WHEN 20 /*int8*/ THEN 64
-                    WHEN 1700 /*numeric*/ THEN
-                         CASE WHEN atttypmod = -1
-                           THEN null
-                           ELSE ((atttypmod - 4) >> 16) & 65535     -- calculate the precision
-                           END
-                    WHEN 700 /*float4*/ THEN 24 /*FLT_MANT_DIG*/
-                    WHEN 701 /*float8*/ THEN 53 /*DBL_MANT_DIG*/
-                    ELSE null
-                END   AS numeric_precision,
-                CASE 
-                  WHEN atttypid IN (21, 23, 20) THEN 0
-                  WHEN atttypid IN (1700) THEN            
-                    CASE 
-                        WHEN atttypmod = -1 THEN null       
-                        ELSE (atttypmod - 4) & 65535            -- calculate the scale  
-                    END
-                     ELSE null
-                END AS numeric_scale                
-            FROM 
-                pg_namespace
-                LEFT JOIN pg_class ON (
-                    pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind IN ('r', 'v')
-                )
-                LEFT JOIN pg_attribute ON (
-                    pg_attribute.attrelid = pg_class.oid
-                    AND pg_attribute.attnum > 0
-                    AND NOT pg_attribute.attisdropped
-                )
-                LEFT JOIN pg_type ON pg_attribute.atttypid = pg_type.oid
-                LEFT JOIN pg_attrdef ON (
-                    pg_attrdef.adrelid = pg_attribute.attrelid
-                    AND pg_attrdef.adnum = pg_attribute.attnum
-                )
-                LEFT JOIN pg_description ON (
-                    pg_description.objoid = pg_attribute.attrelid
-                    AND pg_description.objsubid = pg_attribute.attnum
-                )
-            WHERE
-                pg_namespace.nspname = current_schema()
+        let {model} = this, {tables} = model, rs = await this.select_all (`
+        	SELECT
+			  CONCAT_WS ('.', 
+				  CASE 
+					WHEN c.table_schema = 'public' THEN NULL
+					ELSE c.table_schema
+				  END
+				  , c.table_name
+			  ) table_name
+			  , c.column_name AS name
+			  , UPPER (udt_name) "TYPE_NAME"
+			  , CASE
+				WHEN c.column_default LIKE '%::%' THEN SPLIT_PART (c.column_default, '''', 2)
+				ELSE c.column_default 
+			  END "COLUMN_DEF"
+			  , c.is_nullable = 'YES' "NULLABLE"
+			  , CASE
+				WHEN c.character_maximum_length IS NOT NULL THEN c.character_maximum_length
+				WHEN c.numeric_precision_radix = 10 THEN c.numeric_precision
+				ELSE NULL
+			  END "COLUMN_SIZE"
+			  , CASE
+				WHEN c.numeric_precision_radix = 10 THEN c.numeric_scale
+				ELSE NULL
+			  END "DECIMAL_DIGITS"
+			FROM
+			  information_schema.tables t
+			  JOIN information_schema.columns c ON (t.table_schema = c.table_schema AND t.table_name = c.table_name)
+			WHERE
+			  t.table_type = 'BASE TABLE'
+			  AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
 
         `, [])
 
-        let {tables, views} = this.model
         for (let r of rs) {        
 
-            let t = (r.relkind == 'v' ? views : tables) [r.relname]
-            if (!t) continue
+            let t = tables [r.table_name]; if (!t) continue
             
-            let name = r.attname
+            delete r.table_name; t.existing.columns [r.name] = r
             
-            let col = {
-                name,
-                TYPE_NAME : r.typname.toUpperCase (),
-                REMARK    : r.description,
-                NULLABLE  : !r.attnotnull,
-                COLUMN_DEF: undefined,
-            }                        
+        }
 
-            if (r.adsrc != null) {
-            	let d = '' + r.adsrc
-            	if (/::/.test (d)) [, d] = d.split ("'")
-            	col.COLUMN_DEF = d            	
-            }
+        rs = await this.select_all (`
+            SELECT
+            	CASE WHEN pg_class.relkind = 'v' THEN 'views' ELSE 'tables' END AS type
+                , CONCAT_WS ('.', 
+                	CASE 
+                    	WHEN pg_namespace.nspname = 'public' THEN NULL
+                        ELSE pg_namespace.nspname
+                    END
+                    , pg_class.relname
+                ) table_name            	
+                , pg_attribute.attname AS name
+                , pg_description.description AS "REMARK"
+            FROM 
+                pg_namespace
+                JOIN pg_class       ON (pg_class.relnamespace = pg_namespace.oid AND pg_class.relkind IN ('r', 'v'))
+                JOIN pg_attribute   ON (pg_attribute.attrelid = pg_class.oid AND pg_attribute.attnum > 0 AND NOT pg_attribute.attisdropped)
+                JOIN pg_description ON (pg_description.objoid = pg_attribute.attrelid AND pg_description.objsubid = pg_attribute.attnum)
+        `, [])
 
-            if (col.TYPE_NAME == 'NUMERIC') {
-                col.COLUMN_SIZE = r.numeric_precision
-                col.DECIMAL_DIGITS = r.numeric_scale
-            }
+        for (let r of rs) {        
 
-            t.existing.columns [name] = col
+            let t = model [r.type] [r.table_name]; if (!t) continue
+            
+            let {columns} = t.existing, {name, REMARK} = r
+            
+            if (!columns [name]) columns [name] = {name}
+            
+            columns [name].REMARK = REMARK
             
         }
         
