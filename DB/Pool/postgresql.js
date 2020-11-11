@@ -420,6 +420,18 @@ module.exports = class extends require ('../Pool.js') {
     	return false
 
     }
+    
+    is_column_to_alter_to_varchar (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+    	if (TYPE_NAME != 'VARCHAR') return false
+    	
+    	for (let k of ['COLUMN_SIZE']) if (col [k] > ex_col [k]) return true
+    	
+    	return false
+
+    }
         
     is_column_to_alter_to_text (ex_col, col) {
 
@@ -454,6 +466,7 @@ module.exports = class extends require ('../Pool.js') {
 		if (this.is_type_int (TYPE_NAME)) return this.is_column_to_alter_to_int (ex_col, col)
 		
 		switch (TYPE_NAME) {
+			case 'VARCHAR':   return this.is_column_to_alter_to_varchar   (ex_col, col)
 			case 'NUMERIC':   return this.is_column_to_alter_to_numeric   (ex_col, col)
 			case 'TEXT':      return this.is_column_to_alter_to_text      (ex_col, col)
 			case 'TIMESTAMP': return this.is_column_to_alter_to_timestamp (ex_col, col)
