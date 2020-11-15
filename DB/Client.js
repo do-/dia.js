@@ -12,7 +12,7 @@ module.exports = class {
 
     async select_vocabulary (t, o = {}) {
 
-        let def = this.model.tables [t]; if (!def) throw new Error (`Table "${t}" not found in model`)
+        let def = this.model.relations [t]; if (!def) throw new Error (`No table nor view named "${t}" is found in model`)
 
         let {data, columns, pk} = def
 

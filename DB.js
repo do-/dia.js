@@ -10,8 +10,10 @@ exports.Pool = (o, m) => {
     
     let pool = new clazz (o)
     
-    pool.model = m
     pool.product = product
+
+    pool.model = m
+    pool.normalize_model ()
     
     return pool
 

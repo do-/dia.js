@@ -390,68 +390,37 @@ module.exports = class extends Dia.DB.Client {
             SELECT 
                 pg_class.relname AS name
                 , pg_description.description AS label
-                , pg_views.definition AS sql
             FROM 
                 pg_namespace
                 LEFT JOIN pg_class ON (
                     pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind IN ('r', 'v')
+                    AND pg_class.relkind IN ('r')
                 )
                 LEFT JOIN pg_description ON (
                     pg_description.objoid = pg_class.oid
                     AND pg_description.objsubid = 0
-                )
-                LEFT JOIN pg_views ON (
-                	pg_views.viewname = pg_class.relname
-                	AND pg_views.viewowner = current_user
-                )
-                
+                )                
             WHERE
                 pg_namespace.nspname = current_schema()
 
         `, [])
         
-        let {tables, views} = this.model
+        let {tables} = this.model
         
         for (let r of rs) {
         
-			let t = (r.sql ? views : tables) [r.name]; if (!t) continue
+			let t = tables [r.name]; if (!t) continue
         
         	for (let k of ['columns', 'keys', 'triggers']) r [k] = {}
             
             t.existing = r
 
         }
-        
-        for (let view of Object.values (views)) {
-        
-			let {existing} = view; if (!existing) continue
-			
-			let name = '_tmp_' + ('' + Math.random ()).replace (/\D/g, '')
-			
-			try {
-
-				await this.do (`CREATE VIEW ${name} AS ${view.sql}`)
-
-				let sql = await this.select_scalar ('SELECT definition FROM pg_views WHERE viewowner = current_user AND viewname = ?', [name])
-
-				await this.do (`DROP VIEW ${name}`)
-				
-				if (sql == existing.sql) view._no_recreate = 1
-
-			}
-			catch (x) {
-
-				darn (x)
-
-			}
-
-        }
 
     }
-    
+
     async load_schema_table_columns () {
-    
+   
         let {model} = this, {tables} = model, rs = await this.select_all (`
         	SELECT
 			  CONCAT_WS ('.', 
@@ -489,15 +458,14 @@ module.exports = class extends Dia.DB.Client {
         for (let r of rs) {        
 
             let t = tables [r.table_name]; if (!t) continue
-            
+
             delete r.table_name; t.existing.columns [r.name] = r
-            
+
         }
 
         rs = await this.select_all (`
             SELECT
-            	CASE WHEN pg_class.relkind = 'v' THEN 'views' ELSE 'tables' END AS type
-                , CONCAT_WS ('.', 
+                CONCAT_WS ('.', 
                 	CASE 
                     	WHEN pg_namespace.nspname = 'public' THEN NULL
                         ELSE pg_namespace.nspname
@@ -508,25 +476,25 @@ module.exports = class extends Dia.DB.Client {
                 , pg_description.description AS "REMARK"
             FROM 
                 pg_namespace
-                JOIN pg_class       ON (pg_class.relnamespace = pg_namespace.oid AND pg_class.relkind IN ('r', 'v'))
+                JOIN pg_class       ON (pg_class.relnamespace = pg_namespace.oid AND pg_class.relkind IN ('r'))
                 JOIN pg_attribute   ON (pg_attribute.attrelid = pg_class.oid AND pg_attribute.attnum > 0 AND NOT pg_attribute.attisdropped)
                 JOIN pg_description ON (pg_description.objoid = pg_attribute.attrelid AND pg_description.objsubid = pg_attribute.attnum)
         `, [])
 
         for (let r of rs) {        
 
-            let t = model [r.type] [r.table_name]; if (!t) continue
-            
+            let t = model.tables [r.table_name]; if (!t) continue
+
             let {columns} = t.existing, {name, REMARK} = r
-            
+
             if (!columns [name]) columns [name] = {name}
-            
+
             columns [name].REMARK = REMARK
-            
+
         }
-        
+
     }
-    
+
     async load_schema_table_keys () {
     
         let rs = await this.select_all (`
@@ -635,7 +603,6 @@ module.exports = class extends Dia.DB.Client {
 
             SELECT 
                 pg_proc.proname AS name
-                , pg_proc.prosrc AS src
             FROM
 				pg_namespace
                 INNER JOIN pg_proc ON pg_proc.pronamespace = pg_namespace.oid
@@ -650,7 +617,7 @@ module.exports = class extends Dia.DB.Client {
         
 			let proc = procedures [name] || functions [name]
 			
-			if (proc) proc.existing = {src}
+			if (proc) proc.existing = 1
         
         }
     

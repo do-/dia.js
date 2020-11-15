@@ -159,53 +159,63 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
-    gen_sql_recreate_views () {
+    gen_sql_drop_foreign_tables () {
+    
+    	let {foreign_tables} = this.model; if (!foreign_tables) return []
+    	
+    	let qnames = Object.values (foreign_tables).map (v => v.qname); if (!qnames.length) return []
+    	
+    	return [{sql: `DROP FOREIGN TABLE IF EXISTS ${qnames} CASCADE`}]
 
-        let result = []
-        
-        for (let name in this.model.views) {
-        
-        	let view = this.model.views [name]; view.depends = {}
-        	
+    }
+
+    gen_sql_drop_views () {
+    
+    	let {views} = this.model; if (!views) return []
+    	
+    	let qnames = Object.values (views).map (v => v.qname); if (!qnames.length) return []
+    	
+    	return [{sql: `DROP VIEW IF EXISTS ${qnames} CASCADE`}]
+
+    }
+    
+    gen_sql_create_views () {
+
+        let result = [], {views} = this.model
+
+        for (let name in views) {
+
+        	let view = views [name]; view.depends = {}
+
         	for (let word of view.sql.split (/\b/))
-        	
-        		if (this.model.views [word])
+
+        		if (views [word])
 
         			view.depends [word] = 1
 
         }
-        
-        let names = [], idx = {}
-        
-        let assert = name => {
+
+        let names = [], idx = {}, assert = name => {
         
         	if (idx [name]) return
         
-        	for (let k in this.model.views [name].depends) assert (k)
+        	for (let k in views [name].depends) assert (k)
         	
         	idx [name] = names.push (name)
 
         }
         
-        for (let name in this.model.views) assert (name)
+        for (let name in views) assert (name)
+        
+        for (let name of names) {
 
-		let views = names.map (i => this.model.views [i])
-
-        while (views.length && views [0]._no_recreate) views.shift ()
-
-        for (let view of views) result.push ({sql: `DROP VIEW IF EXISTS ${view.qname} CASCADE`, params: []})
-
-        for (let view of views) {
-            
-            result.push ({sql: `CREATE VIEW ${view.qname} AS ${view.sql}`, params: []})            
-            result.push ({sql: `COMMENT ON VIEW ${view.qname} IS ` + this.gen_sql_quoted_literal (view.label), params: []})
-
-            for (let col of Object.values (view.columns))                             
-                result.push ({sql: `COMMENT ON COLUMN ${view.qname}."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK), params: []})
-            
+        	let {qname, sql} = views [name]
+        
+        	result.push ({sql: `CREATE VIEW ${qname} AS ${sql}`})
+        	
         }
 
-        return result
+		return result
 
     }
 
@@ -240,12 +250,6 @@ module.exports = class extends require ('../Pool.js') {
             if (table.label != table.existing.label)
 
                 result.push ({sql: `COMMENT ON TABLE ${table.qname} IS ` + this.gen_sql_quoted_literal (table.label), params: []})
-
-        for (let view of Object.values (this.model.views)) 
-        
-            if (view._no_recreate && view.label != view.existing.label)
-
-                result.push ({sql: `COMMENT ON VIEW ${view.qname} IS ` + this.gen_sql_quoted_literal (view.label), params: []})
 
         return result
 
@@ -549,31 +553,50 @@ module.exports = class extends require ('../Pool.js') {
     
     }
     
-    gen_sql_create_foreign_keys () {
-    
+    gen_sql_drop_foreign_keys () {
+
         let result = []
 
         for (let table of Object.values (this.model.tables)) {
+        
+        	let {existing} = table; if (!existing) continue
 
-            let existing_columns = table.existing.columns, add = s => result.push ({sql: `ALTER TABLE ${table.qname} ${s}`, params: []})
+        	let {columns} = existing; if (!columns) continue
+        	
+        	let actions = Object.values (columns).map (i => i.ref_name).filter (i => i).map (i => `DROP CONSTRAINT IF EXISTS ${i} CASCADE`)
+        	
+        	if (actions.length) result.push ({sql: `ALTER TABLE ${table.qname} ${actions}`})
+        
+        }
 
-            for (let nw of Object.values (table.columns)) {
-            
-            	let ol = existing_columns [nw.name]; if (ol) {
-					
-					if (nw.ref == ol.ref) continue
-					
-					let {ref_name} = ol; if (ref_name) add (`DROP CONSTRAINT ${ref_name}`)
-				
-				}
+		return result
+        
+    }
+    
+    gen_sql_create_foreign_keys () {
+    
+        let result = [], {model} = this, {tables} = model
 
-            	let {ref} = nw; if (!ref) continue
-            	
-            	let rt = this.model.tables [ref]; if (!rt) continue
-            	
-            	add (`ADD FOREIGN KEY (${nw.name}) REFERENCES ${rt.qname} NOT VALID`)
+        for (let table of Object.values (tables)) {
+        	
+        	let actions = []; for (let column of Object.values (table.columns)) {
+        	
+        		let {name, ref} = column; if (!ref) continue
+        		
+        		let rt = tables [ref]; if (rt) {
+        		
+        			actions.push (`ADD FOREIGN KEY (${name}) REFERENCES ${tables [ref].qname} NOT VALID`)
+        		
+        		} 
+        		else {
+        		
+        			if (!model.relations [ref]) darn (`WARNING! ${table.name}.${name} references non existing ${ref}!`)
 
-            }
+        		}
+
+        	} 
+
+        	if (actions.length) result.push ({sql: `ALTER TABLE ${table.qname} ${actions}`})
 
 		}
 
@@ -638,7 +661,6 @@ module.exports = class extends require ('../Pool.js') {
 
         for (let table of [
         	...Object.values (this.model.tables),
-        	...Object.values (this.model.views).filter (v => v._no_recreate),
         ]) {
 
             let existing_columns = table.existing.columns
@@ -657,33 +679,26 @@ module.exports = class extends require ('../Pool.js') {
 
     }    
     
-    gen_sql_update_triggers () {
+    gen_sql_recreate_triggers () {
     
         let result = []
         
         for (let table of Object.values (this.model.tables)) {
         
-            let triggers = table.triggers
-        
-            if (!triggers) continue
-        
-            let existing_triggers = (table.existing || {triggers: {}}).triggers
-            
+            let {triggers} = table; if (!triggers) continue
+                    
             for (let name in triggers) {
             
                 let src = triggers [name]
-                
-                let old_src = existing_triggers [name]; if (src == old_src) continue
-                
-                if (old_src) {                
-					darn (`[SCHEMA WARNING] TRIGGER REDEFINED (see below)`)
-					darn ([table.name + '.' + name, old_src, src])                
-                }
                 
                 let [phase, ...events] = name.toUpperCase ().split ('_')
                 
                 let glob = `on_${name}_${table.name}`
                 
+                result.push ({sql: `DROP TRIGGER IF EXISTS ${glob} ON ${table.qname}`})
+                
+                if (!src) continue
+
                 result.push ({sql: `
 
                     CREATE OR REPLACE FUNCTION ${glob}() RETURNS trigger AS \$${glob}\$
@@ -692,13 +707,7 @@ module.exports = class extends require ('../Pool.js') {
 
                     \$${glob}\$ LANGUAGE plpgsql;
 
-                `, params: []})
-
-                result.push ({sql: `
-                
-                    DROP TRIGGER IF EXISTS ${glob} ON ${table.qname};
-                    
-                `, params: []})
+                `})
 
                 result.push ({sql: `
 
@@ -709,8 +718,8 @@ module.exports = class extends require ('../Pool.js') {
                     FOR EACH ROW EXECUTE PROCEDURE 
                         ${glob} ();
 
-                `, params: []})
-            
+                `})
+
             }
         
         }
@@ -932,6 +941,24 @@ module.exports = class extends require ('../Pool.js') {
 			RAISE '#${col.name}#: ${table.model.trg_check_column_value_pattern (col, table)}';
 		END IF;
 	`}
+
+    normalize_model () {
+    
+    	super.normalize_model ()
+    	
+        for (let type of ['function', 'procedure']) {
+        
+        	for (let i of Object.values (this.model [type + 's'])) {
+        	
+        		if (!i.language) i.language = 'plpgsql'
+        		
+        		if (!i.options)  i.options = ''
+        	
+        	}
+                			
+		}
+
+    }
     
     normalize_model_table_column (table, col) {
         
@@ -983,7 +1010,7 @@ module.exports = class extends require ('../Pool.js') {
         
     }
     
-    gen_sql_recreate_foreign_tables () {
+    gen_sql_create_foreign_tables () {
 
         let result = []
 
@@ -991,18 +1018,14 @@ module.exports = class extends require ('../Pool.js') {
         
         	for (let [foreign_server, options] of Object.entries (db_link)) {
 
-				result.push ({sql: `DROP FOREIGN TABLE IF EXISTS ${qname} CASCADE`, params: []})
-
 				result.push ({sql: `CREATE FOREIGN TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) SERVER ${foreign_server} OPTIONS (${Object.entries (options).map (i => `${i[0]} '${i[1]}'`)})`, params: []})
 
-				result.push ({sql: `COMMENT ON FOREIGN TABLE ${qname} IS ` + this.gen_sql_quoted_literal (label), params: []})
+//				result.push ({sql: `COMMENT ON FOREIGN TABLE ${qname} IS ` + this.gen_sql_quoted_literal (label), params: []})
 
         	}
         	
         }
         
-        if (result.length) for (let view of Object.values (this.model.views)) delete view._no_recreate
-
         return result
 
     }    
@@ -1012,30 +1035,35 @@ module.exports = class extends require ('../Pool.js') {
         let result = []
         
         for (let type of ['function', 'procedure']) {
-        
-        	let is_fun = type == 'function'
-        
-			for (let {name, returns, arg, declare, body, label, existing} of Object.values (this.model [type + 's'])) {
+                
+			for (let {name, returns, arg, declare, body, label, existing, language, options} of Object.values (this.model [type + 's'])) {
 
 				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
+				
+				if (returns) returns = 'RETURNS ' + returns
 
-				let src = (!declare ? '' : 'DECLARE ' + vars (declare, ';').join ('')) + `BEGIN ${body} END;`
+				if (language = 'plpgsql') {
 
-				if (existing && existing.src == src) continue
+					body = `BEGIN ${body} END;`
 
-				name += '(' + vars (arg) + ')'
+					if (declare) body = 'DECLARE ' + vars (declare, ';').join ('') +  body
 
-				result.push ({sql: `DROP ${type} IF EXISTS ${name}`, params: []})
-
-				let sql = `CREATE ${type} ${name}`
-
-				if (is_fun) sql += ' RETURNS ' + returns
-
-				sql += ` AS $$${src}$$ LANGUAGE plpgsql`
-
-				result.push ({sql, params: []})
-
-				if (is_fun) result.push ({sql: `COMMENT ON ${type} ${name} IS ` + this.gen_sql_quoted_literal (label), params: []})
+				}
+				
+				body = '$$' + body + '$$'
+				
+				result.push ({sql: [
+					'CREATE OR REPLACE',
+					type.toUpperCase (),
+					name,
+					'(' + vars (arg) + ')',
+					returns,
+					'AS',
+					body,
+					'LANGUAGE',
+					language,
+					options,
+				].filter (i => i).join (' ')})
 
 			}
 			
@@ -1043,6 +1071,41 @@ module.exports = class extends require ('../Pool.js') {
 
         return result
 
+    }
+
+    gen_sql_patch () {
+            
+        let patch = []; for (let i of [
+        
+            'drop_foreign_keys',
+
+            'drop_views',
+            'drop_foreign_tables',
+            
+            'recreate_tables',
+            'add_tables',
+            'comment_tables',
+            'add_columns',
+            'alter_columns',
+            'set_default_columns',
+            'comment_columns',
+            'update_keys',
+            
+            'after_add_tables',
+            'upsert_data',
+
+            'create_foreign_tables',
+            'create_views',
+
+            'recreate_proc',
+            'recreate_triggers',
+
+            'create_foreign_keys',
+
+        ]) for (let j of this ['gen_sql_' + i] ()) patch.push (j)
+
+        return patch
+    
     }
 
 }
