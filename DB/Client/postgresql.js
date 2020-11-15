@@ -394,7 +394,7 @@ module.exports = class extends Dia.DB.Client {
                 pg_namespace
                 LEFT JOIN pg_class ON (
                     pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind IN ('r')
+                    AND pg_class.relkind IN ('r', 'p')
                 )
                 LEFT JOIN pg_description ON (
                     pg_description.objoid = pg_class.oid
@@ -405,23 +405,36 @@ module.exports = class extends Dia.DB.Client {
 
         `, [])
         
-        let {tables} = this.model
+        let {tables, partitioned_tables} = this.model
         
         for (let r of rs) {
         
-			let t = tables [r.name]; if (!t) continue
+			let t = tables [r.name] || partitioned_tables [r.name]; if (!t) continue
         
         	for (let k of ['columns', 'keys', 'triggers']) r [k] = {}
             
             t.existing = r
 
         }
+        
+        for (let partitioned_table of Object.values (partitioned_tables)) {
+        
+        	let {partition} = partitioned_table, {select} = partition; if (!select) continue
+        	
+        	try {
+	        	partition.list = await this.select_all ('SELECT ' + select)
+        	}
+        	catch (x) {
+        		partition.list = []
+        	}
+        
+        }
 
     }
 
     async load_schema_table_columns () {
    
-        let {model} = this, {tables} = model, rs = await this.select_all (`
+        let {model} = this, {tables, partitioned_tables} = model, rs = await this.select_all (`
         	SELECT
 			  CONCAT_WS ('.', 
 				  CASE 
@@ -457,7 +470,7 @@ module.exports = class extends Dia.DB.Client {
 
         for (let r of rs) {        
 
-            let t = tables [r.table_name]; if (!t) continue
+            let t = tables [r.table_name] || partitioned_tables [r.table_name]; if (!t) continue
 
             delete r.table_name; t.existing.columns [r.name] = r
 
@@ -483,7 +496,7 @@ module.exports = class extends Dia.DB.Client {
 
         for (let r of rs) {        
 
-            let t = model.tables [r.table_name]; if (!t) continue
+            let t = tables [r.table_name] || partitioned_tables [r.table_name]; if (!t) continue
 
             let {columns} = t.existing, {name, REMARK} = r
 

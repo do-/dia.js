@@ -31,7 +31,7 @@ module.exports = class {
     
     reload () {
 
-    	for (let k of ['tables', 'views', 'procedures', 'functions', 'foreign_tables']) this [k] = {}
+    	for (let k of ['tables', 'views', 'procedures', 'functions', 'foreign_tables', 'partitioned_tables']) this [k] = {}
 
         for (let p of this.o.paths) this.load_dir (p)
 
@@ -82,6 +82,11 @@ module.exports = class {
 			if (m.db_link) {
 
 	            m.type = 'foreign_table'
+
+			}
+			else if (m.partition) {
+
+	            m.type = 'partitioned_table'
 
 			}
 			else {

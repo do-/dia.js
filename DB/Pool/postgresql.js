@@ -159,6 +159,32 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    gen_sql_drop_partitioned_tables () {
+
+    	let {partitioned_tables} = this.model; if (!partitioned_tables) return []
+    	
+    	let qnames = Object.values (partitioned_tables).map (v => v.qname); if (!qnames.length) return []
+    	
+    	return [{sql: `DROP TABLE IF EXISTS ${qnames} CASCADE`}]
+
+    }
+
+    gen_sql_create_partitioned_tables () {
+    
+    	let result = []
+    
+    	for (let {qname, columns, partition} of Object.values (this.model.partitioned_tables)) {
+    	
+    		result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
+    		
+    		for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} ATTACH PARTITION ${name} FOR VALUES ${filter}`})
+
+    	}
+
+    	return result
+
+    }
+    
     gen_sql_drop_foreign_tables () {
     
     	let {foreign_tables} = this.model; if (!foreign_tables) return []
@@ -1081,6 +1107,7 @@ module.exports = class extends require ('../Pool.js') {
 
             'drop_views',
             'drop_foreign_tables',
+            'drop_partitioned_tables',
             
             'recreate_tables',
             'add_tables',
@@ -1094,6 +1121,7 @@ module.exports = class extends require ('../Pool.js') {
             'after_add_tables',
             'upsert_data',
 
+            'create_partitioned_tables',
             'create_foreign_tables',
             'create_views',
 

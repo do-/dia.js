@@ -82,7 +82,7 @@ module.exports = class {
 
     	model.relations = {}
 
-    	for (let type of ['tables', 'views', 'foreign_tables']) {
+    	for (let type of ['tables', 'views', 'foreign_tables', 'partitioned_tables']) {
 
         	for (let table of Object.values (model [type])) {
 
