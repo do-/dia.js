@@ -1121,9 +1121,9 @@ module.exports = class extends require ('../Pool.js') {
             'after_add_tables',
             'upsert_data',
 
-            'create_partitioned_tables',
             'create_foreign_tables',
             'create_views',
+            'create_partitioned_tables',
 
             'recreate_proc',
             'recreate_triggers',
