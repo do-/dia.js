@@ -170,7 +170,9 @@ module.exports = class extends Dia.DB.Client {
         
         let [fields, args, set, params] = [[], [], [], []]
         
+        let {columns} = def
         for (let k in data) {
+        	if (!columns [k]) continue
             let v = data [k]
             if (typeof v === 'undefined') continue            
             fields.push (k)
