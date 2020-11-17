@@ -55,9 +55,7 @@ exports.Handler = class extends Handler {
     	return s.split (';') [0]
     }
     
-    parse_http_request_body () {
-    
-        if (this.get_content_type () != 'application/json') return
+    parse_http_request_body_application_json () {
 
         try {
             let o = JSON.parse (this.body)
@@ -67,6 +65,38 @@ exports.Handler = class extends Handler {
         catch (x) {
             throw '400 Broken JSON'
         }
+
+    }
+
+    parse_http_request_body_application_x_www_form_urlencoded () {
+    
+        try {
+        
+	    	new URLSearchParams (this.body).forEach ((v, k) => {
+	    	
+	    		switch (k) {
+	    			case '__json': 
+	    				this.rq = {...this.rq, ...JSON.parse (v)}
+	    				break
+	    			default:
+	    				this.rq [k] = v
+	    		}
+	    	
+	    	})
+	    	
+        }
+        catch (x) {
+            throw '400 Broken request'
+        }
+
+    }
+
+    parse_http_request_body () {
+    
+    	switch (this.get_content_type ()) {
+    		case 'application/json': return this.parse_http_request_body_application_json ()
+    		case 'application/x-www-form-urlencoded': return this.parse_http_request_body_application_x_www_form_urlencoded ()
+    	}
         
     }
     
