@@ -151,6 +151,11 @@ module.exports = class {
         }
         
         type = type.replace (/\s/g, '')
+
+        let xxx = type.split (/(\!)/); if (xxx.length > 1) {
+        	type = xxx [0]
+	        col.NULLABLE = false
+        }
         
         if (type.charAt (0) == '(') {
             col.ref = type.replace (/[\(\)]/g, '')
