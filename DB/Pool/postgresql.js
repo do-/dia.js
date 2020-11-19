@@ -117,7 +117,7 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     quote_name (s) {
-        return '"' + String (s).replace (/"/g, '""') + '"'
+        return ('' + s).split ('.').map (s => '"' + s.replace (/"/g, '""') + '"').join ('.')
     }
 
     gen_sql_quoted_literal (s) {
@@ -977,12 +977,34 @@ module.exports = class extends require ('../Pool.js') {
 	`}
 
     normalize_model () {
-    
+
     	super.normalize_model ()
     	
+    	let {model} = this
+
+    	if (!model.schemas) model.schemas = {}
+
+    	for (let type of ['relation', 'function', 'procedure']) {
+
+    		for (let name in model [type + 's']) {
+
+    			let parts = name.split ('.'); switch (parts.length) {
+
+    				case 3: throw `Invalid ${type} name: ${name}`
+
+    				case 2: 
+    					let [s] = parts
+    					if (!model.schemas [s]) model.schemas [s] = {}
+
+    			}    			
+
+    		}
+
+    	}
+
         for (let type of ['function', 'procedure']) {
         
-        	for (let i of Object.values (this.model [type + 's'])) {
+        	for (let i of Object.values (model [type + 's'])) {
         	
         		if (!i.language) i.language = 'plpgsql'
         		
@@ -1062,7 +1084,15 @@ module.exports = class extends require ('../Pool.js') {
         
         return result
 
-    }    
+    }
+    
+    gen_sql_recreate_schemas () {
+    
+    	return Object.keys (this.model.schemas)
+    		.map (i => `CREATE SCHEMA IF NOT EXISTS ${i}`)
+    		.map (sql => ({sql}))
+    
+    }
     
     gen_sql_drop_proc () {
     
@@ -1160,6 +1190,8 @@ module.exports = class extends require ('../Pool.js') {
             
         let patch = []; for (let i of [
         
+            'recreate_schemas',
+
             'drop_foreign_keys',
 
             'drop_foreign_tables',

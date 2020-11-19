@@ -389,8 +389,11 @@ module.exports = class extends Dia.DB.Client {
 
         let rs = await this.select_all (`
 
-            SELECT 
-                pg_class.relname AS name
+            SELECT
+				CONCAT_WS ('.',
+					CASE WHEN pg_namespace.nspname = 'public' THEN NULL ELSE pg_namespace.nspname END,
+					pg_class.relname
+				) AS name
                 , pg_description.description AS label
             FROM 
                 pg_namespace
@@ -401,10 +404,7 @@ module.exports = class extends Dia.DB.Client {
                 LEFT JOIN pg_description ON (
                     pg_description.objoid = pg_class.oid
                     AND pg_description.objsubid = 0
-                )                
-            WHERE
-                pg_namespace.nspname = current_schema()
-
+                )
         `, [])
         
         let {tables, partitioned_tables} = this.model
@@ -539,13 +539,17 @@ module.exports = class extends Dia.DB.Client {
     
         let rs = await this.select_all (`
             SELECT 
-                tablename, 
+                CONCAT_WS ('.', 
+                	CASE 
+                    	WHEN schemaname = 'public' THEN NULL
+                        ELSE schemaname
+                    END
+                    , tablename
+                ) AS tablename,
                 indexname, 
                 REPLACE (indexdef, schemaname || '.', '') AS indexdef
             FROM
-                pg_indexes 
-            WHERE 
-                schemaname = current_schema ()
+                pg_indexes
         `, [])
 
         let tables = this.model.tables
