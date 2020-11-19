@@ -125,7 +125,7 @@ module.exports = class extends require ('../Pool.js') {
         return "'" + String (s).replace (/'/g, "''") + "'"
     }
     
-    gen_sql_column_definition (col) {
+    gen_sql_type_dim (col) {
     
         let sql = col.TYPE_NAME
         
@@ -135,6 +135,14 @@ module.exports = class extends require ('../Pool.js') {
             sql += ')'
         }
         
+        return sql
+        
+    }
+    
+    gen_sql_column_definition (col) {
+    
+        let sql = this.gen_sql_type_dim (col)
+                
         let def = col.COLUMN_DEF
         if (def != undefined) {
             if (def.indexOf (')') < 0) def = this.gen_sql_quoted_literal (def)
@@ -205,51 +213,43 @@ module.exports = class extends require ('../Pool.js') {
 
     gen_sql_drop_views () {
     
-    	let {views} = this.model; if (!views) return []
-    	
-    	let qnames = Object.values (views).map (v => v.qname); if (!qnames.length) return []
-    	
-    	return [{sql: `DROP VIEW IF EXISTS ${qnames} CASCADE`}]
+    	let views = Object.values (this.model.views || {})
 
+    	return [
+
+    		`DROP VIEW IF EXISTS ${views.map (i => i.qname)} CASCADE`,
+    	
+    		...views.map (({qname, columns}) => 
+    			
+    			`CREATE OR REPLACE VIEW ${qname} AS SELECT ${
+    			
+    				Object.values (columns).map (
+    				
+    					col => `NULL::${this.gen_sql_type_dim (col)} AS ${col.name}`
+    					
+    				)
+    			
+    			}`)
+
+    	].map (sql => ({sql}))
+    		
     }
     
     gen_sql_create_views () {
 
-        let result = [], {views} = this.model
+    	return Object.values (this.model.views || [])
+    	
+    		.map (({qname, columns, sql}) => `CREATE OR REPLACE VIEW ${qname} AS SELECT ${    		
+    		
+    			Object.values (columns).map (
 
-        for (let name in views) {
+					col => `${col.name}::${this.gen_sql_type_dim (col)} AS ${col.name}`
 
-        	let view = views [name]; view.depends = {}
-
-        	for (let word of view.sql.split (/\b/))
-
-        		if (views [word])
-
-        			view.depends [word] = 1
-
-        }
-
-        let names = [], idx = {}, assert = name => {
-        
-        	if (idx [name]) return
-        
-        	for (let k in views [name].depends) assert (k)
-        	
-        	idx [name] = names.push (name)
-
-        }
-        
-        for (let name in views) assert (name)
-        
-        for (let name of names) {
-
-        	let {qname, sql} = views [name]
-        
-        	result.push ({sql: `CREATE VIEW ${qname} AS ${sql}`})
-        	
-        }
-
-		return result
+    			)
+    		
+    		} FROM (${sql}) t`)
+    			
+    		.map (sql => ({sql}))
 
     }
 
@@ -1113,8 +1113,10 @@ module.exports = class extends require ('../Pool.js') {
         
             'drop_foreign_keys',
 
-            'drop_views',
             'drop_foreign_tables',
+            'create_foreign_tables',
+
+            'drop_views',
             'drop_partitioned_tables',
             
             'recreate_tables',
@@ -1130,7 +1132,6 @@ module.exports = class extends require ('../Pool.js') {
             'upsert_data',
 
             'create_partitioned_tables',
-            'create_foreign_tables',
             'create_views',
 
             'recreate_proc',
