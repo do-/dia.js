@@ -421,14 +421,39 @@ module.exports = class extends Dia.DB.Client {
         
         for (let partitioned_table of Object.values (partitioned_tables)) {
         
-        	let {partition} = partitioned_table, {select} = partition; if (!select) continue
+        	let {partition} = partitioned_table
         	
-        	try {
-	        	partition.list = await this.select_all ('SELECT ' + select)
-        	}
-        	catch (x) {
-        		partition.list = []
-        	}
+			partition.list = []
+        
+        }
+        
+        rs = await this.select_all (`
+
+			SELECT
+				CONCAT_WS ('.', 
+				CASE WHEN ptn.nspname = 'public' THEN NULL ELSE ptn.nspname END,
+				ptc.relname
+			  ) table_name
+				, CONCAT_WS ('.', 
+				CASE WHEN pn.nspname = 'public' THEN NULL ELSE pn.nspname END,
+				pc.relname
+			  ) AS name
+			  , pg_get_expr (pc.relpartbound, pc.oid, true) AS filter
+			FROM 
+			  pg_partitioned_table pt
+			  join pg_class ptc on pt.partrelid = ptc.oid
+			  join pg_namespace ptn on ptc.relnamespace = ptn.oid
+			  join pg_inherits i ON i.inhparent = pt.partrelid
+			  join pg_class pc on i.inhrelid = pc.oid
+			  join pg_namespace pn on pc.relnamespace = pn.oid
+
+        `, [])        
+        
+        for (let {table_name, name, filter} of rs) {
+        
+        	let partitioned_table = partitioned_tables [table_name]; if (!partitioned_table) continue
+        	
+        	partitioned_table.partition.list.push ({name, filter})
         
         }
 

@@ -193,7 +193,7 @@ module.exports = class extends require ('../Pool.js') {
     	
     		result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
     		
-    		for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} ATTACH PARTITION ${name} FOR VALUES ${filter}`})
+    		for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} ATTACH PARTITION ${name} ${filter}`})
 
     	}
 
