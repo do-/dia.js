@@ -1064,13 +1064,62 @@ module.exports = class extends require ('../Pool.js') {
 
     }    
     
-    gen_sql_recreate_proc () {
+    gen_sql_drop_proc () {
+    
+        let result = []
+        
+        for (let type of ['function', 'procedure']) {
+                
+			for (let {name, returns, arg, language, options} of Object.values (this.model [type + 's'])) {
+
+				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
+				
+				if (returns) returns = 'RETURNS ' + returns
+				
+				let body = (() => {
+
+					switch (language) {
+
+						case 'plpgsql': return 'BEGIN NULL; END;'
+
+						case 'sql': return 'SELECT NULL'
+
+						default: throw 'Unsupported language: ' + language
+
+					}
+				
+				}) ()
+				
+				body = '$$' + body + '$$'
+				
+				result.push ({sql: [
+					'CREATE OR REPLACE',
+					type.toUpperCase (),
+					name,
+					'(' + vars (arg) + ')',
+					returns,
+					'AS',
+					body,
+					'LANGUAGE',
+					language,
+					options,
+				].filter (i => i).join (' ')})
+
+			}
+			
+		}
+
+        return result
+    
+    }
+    
+    gen_sql_create_proc () {
 
         let result = []
         
         for (let type of ['function', 'procedure']) {
                 
-			for (let {name, returns, arg, declare, body, label, existing, language, options} of Object.values (this.model [type + 's'])) {
+			for (let {name, returns, arg, declare, body, language, options} of Object.values (this.model [type + 's'])) {
 
 				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
 				
@@ -1117,6 +1166,7 @@ module.exports = class extends require ('../Pool.js') {
             'create_foreign_tables',
 
             'drop_views',
+            'drop_proc',
             'drop_partitioned_tables',
             
             'recreate_tables',
@@ -1134,7 +1184,7 @@ module.exports = class extends require ('../Pool.js') {
             'create_partitioned_tables',
             'create_views',
 
-            'recreate_proc',
+            'create_proc',
             'recreate_triggers',
 
             'create_foreign_keys',
