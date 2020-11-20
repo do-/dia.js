@@ -597,10 +597,20 @@ module.exports = class extends require ('../Pool.js') {
 
         	let {columns} = existing; if (!columns) continue
         	
-        	let actions = Object.values (columns).map (i => i.ref_name).filter (i => i).map (i => `DROP CONSTRAINT IF EXISTS ${i} CASCADE`)
+        	let actions = []
         	
-        	if (actions.length) result.push ({sql: `ALTER TABLE ${table.qname} ${actions}`})
-        
+        	for (let {ref_names} of Object.values (columns)) 
+        		
+        		if (ref_names) 
+        		
+        			for (let ref_name of ref_names) 
+        			
+        				actions.push (`DROP CONSTRAINT IF EXISTS ${ref_name} CASCADE`)
+        	        	
+        	if (actions.length) 
+        		
+        		result.push ({sql: `ALTER TABLE ${table.qname} ${actions}`})
+
         }
 
 		return result
