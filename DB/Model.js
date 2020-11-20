@@ -21,8 +21,13 @@ module.exports = class {
         	...(o.voc_options || {})
 
         }
-        this.todo = []        
-        this.reload ()        
+
+        this.todo           = []        
+        this.relation_types = ['tables', 'views', 'foreign_tables', 'partitioned_tables']
+        this.all_types      = [...this.relation_types, 'procedures', 'functions']
+
+        this.reload ()
+
     }
     
     async pending () {
@@ -31,7 +36,7 @@ module.exports = class {
     
     reload () {
 
-    	for (let k of ['tables', 'views', 'procedures', 'functions', 'foreign_tables', 'partitioned_tables']) this [k] = {}
+    	for (let k of this.all_types) this [k] = {}
 
         for (let p of this.o.paths) this.load_dir (p)
 

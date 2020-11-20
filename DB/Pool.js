@@ -1,7 +1,9 @@
 module.exports = class {
 
     constructor (o) {
+
         this.options = o
+
     }
     
     async update_model () {
@@ -82,17 +84,9 @@ module.exports = class {
 
     	model.relations = {}
 
-    	for (let type of ['tables', 'views', 'foreign_tables', 'partitioned_tables']) {
+    	for (let type of model.relation_types) for (let r of Object.values (model [type])) model.relations [r.name] = r
 
-        	for (let table of Object.values (model [type])) {
-
-        		this.normalize_model_table (table)
-        		
-        		model.relations [table.name] = table
-        		
-        	}
-        		
-        }
+        for (let r of Object.values (model.relations)) this.normalize_model_table (r)
 
     }
 
@@ -111,9 +105,7 @@ module.exports = class {
 
         if (!col.TYPE_NAME && col.ref) {
 
-            let t = this.model.tables [col.ref] || this.model.views [col.ref]
-
-        	if (!t) throw new Error (`${table.name}.${col.name} references ${col.ref}, but no such table found in the model`)
+            let t = this.model.relations [col.ref]; if (!t) throw new Error (`${table.name}.${col.name} references ${col.ref}, but no such relation found in the model`)
 
 			let tpk = t.columns [t.pk]; for (let k of ['TYPE_NAME', 'COLUMN_SIZE']) {
 			
