@@ -80,7 +80,7 @@ module.exports = class {
 
     normalize_model () {
 
-    	let {model} = this
+    	let {model} = this; if (model._is_normalized) return; model._is_normalized = 1
 
     	model.relations = {}
 
