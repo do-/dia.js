@@ -167,36 +167,49 @@ module.exports = class extends require ('../Pool.js') {
 
     }
 
-    gen_sql_drop_partitioned_tables () {
-
-    	let result = [], qnames = [], {partitioned_tables} = this.model
-
-    	for (let {qname, columns, partition} of Object.values (this.model.partitioned_tables)) {
-
-    		qnames.push (qname)
-
-    		for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} DETACH PARTITION ${name}`})
-
-    	}
-
-    	if (qnames.length) result.push ({sql: `DROP TABLE IF EXISTS ${qnames} CASCADE`})
-
-    	return result
-
-    }
-
-    gen_sql_create_partitioned_tables () {
+    gen_sql_update_partitioned_tables () {
     
-    	let result = []
-    
-    	for (let {qname, columns, partition} of Object.values (this.model.partitioned_tables)) {
+    	let result = [], {partitioned_tables} = this.model
+
+    	for (let name of Object.keys (partitioned_tables).sort ()) {
     	
-    		result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
+    		let table = partitioned_tables [name], {qname, columns, partition, existing} = table
+
+    		if (!existing) {
     		
-    		for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} ATTACH PARTITION ${name} ${filter}`})
+				result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
 
+				continue
+				
+			}
+
+    		let r = [], ex = clone (table.existing), cols = clone (columns)
+
+	    	this.add_sql_update_columns (table, r)
+
+	    	if (!r.length) continue
+
+	    	for (let i of r) result.push (i)
+/*
+			for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} DETACH PARTITION ${name}`})
+
+			for (let {name, filter} of partition.list) {
+
+				table.existing = ex
+				table.columns  = cols
+				table.qname    = name
+
+		    	this.add_sql_update_columns (table, result)
+
+			}
+
+			for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} ATTACH PARTITION ${name} ${filter}`})
+			
+			table.existing = ex
+			table.qname = qname
+*/
     	}
-
+    	
     	return result
 
     }
@@ -512,79 +525,110 @@ module.exports = class extends require ('../Pool.js') {
 		}
 
     }
-    
-    gen_sql_alter_columns () {
+        
+    add_sql_add_column (table, col, existing_columns, result) {
 
-        let result = []
+        let {name} = col, after = table.on_after_add_column
 
-        for (let table of Object.values (this.model.tables)) {
-
-            let existing_columns = table.existing.columns
-
-            for (let col of Object.values (table.columns)) {
-            
-            	let {name} = col, ex_col = existing_columns [name]; 
-            	
-            	if (!ex_col || !this.is_column_to_alter (ex_col, col)) continue
-            
-				if (ex_col.COLUMN_DEF) {
-					result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
-					delete ex_col.COLUMN_DEF
-				}
-				
-				result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0], params: []})
-
-		    	for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
-            
-            }
+        if (table.p_k.includes (name)) return
+        
+        if (name in existing_columns) {
+        
+        	if (after && name in after) darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
+        
+        	return
 
         }
+
+        result.push (this.gen_sql_add_column (table, col))
+                        
+        if (!table._is_just_added && after) {
+            let a = after [name]
+            if (a) for (let i of a) result.push (i)
+        }                
+
+        existing_columns [name] = clone (col)
         
-        return result
-        
+        delete existing_columns [name].REMARK
+
     }
     
-    gen_sql_add_columns () {
-    
-        let result = []
+    add_sql_alter_column (table, col, existing_columns, result) {
+
+        let {name} = col, ex_col = existing_columns [name]; 
         
-        for (let table of Object.values (this.model.tables)) {
+        if (!ex_col || !this.is_column_to_alter (ex_col, col)) return
         
-            let existing_columns = table.existing.columns
+		if (ex_col.COLUMN_DEF) {
+			result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
+			delete ex_col.COLUMN_DEF
+		}
+		
+		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0], params: []})
 
-            let after = table.on_after_add_column
-
-            for (let col of Object.values (table.columns)) {
-
-            	let {name} = col
-            	
-            	if (table.p_k.includes (name)) continue
-            	
-            	if (name in existing_columns) {
-            	
-            		if (after && name in after) darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
-            	
-            		continue
-            		
-            	}
-
-                result.push (this.gen_sql_add_column (table, col))
-                                
-                if (!table._is_just_added && after) {
-                    let a = after [name]
-                    if (a) for (let i of a) result.push (i)
-                }                
-
-                existing_columns [name] = clone (col)
+		for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
                 
-                delete existing_columns [name].REMARK
+    }
+    
+    add_sql_set_default_column (table, col, existing_columns, result) {
+
+        if (table.p_k.includes (col.name)) return
+
+        if (col.TYPE_NAME == 'SERIAL') return
+
+        let d = col.COLUMN_DEF
+
+        if (d != existing_columns [col.name].COLUMN_DEF) {
+        
+            if (d == null) {
+
+                result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
 
             }
+            else {
+
+        		let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
+
+                result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
+
+                if (d.indexOf (')') < 0) d = this.gen_sql_quoted_literal (d)
+
+                result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
+
+            }
+        
+        }
+        
+        let n = col.NULLABLE; if (n != existing_columns [col.name].NULLABLE) {
+
+            result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
 
         }
+
+    }    
     
+    add_sql_update_columns (table, result) {
+    
+    	let {existing, columns} = table
+    	
+    	for (let action of ['add', 'alter', 'set_default'])
+    	
+    		for (let name of Object.keys (columns).sort ())
+
+	    		this [`add_sql_${action}_column`] (table, columns [name], existing.columns, result)
+
+    }
+
+    gen_sql_update_columns () {
+
+        let result = [], {tables} = this.model
+
+        for (let name of Object.keys (tables).sort ())
+        
+        	this.add_sql_update_columns (tables [name], result)
+
         return result
-    
+
     }
     
     gen_sql_drop_foreign_keys () {
@@ -647,57 +691,6 @@ module.exports = class extends require ('../Pool.js') {
         return result
     
     }
-
-    gen_sql_set_default_columns () {
-
-        let result = []
-
-        for (let table of Object.values (this.model.tables)) {
-
-            let existing_columns = table.existing.columns
-
-            for (let col of Object.values (table.columns)) {
-
-                if (table.p_k.includes (col.name)) continue
-
-                if (col.TYPE_NAME == 'SERIAL') continue
-
-                let d = col.COLUMN_DEF
-
-                if (d != existing_columns [col.name].COLUMN_DEF) {
-                
-                    if (d == null) {
-
-                        result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
-
-                    }
-                    else {
-
-                		let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
-
-                        result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
-
-                        if (d.indexOf (')') < 0) d = this.gen_sql_quoted_literal (d)
-
-                        result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
-
-                    }
-                
-                }
-                
-                let n = col.NULLABLE; if (n != existing_columns [col.name].NULLABLE) {
-
-                    result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
-
-                }
-
-            }
-
-        }
-
-        return result
-
-    }    
     
     gen_sql_comment_columns () {
 
@@ -1204,26 +1197,25 @@ module.exports = class extends require ('../Pool.js') {
 
             'drop_foreign_keys',
 
+            'update_partitioned_tables',
             'drop_foreign_tables',
             'create_foreign_tables',
 
             'drop_views',
             'drop_proc',
-            'drop_partitioned_tables',
             
             'recreate_tables',
             'add_tables',
             'comment_tables',
-            'add_columns',
-            'alter_columns',
-            'set_default_columns',
+            
+            'update_columns',
+            
             'comment_columns',
             'update_keys',
             
             'after_add_tables',
             'upsert_data',
 
-            'create_partitioned_tables',
             'create_views',
 
             'create_proc',

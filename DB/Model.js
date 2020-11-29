@@ -98,9 +98,18 @@ module.exports = class {
 
 				m.type = m.sql ? 'view' : 'table'
 
-				let {pk} = m; if (!pk) throw `No primary key defined for the ${m.type} named "${m.name}"`
+			}
 
-				m.p_k = Array.isArray (pk) ? pk : [pk]
+			let {pk} = m; if (pk) {
+
+				m.p_k = Array.isArray (pk) ? pk : [pk]			
+
+			}
+			else {
+
+				if (m.type == 'table') throw `No primary key defined for the ${m.type} named "${m.name}"`
+				
+				m.p_k = []
 
 			}
 
