@@ -12,9 +12,11 @@ exports.Pool = (o, m) => {
     
     pool.product = product
 
-    pool.model = m
-    pool.normalize_model ()
-    
+    if (m) {
+		pool.model = m
+		pool.normalize_model ()
+    }
+
     return pool
 
 }
