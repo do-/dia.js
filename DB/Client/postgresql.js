@@ -427,36 +427,45 @@ module.exports = class extends Dia.DB.Client {
         
         }
         
-        rs = await this.select_all (`
-
-			SELECT
-				CONCAT_WS ('.', 
-				CASE WHEN ptn.nspname = 'public' THEN NULL ELSE ptn.nspname END,
-				ptc.relname
-			  ) table_name
-				, CONCAT_WS ('.', 
-				CASE WHEN pn.nspname = 'public' THEN NULL ELSE pn.nspname END,
-				pc.relname
-			  ) AS name
-			  , pg_get_expr (pc.relpartbound, pc.oid, true) AS filter
-			FROM 
-			  pg_partitioned_table pt
-			  join pg_class ptc on pt.partrelid = ptc.oid
-			  join pg_namespace ptn on ptc.relnamespace = ptn.oid
-			  join pg_inherits i ON i.inhparent = pt.partrelid
-			  join pg_class pc on i.inhrelid = pc.oid
-			  join pg_namespace pn on pc.relnamespace = pn.oid
-
-        `, [])        
+        try {
         
-        for (let {table_name, name, filter} of rs) {
-        
-        	let partitioned_table = partitioned_tables [table_name]; if (!partitioned_table) continue
-        	
-        	partitioned_table.partition.list.push ({name, filter})
+			rs = await this.select_all (`
+
+				SELECT
+					CONCAT_WS ('.', 
+					CASE WHEN ptn.nspname = 'public' THEN NULL ELSE ptn.nspname END,
+					ptc.relname
+				  ) table_name
+					, CONCAT_WS ('.', 
+					CASE WHEN pn.nspname = 'public' THEN NULL ELSE pn.nspname END,
+					pc.relname
+				  ) AS name
+				  , pg_get_expr (pc.relpartbound, pc.oid, true) AS filter
+				FROM 
+				  pg_partitioned_table pt
+				  join pg_class ptc on pt.partrelid = ptc.oid
+				  join pg_namespace ptn on ptc.relnamespace = ptn.oid
+				  join pg_inherits i ON i.inhparent = pt.partrelid
+				  join pg_class pc on i.inhrelid = pc.oid
+				  join pg_namespace pn on pc.relnamespace = pn.oid
+
+			`, [])        
+
+			for (let {table_name, name, filter} of rs) {
+
+				let partitioned_table = partitioned_tables [table_name]; if (!partitioned_table) continue
+
+				partitioned_table.partition.list.push ({name, filter})
+
+			}
         
         }
-
+        catch (x) {
+        
+        	if (x.code != '42P01') throw x // pg_partitioned_table didn't exist in pg < 10
+        
+        }
+        
     }
 
     async load_schema_table_columns () {
