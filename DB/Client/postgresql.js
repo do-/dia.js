@@ -154,7 +154,7 @@ module.exports = class extends Dia.DB.Client {
                 
                 if (parts.length != key.length) continue
                 
-                for (let i = 0; i < parts.length; i ++) if (parts [i] != key [i]) continue outer
+                for (let i = 0; i < parts.length; i ++) if (!key.find (k => k == parts [i])) continue outer
                 
                 the_index = ix
                 
