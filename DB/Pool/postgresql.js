@@ -1113,7 +1113,7 @@ module.exports = class extends require ('../Pool.js') {
 
 					switch (language) {
 
-						case 'plpgsql': return 'BEGIN NULL; END;'
+						case 'plpgsql': return `BEGIN ${returns ? 'RETURN ' : '' }NULL; END;`
 
 						case 'sql': return 'SELECT NULL'
 
