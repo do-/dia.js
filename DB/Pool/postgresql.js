@@ -1213,13 +1213,13 @@ module.exports = class extends require ('../Pool.js') {
             'comment_columns',
             'update_keys',
             
-            'after_add_tables',
-            'upsert_data',
-
             'create_views',
 
             'create_proc',
             'recreate_triggers',
+
+            'after_add_tables',
+            'upsert_data',
 
             'create_foreign_keys',
 
