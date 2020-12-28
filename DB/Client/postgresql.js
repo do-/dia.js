@@ -154,7 +154,7 @@ module.exports = class extends Dia.DB.Client {
                 
                 if (parts.length != key.length) continue
                 
-                for (let i = 0; i < parts.length; i ++) if (parts [i] != key [i]) continue outer
+                for (let i = 0; i < parts.length; i ++) if (!key.find (k => k == parts [i])) continue outer
                 
                 the_index = ix
                 
@@ -337,13 +337,18 @@ module.exports = class extends Dia.DB.Client {
 
 				if (v == null) continue
 				
-				if (!sql) sql = 'WITH'
+				if (sql)
+					sql += ', '
+				else
+					sql = 'WITH ('
 
-				if (typeof v !== "boolean") v = "'" + v.replace (/\'/g, "''") + "'" //'
+				if (typeof v !== "boolean" && k != 'FORMAT') v = "'" + v.replace (/\'/g, "''") + "'" //'
 				
 				sql += ' ' + k + ' ' + v
 
 			}
+
+			if (sql) sql += ')'
 
 			sql = `COPY ${table} (${cols}) FROM STDIN ${sql}`
 
