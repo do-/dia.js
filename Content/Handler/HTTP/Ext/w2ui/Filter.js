@@ -67,8 +67,17 @@ module.exports = class {
         else if (s.value != null) {
         
             s.value = String (s.value).trim ()            
-            if (s.expr.indexOf ('LIKE') > -1) s.value = s.value.replace (/[\*\s]+/g, '%')
-            
+            if (s.expr.indexOf ('LIKE') > -1) {
+
+            	s.value = s.value
+					.replace (/\%/g, '\\%')
+					.replace (/_/g,  '\\_')
+					.replace (/[\*\s]+/g, '%')
+					
+				s.expr += " ESCAPE '\\'"
+					
+            }
+
             if (s.type == 'date') {
             	s.value = dt_iso (s.value)
 				if (s.operator == 'less') s.value += 'T23:59:59.999'        	
