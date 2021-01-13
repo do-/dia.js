@@ -14,7 +14,7 @@ module.exports = class extends require ('../Pool.js') {
         let [hp, database] = dsn.split ('/')
         let [server, port] = hp.split (':')
 
-		let co = {server, port, user, password, database, connectTimeout: 1000}
+		let co = {server, port, user, password, database, connectTimeout: 1000, options: {enableArithAbort: true}}
 
         this.backend = new mssql.ConnectionPool (co)
 
