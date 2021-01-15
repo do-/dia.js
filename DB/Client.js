@@ -12,15 +12,27 @@ module.exports = class {
 
     async select_vocabulary (t, o = {}) {
 
-        let def = this.model.tables [t]
+        let def = this.model.relations [t]; if (!def) throw new Error (`No table nor view named "${t}" is found in model`)
 
-        let data = def.data; if (data && !Object.keys (o).length) return data
+        let {data, columns, pk} = def
 
-        if (!o.order) o.order = 2
+        if (data && !Object.keys (o).length) return data
         
-        if ((o.label = o.label || 'label') != 'label') o.label = o.label.replace (/ AS.*/, '') + ' AS label'
-        
-        return this.select_all (`SELECT ${def.pk} id, ${o.label} FROM ${t} WHERE ${o.filter || '1=1'} ORDER BY ${o.order}`)
+        o = {...this.model.voc_options, ...o}
+
+        let sql = `SELECT ${pk}`;  if (pk != o.id_name) sql += ` AS ${o.id_name}`
+
+        sql += `, ${o.label}`;     if (o.label != o.label_name) sql += ` AS ${o.label_name}`
+
+		for (let col of o.columns) if (columns [col]) sql += `, ${col}`
+
+		sql += ` FROM ${t}`
+
+		if (o.filter) sql += ` WHERE ${o.filter}`
+
+		sql += ` ORDER BY ${o.order}`
+
+        return this.select_all (sql)
 
     }
 
@@ -71,8 +83,13 @@ module.exports = class {
 
         if (offset == undefined) offset = q.offset
         if (offset == undefined) offset = 0
+        
+        let [limited_sql, limited_params] = this.to_limited_sql_params (q.sql, q.params, limit, offset)
 
-        let [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
+        let [all, cnt] = await Promise.all ([
+        	this.select_all    (limited_sql, limited_params),
+        	this.select_scalar (q.sql_cnt, q.params),
+        ])
 
         data [q.parts [0].alias] = all
         data.cnt = cnt
@@ -215,10 +232,14 @@ module.exports = class {
         await this.load_schema_table_triggers ()
         await this.load_schema_table_data ()
         await this.load_schema_foreign_keys ()
+        await this.load_schema_proc ()
 
     }
     
     async load_schema_foreign_keys () {
+    }
+
+    async load_schema_proc () {
     }
 
     async load_schema_table_data () {
@@ -264,5 +285,13 @@ module.exports = class {
     	}
 
     }    
+    
+    async load_schema_tables () {}
+    
+    async load_schema_table_columns () {}
+    
+    async load_schema_table_keys () {}
+    
+    async load_schema_table_triggers () {}
 
 }

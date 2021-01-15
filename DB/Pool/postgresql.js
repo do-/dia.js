@@ -115,13 +115,17 @@ module.exports = class extends require ('../Pool.js') {
     async release (client) {
         return await client.release ()
     }
-    
+
+    quote_name (s) {
+        return ('' + s).split ('.').map (s => '"' + s.replace (/"/g, '""') + '"').join ('.')
+    }
+
     gen_sql_quoted_literal (s) {
         if (s == null) s = ''
-        return "'" + String (s).replace(/'/g, "''") + "'"
+        return "'" + String (s).replace (/'/g, "''") + "'"
     }
     
-    gen_sql_column_definition (col) {
+    gen_sql_type_dim (col) {
     
         let sql = col.TYPE_NAME
         
@@ -131,6 +135,14 @@ module.exports = class extends require ('../Pool.js') {
             sql += ')'
         }
         
+        return sql
+        
+    }
+    
+    gen_sql_column_definition (col) {
+    
+        let sql = this.gen_sql_type_dim (col)
+                
         let def = col.COLUMN_DEF
         if (def != undefined) {
             if (def.indexOf (')') < 0) def = this.gen_sql_quoted_literal (def)
@@ -149,59 +161,108 @@ module.exports = class extends require ('../Pool.js') {
 		let col = table.columns
 
         return {
-            sql: `CREATE TABLE "${table.name}" (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}, PRIMARY KEY (${p_k}))`,
+            sql: `CREATE TABLE ${table.qname} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}, PRIMARY KEY (${p_k}))`,
             params: []
         }
 
     }
+
+    gen_sql_update_partitioned_tables () {
     
-    gen_sql_recreate_views () {
+    	let result = [], {partitioned_tables} = this.model
 
-        let result = []
-        
-        for (let name in this.model.views) {
-        
-        	let view = this.model.views [name]; view.depends = {}
-        	
-        	for (let word of view.sql.split (/\b/))
-        	
-        		if (this.model.views [word])
+    	for (let name of Object.keys (partitioned_tables).sort ()) {
+    	
+    		let table = partitioned_tables [name], {qname, columns, partition, existing} = table
 
-        			view.depends [word] = 1
+    		if (!existing) {
+    		
+				result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
 
-        }
-        
-        let names = [], idx = {}
-        
-        let assert = name => {
-        
-        	if (idx [name]) return
-        
-        	for (let k in this.model.views [name].depends) assert (k)
-        	
-        	idx [name] = names.push (name)
+				continue
+				
+			}
 
-        }
-        
-        for (let name in this.model.views) assert (name)
+    		let r = [], ex = clone (table.existing), cols = clone (columns)
 
-		let views = names.map (i => this.model.views [i])
+	    	this.add_sql_update_columns (table, r)
 
-        while (views.length && views [0]._no_recreate) views.shift ()
+	    	if (!r.length) continue
 
-        for (let view of views) result.push ({sql: `DROP VIEW IF EXISTS "${view.name}" CASCADE`, params: []})
+	    	for (let i of r) result.push (i)
+/*
+			for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} DETACH PARTITION ${name}`})
 
-        for (let view of views) {
-            
-            result.push ({sql: `CREATE VIEW "${view.name}" AS ${view.sql}`, params: []})            
-            result.push ({sql: `COMMENT ON VIEW "${view.name}" IS ` + this.gen_sql_quoted_literal (view.label), params: []})
+			for (let {name, filter} of partition.list) {
 
-            for (let col of Object.values (view.columns))                             
-                result.push ({sql: `COMMENT ON COLUMN "${view.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (col.REMARK), params: []})
-            
-        }
+				table.existing = ex
+				table.columns  = cols
+				table.qname    = name
 
-        return result
+		    	this.add_sql_update_columns (table, result)
+
+			}
+
+			for (let {name, filter} of partition.list) result.push ({sql: `ALTER TABLE ${qname} ATTACH PARTITION ${name} ${filter}`})
+			
+			table.existing = ex
+			table.qname = qname
+*/
+    	}
+    	
+    	return result
+
+    }
+    
+    gen_sql_drop_foreign_tables () {
+    
+    	let {foreign_tables} = this.model; if (!foreign_tables) return []
+    	
+    	let qnames = Object.values (foreign_tables).map (v => v.qname); if (!qnames.length) return []
+    	
+    	return [{sql: `DROP FOREIGN TABLE IF EXISTS ${qnames} CASCADE`}]
+
+    }
+
+    gen_sql_drop_views () {
+    
+    	let views = Object.values (this.model.views || {})
+
+    	return [
+
+    		`DROP VIEW IF EXISTS ${views.map (i => i.qname)} CASCADE`,
+    	
+    		...views.map (({qname, columns}) => 
+    			
+    			`CREATE OR REPLACE VIEW ${qname} AS SELECT ${
+    			
+    				Object.values (columns).map (
+    				
+    					col => `NULL::${this.gen_sql_type_dim (col)} AS ${col.name}`
+    					
+    				)
+    			
+    			}`)
+
+    	].map (sql => ({sql}))
+    		
+    }
+    
+    gen_sql_create_views () {
+
+    	return Object.values (this.model.views || [])
+    	
+    		.map (({qname, columns, sql}) => `CREATE OR REPLACE VIEW ${qname} AS SELECT ${    		
+    		
+    			Object.values (columns).map (
+
+					col => `${col.name}::${this.gen_sql_type_dim (col)} AS ${col.name}`
+
+    			)
+    		
+    		} FROM (${sql}) t`)
+    			
+    		.map (sql => ({sql}))
 
     }
 
@@ -235,13 +296,7 @@ module.exports = class extends require ('../Pool.js') {
         
             if (table.label != table.existing.label)
 
-                result.push ({sql: `COMMENT ON TABLE "${table.name}" IS ` + this.gen_sql_quoted_literal (table.label), params: []})
-
-        for (let view of Object.values (this.model.views)) 
-        
-            if (view._no_recreate && view.label != view.existing.label)
-
-                result.push ({sql: `COMMENT ON VIEW "${view.name}" IS ` + this.gen_sql_quoted_literal (view.label), params: []})
+                result.push ({sql: `COMMENT ON TABLE ${table.qname} IS ` + this.gen_sql_quoted_literal (table.label), params: []})
 
         return result
 
@@ -272,7 +327,7 @@ module.exports = class extends require ('../Pool.js') {
                 
                 let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
                             
-                result.push ({sql: `INSERT INTO "${table.name}" (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO ${something}`, params: v})
+                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO ${something}`, params: v})
 
             }
         
@@ -285,7 +340,7 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_add_column (table, col) {
     
         return {
-            sql: `ALTER TABLE "${table.name}" ADD "${col.name}" ` + this.gen_sql_column_definition (col), 
+            sql: `ALTER TABLE ${table.qname} ADD "${col.name}" ` + this.gen_sql_column_definition (col), 
             params: []
         }
     
@@ -322,7 +377,8 @@ module.exports = class extends require ('../Pool.js') {
             for (let t of [table, tmp_table]) t.model = this.model
             
             tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
-                        
+            tmp_table.qname = this.quote_name (tmp_table.name)
+
             result.push (this.gen_sql_add_table (tmp_table))
             
             let cols = []
@@ -344,7 +400,7 @@ module.exports = class extends require ('../Pool.js') {
 
             }
 
-            result.push ({sql: `INSERT INTO ${tmp_table.name} (${cols}) SELECT ${cols} FROM ${table.name}`, params: []})
+            result.push ({sql: `INSERT INTO ${tmp_table.qname} (${cols}) SELECT ${cols} FROM ${table.name}`, params: []})
 
 			if (tmp_table.p_k.length == 1) {
 				
@@ -361,9 +417,9 @@ module.exports = class extends require ('../Pool.js') {
 						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
 
 						result.push (this.gen_sql_add_column (ref_table, tmp_col))
-						result.push ({sql: `UPDATE ${ref_table.name} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
-						result.push ({sql: `ALTER TABLE ${ref_table.name} DROP COLUMN ${col.name}`, params: []})
-						result.push ({sql: `ALTER TABLE ${ref_table.name} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
+						result.push ({sql: `UPDATE ${ref_table.qname} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
+						result.push ({sql: `ALTER TABLE ${ref_table.qname} DROP COLUMN ${col.name}`, params: []})
+						result.push ({sql: `ALTER TABLE ${ref_table.qname} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
 
 						ref_table.columns [col.name].TYPE_NAME = TYPE_NAME
 
@@ -373,8 +429,8 @@ module.exports = class extends require ('../Pool.js') {
 				
 			}
 
-            result.push ({sql: `DROP TABLE ${table.name}`, params: []})
-            result.push ({sql: `ALTER TABLE ${tmp_table.name} RENAME TO ${table.name}`, params: []})
+            result.push ({sql: `DROP TABLE ${table.qname}`, params: []})
+            result.push ({sql: `ALTER TABLE ${tmp_table.qname} RENAME TO ${table.qname}`, params: []})
             
             table.existing.pk  = table.pk
             table.existing.p_k = table.p_k
@@ -386,123 +442,255 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
-    gen_sql_add_columns () {
+    is_type_int (t) {
     
-        let result = []
+    	return /^INT/.test (t)
+    
+    }
+    
+    is_column_to_alter_to_int (ex_col, col) {
+    
+    	if (!this.is_type_int (ex_col.TYPE_NAME)) return false
+    	
+    	let len = c => parseInt (c.TYPE_NAME.slice (3))
+    	
+    	return len (col) > len (ex_col)
+
+    }
+    
+    is_column_to_alter_to_numeric (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+    	if (this.is_type_int (TYPE_NAME)) return true
+
+    	if (TYPE_NAME != 'NUMERIC') return false
+    	
+    	for (let k of ['COLUMN_SIZE', 'DECIMAL_DIGITS']) if (col [k] > ex_col [k]) return true
+    	
+    	return false
+
+    }
+    
+    is_column_to_alter_to_varchar (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+    	if (TYPE_NAME != 'VARCHAR') return false
+    	
+    	for (let k of ['COLUMN_SIZE']) if (col [k] > ex_col [k]) return true
+    	
+    	return false
+
+    }
         
-        for (let table of Object.values (this.model.tables)) {
+    is_column_to_alter_to_text (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+		if (/CHAR$/.test (TYPE_NAME)) return true
+    	
+    	return false
+
+    }
+    
+    is_column_to_alter_to_timestamp (ex_col, col) {
+
+    	let {TYPE_NAME} = ex_col
+
+		if (TYPE_NAME == 'DATE') return true
+    	
+    	return false
+
+    }
+
+    is_column_to_alter (ex_col, col) {
+    
+    	if (
+    		ex_col.TYPE_NAME == col.TYPE_NAME && 
+    		ex_col.COLUMN_SIZE == col.COLUMN_SIZE && 
+    		ex_col.DECIMAL_DIGITS == col.DECIMAL_DIGITS
+    	) return false
+    	
+    	let {TYPE_NAME} = col
+
+		if (this.is_type_int (TYPE_NAME)) return this.is_column_to_alter_to_int (ex_col, col)
+		
+		switch (TYPE_NAME) {
+			case 'VARCHAR':   return this.is_column_to_alter_to_varchar   (ex_col, col)
+			case 'NUMERIC':   return this.is_column_to_alter_to_numeric   (ex_col, col)
+			case 'TEXT':      return this.is_column_to_alter_to_text      (ex_col, col)
+			case 'TIMESTAMP': return this.is_column_to_alter_to_timestamp (ex_col, col)
+			default:          return false
+		}
+
+    }
         
-            let existing_columns = table.existing.columns
+    add_sql_add_column (table, col, existing_columns, result) {
 
-            let after = table.on_after_add_column
+        let {name} = col, after = table.on_after_add_column
 
-            for (let col of Object.values (table.columns)) {
-
-            	let {name} = col
-            	
-            	if (table.p_k.includes (name)) continue
-            	
-            	if (name in existing_columns) {
-            	
-            		if (after && name in after) darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
-            	
-            		continue
-            		
-            	}
-
-                result.push (this.gen_sql_add_column (table, col))
-                                
-                if (after) {
-                    let a = after [name]
-                    if (a) for (let i of a) result.push (i)
-                }                
-
-                existing_columns [name] = clone (col)
-                
-                delete existing_columns [name].REMARK
-
-            }
+        if (table.p_k.includes (name)) return
+        
+        if (name in existing_columns) {
+        
+        	if (after && name in after) darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
+        
+        	return
 
         }
+
+        result.push (this.gen_sql_add_column (table, col))
+                        
+        if (!table._is_just_added && after) {
+            let a = after [name]
+            if (a) for (let i of a) result.push (i)
+        }                
+
+        existing_columns [name] = clone (col)
+        
+        delete existing_columns [name].REMARK
+
+    }
     
+    add_sql_alter_column (table, col, existing_columns, result) {
+
+        let {name} = col, ex_col = existing_columns [name]; 
+        
+        if (!ex_col || !this.is_column_to_alter (ex_col, col)) return
+        
+		if (ex_col.COLUMN_DEF) {
+			result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
+			delete ex_col.COLUMN_DEF
+		}
+		
+		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0], params: []})
+
+		for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
+                
+    }
+    
+    add_sql_set_default_column (table, col, existing_columns, result) {
+
+        if (table.p_k.includes (col.name)) return
+
+        if (col.TYPE_NAME == 'SERIAL') return
+
+        let d = col.COLUMN_DEF
+
+        if (d != existing_columns [col.name].COLUMN_DEF) {
+        
+            if (d == null) {
+
+                result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
+
+            }
+            else {
+
+        		let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
+
+                result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
+
+                if (d.indexOf (')') < 0) d = this.gen_sql_quoted_literal (d)
+
+                result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" SET DEFAULT ${d}`, params: []})
+
+            }
+        
+        }
+        
+        let n = col.NULLABLE; if (n != existing_columns [col.name].NULLABLE) {
+
+            result.push ({sql: `ALTER TABLE ${table.qname} ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
+
+        }
+
+    }    
+    
+    add_sql_update_columns (table, result) {
+    
+    	let {existing, columns} = table
+    	
+    	for (let action of ['add', 'alter', 'set_default'])
+    	
+    		for (let name of Object.keys (columns).sort ())
+
+	    		this [`add_sql_${action}_column`] (table, columns [name], existing.columns, result)
+
+    }
+
+    gen_sql_update_columns () {
+
+        let result = [], {tables} = this.model
+
+        for (let name of Object.keys (tables).sort ())
+        
+        	this.add_sql_update_columns (tables [name], result)
+
         return result
+
+    }
     
+    gen_sql_drop_foreign_keys () {
+
+        let result = []
+
+        for (let table of Object.values (this.model.tables)) {
+        
+        	let {existing} = table; if (!existing) continue
+
+        	let {columns} = existing; if (!columns) continue
+        	
+        	let actions = []
+        	
+        	for (let {ref_names} of Object.values (columns)) 
+        		
+        		if (ref_names) 
+        		
+        			for (let ref_name of ref_names) 
+        			
+        				actions.push (`DROP CONSTRAINT IF EXISTS ${ref_name} CASCADE`)
+        	        	
+        	if (actions.length) 
+        		
+        		result.push ({sql: `ALTER TABLE ${table.qname} ${actions}`})
+
+        }
+
+		return result
+        
     }
     
     gen_sql_create_foreign_keys () {
     
-        let result = []
+        let result = [], {model} = this, {tables} = model
 
-        for (let table of Object.values (this.model.tables)) {
+        for (let table of Object.values (tables)) {
+        	
+        	let actions = []; for (let column of Object.values (table.columns)) {
+        	
+        		let {name, ref} = column; if (!ref) continue
+        		
+        		let rt = tables [ref]; if (rt) {
+        		
+        			actions.push (`ADD FOREIGN KEY (${name}) REFERENCES ${tables [ref].qname} NOT VALID`)
+        		
+        		} 
+        		else {
+        		
+        			if (!model.relations [ref]) darn (`WARNING! ${table.name}.${name} references non existing ${ref}!`)
 
-            let existing_columns = table.existing.columns, add = s => result.push ({sql: `ALTER TABLE "${table.name}" ${s}`, params: []})
+        		}
 
-            for (let nw of Object.values (table.columns)) {
-            
-            	let ol = existing_columns [nw.name]; if (ol) {
-					
-					if (nw.ref == ol.ref) continue
-					
-					let {ref_name} = ol; if (ref_name) add (`DROP CONSTRAINT ${ref_name}`)
-				
-				}
+        	} 
 
-            	let {ref} = nw; if (ref) add (`ADD FOREIGN KEY (${nw.name}) REFERENCES ${ref} NOT VALID`)
-
-            }
+        	if (actions.length) result.push ({sql: `ALTER TABLE ${table.qname} ${actions}`})
 
 		}
 
         return result
     
     }
-
-    gen_sql_set_default_columns () {
-
-        let result = []
-
-        for (let table of Object.values (this.model.tables)) {
-
-            let existing_columns = table.existing.columns
-
-            for (let col of Object.values (table.columns)) {
-            
-            	if (table.p_k.includes (col.name)) continue
-            
-                let d = col.COLUMN_DEF
-
-                if (d != existing_columns [col.name].COLUMN_DEF) {
-                
-                    if (d == null) {
-
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" DROP DEFAULT`, params: []})
-
-                    }
-                    else {
-
-                		let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
-
-                        result.push ({sql: `UPDATE "${table.name}" SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
-                        
-                        result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" SET DEFAULT ${this.gen_sql_quoted_literal (d)}`, params: []})
-
-                    }
-                
-                }
-                
-                let n = col.NULLABLE; if (n != existing_columns [col.name].NULLABLE) {
-
-                    result.push ({sql: `ALTER TABLE "${table.name}" ALTER COLUMN "${col.name}" ${n ? 'DROP' : 'SET'} NOT NULL`, params: []})
-
-                }
-
-            }
-
-        }
-
-        return result
-
-    }    
     
     gen_sql_comment_columns () {
 
@@ -510,7 +698,6 @@ module.exports = class extends require ('../Pool.js') {
 
         for (let table of [
         	...Object.values (this.model.tables),
-        	...Object.values (this.model.views).filter (v => v._no_recreate),
         ]) {
 
             let existing_columns = table.existing.columns
@@ -519,7 +706,7 @@ module.exports = class extends require ('../Pool.js') {
             
                 let label = col.REMARK || '', old_label = (existing_columns [col.name] || {}).REMARK || ''
 
-                if (label != old_label) result.push ({sql: `COMMENT ON COLUMN "${table.name}"."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
+                if (label != old_label) result.push ({sql: `COMMENT ON COLUMN ${table.qname}."${col.name}" IS ` + this.gen_sql_quoted_literal (label), params: []})
 
             }
 
@@ -529,33 +716,26 @@ module.exports = class extends require ('../Pool.js') {
 
     }    
     
-    gen_sql_update_triggers () {
+    gen_sql_recreate_triggers () {
     
         let result = []
         
         for (let table of Object.values (this.model.tables)) {
         
-            let triggers = table.triggers
-        
-            if (!triggers) continue
-        
-            let existing_triggers = (table.existing || {triggers: {}}).triggers
-            
+            let {triggers} = table; if (!triggers) continue
+                    
             for (let name in triggers) {
             
                 let src = triggers [name]
-                
-                let old_src = existing_triggers [name]; if (src == old_src) continue
-                
-                if (old_src) {                
-					darn (`[SCHEMA WARNING] TRIGGER REDEFINED (see below)`)
-					darn ([table.name + '.' + name, old_src, src])                
-                }
                 
                 let [phase, ...events] = name.toUpperCase ().split ('_')
                 
                 let glob = `on_${name}_${table.name}`
                 
+                result.push ({sql: `DROP TRIGGER IF EXISTS ${glob} ON ${table.qname}`})
+                
+                if (!src) continue
+
                 result.push ({sql: `
 
                     CREATE OR REPLACE FUNCTION ${glob}() RETURNS trigger AS \$${glob}\$
@@ -564,13 +744,7 @@ module.exports = class extends require ('../Pool.js') {
 
                     \$${glob}\$ LANGUAGE plpgsql;
 
-                `, params: []})
-
-                result.push ({sql: `
-                
-                    DROP TRIGGER IF EXISTS ${glob} ON ${table.name};
-                    
-                `, params: []})
+                `})
 
                 result.push ({sql: `
 
@@ -581,8 +755,8 @@ module.exports = class extends require ('../Pool.js') {
                     FOR EACH ROW EXECUTE PROCEDURE 
                         ${glob} ();
 
-                `, params: []})
-            
+                `})
+
             }
         
         }
@@ -670,6 +844,10 @@ module.exports = class extends require ('../Pool.js') {
                 	result.push ({sql: src, params: []})
 
                 	let [, cols] = src.split (/[\(\)]/)
+
+                    cols = cols.split (/,\s*/)
+                        .map (c =>  c.match(/^(\w+)/) [0] )
+                        .join (', ')
 
                 	result.push ({sql: `VACUUM ANALYZE ${table.name} (${cols})`, params: []})
 
@@ -800,11 +978,55 @@ module.exports = class extends require ('../Pool.js') {
 			RAISE '#${col.name}#: ${table.model.trg_check_column_value_pattern (col, table)}';
 		END IF;
 	`}
+
+    normalize_model () {
+
+    	super.normalize_model ()
+    	
+    	let {model} = this
+
+    	if (!model.schemas) model.schemas = {}
+
+    	for (let type of ['relation', 'function', 'procedure']) {
+
+    		for (let name in model [type + 's']) {
+
+    			let parts = name.split ('.'); switch (parts.length) {
+
+    				case 3: throw `Invalid ${type} name: ${name}`
+
+    				case 2: 
+    					let [s] = parts
+    					if (!model.schemas [s]) model.schemas [s] = {}
+
+    			}    			
+
+    		}
+
+    	}
+
+        for (let type of ['function', 'procedure']) {
+        
+        	for (let i of Object.values (model [type + 's'])) {
+        	
+        		if (!i.language) i.language = 'plpgsql'
+        		
+        		if (!i.options)  i.options = ''
+        	
+        	}
+                			
+		}
+
+    }
     
     normalize_model_table_column (table, col) {
         
         super.normalize_model_table_column (table, col) 
-        
+
+        if (col.ref && col.TYPE_NAME === 'SERIAL') {
+            col.TYPE_NAME = 'INT'
+        }
+
         function get_int_type_name (prefix) {switch (prefix) {
             case 'MEDIUM': 
             case 'BIG': 
@@ -842,8 +1064,169 @@ module.exports = class extends require ('../Pool.js') {
         if (col.TYPE_NAME == 'NUMERIC') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
             if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
+            for (let k of ['COLUMN_SIZE', 'DECIMAL_DIGITS']) col [k] = parseInt (col [k])
         }                
         
+    }
+    
+    gen_sql_create_foreign_tables () {
+
+        let result = []
+
+        for (let {name, qname, label, db_link, columns} of Object.values (this.model.foreign_tables)) {
+        
+        	for (let [foreign_server, options] of Object.entries (db_link)) {
+
+				result.push ({sql: `CREATE FOREIGN TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) SERVER ${foreign_server} OPTIONS (${Object.entries (options).map (i => `${i[0]} '${i[1]}'`)})`, params: []})
+
+//				result.push ({sql: `COMMENT ON FOREIGN TABLE ${qname} IS ` + this.gen_sql_quoted_literal (label), params: []})
+
+        	}
+        	
+        }
+        
+        return result
+
+    }
+    
+    gen_sql_recreate_schemas () {
+    
+    	return Object.keys (this.model.schemas)
+    		.map (i => `CREATE SCHEMA IF NOT EXISTS ${i}`)
+    		.map (sql => ({sql}))
+    
+    }
+    
+    gen_sql_drop_proc () {
+    
+        let result = []
+        
+        for (let type of ['function', 'procedure']) {
+                
+			for (let {name, returns, arg, language, options} of Object.values (this.model [type + 's'])) {
+
+				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
+				
+				if (returns) returns = 'RETURNS ' + returns
+				
+				let body = (() => {
+
+					switch (language) {
+
+						case 'plpgsql': return 'BEGIN NULL; END;'
+
+						case 'sql': return 'SELECT NULL'
+
+						default: throw 'Unsupported language: ' + language
+
+					}
+				
+				}) ()
+				
+				body = '$$' + body + '$$'
+				
+				result.push ({sql: [
+					'CREATE OR REPLACE',
+					type.toUpperCase (),
+					name,
+					'(' + vars (arg) + ')',
+					returns,
+					'AS',
+					body,
+					'LANGUAGE',
+					language,
+					options,
+				].filter (i => i).join (' ')})
+
+			}
+			
+		}
+
+        return result
+    
+    }
+    
+    gen_sql_create_proc () {
+
+        let result = []
+        
+        for (let type of ['function', 'procedure']) {
+                
+			for (let {name, returns, arg, declare, body, language, options} of Object.values (this.model [type + 's'])) {
+
+				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
+				
+				if (returns) returns = 'RETURNS ' + returns
+
+				if (language = 'plpgsql') {
+
+					body = `BEGIN ${body} END;`
+
+					if (declare) body = 'DECLARE ' + vars (declare, ';').join ('') +  body
+
+				}
+				
+				body = '$$' + body + '$$'
+				
+				result.push ({sql: [
+					'CREATE OR REPLACE',
+					type.toUpperCase (),
+					name,
+					'(' + vars (arg) + ')',
+					returns,
+					'AS',
+					body,
+					'LANGUAGE',
+					language,
+					options,
+				].filter (i => i).join (' ')})
+
+			}
+			
+		}
+
+        return result
+
+    }
+
+    gen_sql_patch () {
+            
+        let patch = []; for (let i of [
+        
+            'recreate_schemas',
+
+            'drop_foreign_keys',
+
+            'update_partitioned_tables',
+            'drop_foreign_tables',
+            'create_foreign_tables',
+
+            'drop_views',
+            'drop_proc',
+            
+            'recreate_tables',
+            'add_tables',
+            'comment_tables',
+            
+            'update_columns',
+            
+            'comment_columns',
+            'update_keys',
+            
+            'create_views',
+
+            'create_proc',
+            'recreate_triggers',
+
+            'after_add_tables',
+            'upsert_data',
+
+            'create_foreign_keys',
+
+        ]) for (let j of this ['gen_sql_' + i] ()) patch.push (j)
+
+        return patch
+    
     }
 
 }

@@ -6,8 +6,28 @@ module.exports = class {
     constructor (o) {
         if (!o.paths) o.paths = o.path ? [o.path] : []
         this.o = o
-        this.todo = []
+        this.voc_options = {
+        
+        	id:         'id',
+        	id_name:    'id',
+        	
+        	label:      'label',
+        	label_name: 'label',
+        	
+        	order:      '2',
+        	
+        	columns:    ['is_deleted'],
+
+        	...(o.voc_options || {})
+
+        }
+
+        this.todo           = []        
+        this.relation_types = ['tables', 'views', 'foreign_tables', 'partitioned_tables']
+        this.all_types      = [...this.relation_types, 'procedures', 'functions']
+
         this.reload ()
+
     }
     
     async pending () {
@@ -15,10 +35,13 @@ module.exports = class {
     }
     
     reload () {
-        this.tables = {}
-        this.views = {}
+
+    	for (let k of this.all_types) this [k] = {}
+
         for (let p of this.o.paths) this.load_dir (p)
+
         this.adjust_triggers ()
+
     }
 
     adjust_triggers () {
@@ -35,33 +58,75 @@ module.exports = class {
     }
 
     load_dir (p) {
+    
         for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
-            let name = fn.split ('.') [0]
-            let table = this.load_file (p + '/' + fn, name)
-            if (!table.pk) throw 'No primary key defined for ' + name
-            table.p_k = Array.isArray (table.pk) ? table.pk : [table.pk]
-            this [table.sql ? 'views' : 'tables'] [name] = table
+ 
+ 			let name = fn.slice (0, fn.lastIndexOf ('.')), m = this.load_file (p + '/' + fn, name)
+                        
+            this [m.type + 's'] [m.name] = m
+
         }
+        
     }
     
     load_file (p, name) {
 
         let m = require (path.resolve (p))
 
-        m.name = name
+        if (!('name' in m)) m.name = name
         m.model = this
+        
+        if (m.columns) {
 
-        this.on_before_parse_table_columns (m)
+			this.on_before_parse_table_columns (m)
 
-        if (m.columns) this.parse_columns (m.columns)
+			this.parse_columns (m.columns)
 
-        this.on_after_parse_table_columns (m)
+			this.on_after_parse_table_columns (m)
+			
+			if (m.db_link) {
 
-        for (let k of ['data', 'init_data']) 
+	            m.type = 'foreign_table'
+
+			}
+			else if (m.partition) {
+
+	            m.type = 'partitioned_table'
+
+			}
+			else {
+
+				m.type = m.sql ? 'view' : 'table'
+
+			}
+
+			let {pk} = m; if (pk) {
+
+				m.p_k = Array.isArray (pk) ? pk : [pk]			
+
+			}
+			else {
+
+				if (m.type == 'table') throw `No primary key defined for the ${m.type} named "${m.name}"`
+				
+				m.p_k = []
+
+			}
+
+        }
+        else {
+
+            m.type = m.returns ? 'function' : 'procedure'
+            
+            if (!m.body) throw `No SQL body defined for the ${m.type} named "${name}"`
+
+        }
+
+        for (let k of ['data', 'init_data', 'sql', 'body']) 
+        
         	if (typeof m [k] === "function")
-        		this.todo.push ((
-        			async () => {m [k] = await m [k].apply (m)}
-        		) ())
+        	
+        		this.todo.push ((async () => {m [k] = await m [k].apply (m)}) ())
 
         return m
 
@@ -100,6 +165,11 @@ module.exports = class {
         }
         
         type = type.replace (/\s/g, '')
+
+        let xxx = type.split (/(\!)/); if (xxx.length > 1) {
+        	type = xxx [0]
+	        col.NULLABLE = false
+        }
         
         if (type.charAt (0) == '(') {
             col.ref = type.replace (/[\(\)]/g, '')

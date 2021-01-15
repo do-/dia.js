@@ -58,3 +58,11 @@ global.suicide = (x) => {
 }
 
 global.not_off = (i) => !i.off
+
+global.dt_iso = (dt) => {
+	let ymd = dt.substr (0, 10).split (/\D/)
+	if (ymd [0].length == 2) ymd.reverse ()
+	return ymd.join ('-')
+}
+
+global.is_uuid = s => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test (s)

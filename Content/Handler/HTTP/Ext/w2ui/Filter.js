@@ -8,6 +8,7 @@ module.exports = class {
         case 'begins':   return ' ILIKE ?%'
         case 'ends':     return ' ILIKE %?'
         case 'contains': return ' ILIKE %?%'
+        case 'misses':   return ' NOT ILIKE %?%'
         case 'in':       return ' IN '
         case 'not in':   return ' NOT IN '
         case 'null': throw '"null" must be replaced by "is" null'
@@ -33,18 +34,24 @@ module.exports = class {
         	}
         	        
         }
-
-        if (s.operator == 'null') {
-            s.operator = 'is'
-            s.value = null
-            s.expr = s.field
+        
+        switch (s.operator) {
+        
+        	case 'null':
+				s.value = null
+				s.expr = s.field
+        		break
+        		
+        	case 'not null':
+				s.value = null
+				s.expr = s.field + ' <>'
+        		break
+        		
+        	default:
+				s.expr = s.field + this.op (s.operator)
+				if (s.value == null) s.value = undefined
+        
         }
-        else {
-        	s.expr = s.field + this.op (s.operator)
-        	if (s.value == null) s.value = undefined
-        }
-
-        let dt_iso = (dt) => dt.substr (0, 10)
         
         if (Array.isArray (s.value)) {
         
@@ -57,14 +64,23 @@ module.exports = class {
         	}
             
         }
-        else if (s.value !== null) {
+        else if (s.value != null) {
         
             s.value = String (s.value).trim ()            
-            if (s.expr.indexOf ('LIKE') > -1) s.value = s.value.replace (/[\*\s]+/g, '%')
-            
+            if (s.expr.indexOf ('LIKE') > -1) {
+
+            	s.value = s.value
+					.replace (/\%/g, '\\%')
+					.replace (/_/g,  '\\_')
+					.replace (/[\*\s]+/g, '%')
+					
+				s.expr += " ESCAPE '\\'"
+					
+            }
+
             if (s.type == 'date') {
-            	s.value  = dt_iso (s.value)
-				if (s.operator = 'less') s.value += 'T23:59:59.999'        	
+            	s.value = dt_iso (s.value)
+				if (s.operator == 'less') s.value += 'T23:59:59.999'        	
             }
         
         }
