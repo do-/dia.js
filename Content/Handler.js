@@ -1,6 +1,8 @@
 const Dia = require ('../Dia.js')
 const url = require ('url')
 const http = require ('http')
+const path = require ('path')
+const fs   = require ('fs')
 
 module.exports = class {
 
@@ -18,6 +20,53 @@ module.exports = class {
     get_log_banner () {
         return `${this.module_name}.${this.method_name}`
     }
+    
+    get_ttl () {
+    	return 0
+    }
+    
+    async get_data () {
+    
+    	let watch, main = this.get_method ().call (this), ttl = this.get_ttl (); 
+    	
+    	if (!(ttl > 0)) return main
+    	
+    	return Promise.race ([
+
+    		new Promise (async (ok, fail) => {
+
+    			try {
+    			
+    				let data = await main
+    				
+    				clearTimeout (watch)
+    				
+    				ok (data)
+    				
+    			}
+    			catch (x) {
+    			
+    				fail (x)
+    			
+    			}
+
+    		}),
+    		
+    		new Promise (async (ok, fail) => {
+
+    			watch = setTimeout (() => 
+
+    				fail (new Error ('Dia handler timeout expired: ' + ttl + ' ms elapsed'))
+
+    				, ttl + 1
+    			
+    			)
+
+    		}),
+
+    	])
+
+    }
 
     async run () {
         
@@ -34,8 +83,7 @@ module.exports = class {
             if (!this.module_name) this.module_name = this.get_module_name ()
             if (!this.method_name) this.method_name = this.get_method_name ()
             console.log (this.uuid + ': ' + this.get_log_banner ())            
-            let data = await this.get_method ().call (this)
-            this.send_out_data (data)
+            this.send_out_data (await this.get_data ())
         }
         catch (x) {
             console.log (this.uuid, x)
@@ -120,7 +168,35 @@ module.exports = class {
     }
     
     get_module () {
-        return Dia.require_fresh (this.module_name)        
+
+		let fn = 'Content/' + this.module_name + '.js', abs
+
+		try {
+
+			fs.statSync (abs = path.resolve (fn))
+
+			return require (abs)
+
+		}
+		catch (x) {
+		
+			if (x.code != 'ENOENT') throw x
+			
+			let root = '../../slices'; for (let i of fs.readdirSync (root)) try {
+
+				fs.statSync (abs = path.resolve (`${root}/${i}/back/lib/${fn}`))
+
+				return require (abs)
+
+			}
+			catch (x) {
+			
+				if (x.code != 'ENOENT') throw x
+			
+			}			
+			
+		}
+
     }
     
     get_method () {
