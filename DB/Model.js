@@ -3,8 +3,8 @@ const path = require ('path')
 
 module.exports = class {
 
-    constructor (o) {
-        if (!o.paths) o.paths = o.path ? [o.path] : []
+    constructor (o = {}) {
+        if (!o.paths) o.paths = o.path ? [o.path] : ['./Model']
         this.o = o
         this.voc_options = {
         
