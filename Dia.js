@@ -8,6 +8,7 @@ this.Handler = require ('./Content/Handler.js')
 this.HTTP    = require ('./Content/Handler/HTTP.js')
 this.DB      = require ('./DB.js')
 this.Cache   = require ('./Cache.js')
+this.Config  = require ('./Config.js')
 
 function reExport (module_name) {
 
