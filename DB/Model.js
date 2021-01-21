@@ -10,7 +10,7 @@ module.exports = class {
     	
     	this.conf = o.conf || {}
 
-        if (!o.paths) o.paths = this.conf._model_paths || (o.path ? [o.path] : ['./Model'])
+        if (!o.paths) o.paths = o.path ? [o.path] : this.conf._model_paths || ['./Model']
 
         this.o = o
 
