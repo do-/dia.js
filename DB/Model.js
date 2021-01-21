@@ -1,11 +1,19 @@
 const fs = require ('fs')
 const path = require ('path')
+const Config = require ('../Config.js')
 
 module.exports = class {
 
     constructor (o = {}) {
-        if (!o.paths) o.paths = o.path ? [o.path] : ['./Model']
+
+    	if (o instanceof Config) o = {conf: o}
+    	
+    	this.conf = o.conf || {}
+
+        if (!o.paths) o.paths = this.conf._model_paths || (o.path ? [o.path] : ['./Model'])
+
         this.o = o
+
         this.voc_options = {
         
         	id:         'id',
