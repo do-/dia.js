@@ -68,24 +68,28 @@ module.exports = class {
 	}
 	
 	load_slice (lib) {
-	
+
 		lib = Path.resolve (lib)
 
 		let slice = {lib}
 
 		try {
 
-			for (let part of fs.readdirSync (lib)) 
-			
-				switch (part) {
-				
-					case 'Content':
-					case 'Model':
+			for (let part of fs.readdirSync (lib)) {
 
-						slice [part] = get_subdirs (Path.join (lib, part))
-				
+				let get = i => i
+
+				switch (part) {
+
+					case 'Model':
+						get = get_subdirs
+
+					case 'Content':
+						slice [part] = get (Path.join (lib, part))
+
 				}
-			
+
+			}
 
 		}
 		catch (x) {
@@ -106,6 +110,30 @@ module.exports = class {
 			
 				.reduce ((a, b) => [...a, ...b], [])
 
+	}
+
+	get _content_paths () {
+
+		delete this._content_paths;
+	
+		let value = Object.values (this._slices)
+		
+			.map (i => i.Content)
+			
+				.filter (i => i)
+				
+		Object.defineProperty (this, '_content_paths', {value, writable: false})
+		
+		return value
+
+	}
+	
+	get_content_paths (name) {
+	
+		let fn = name + '.js'
+		
+		return this._content_paths.filter (i => fs.existsSync (Path.resolve (i, fn)))
+	
 	}
 
 }

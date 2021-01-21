@@ -168,48 +168,35 @@ module.exports = class {
     }
     
     get_module () {
+    
+    	let {conf} = this; if (!(conf instanceof Dia.Config)) throw 'Since some ago, this.conf must inherit Dia.Config, sorry.'
 
-		let fn = 'Content/' + this.module_name + '.js', abs
+    	let {module_name, method_name} = this, fn = module_name + '.js'
 
-		try {
+    	for (let p of conf.get_content_paths (module_name)) {
 
-			fs.statSync (abs = path.resolve (fn))
+    		let module = require (path.resolve (p, fn)); if (method_name in module) return module
 
-			return require (abs)
-
-		}
-		catch (x) {
-		
-			if (x.code != 'ENOENT') throw x
-			
-			let root = '../../slices'; for (let i of fs.readdirSync (root)) try {
-
-				fs.statSync (abs = path.resolve (`${root}/${i}/back/lib/${fn}`))
-
-				return require (abs)
-
-			}
-			catch (x) {
-			
-				if (x.code != 'ENOENT') throw x
-			
-			}			
-			
-		}
+    	}
+    	
+    	return null
 
     }
-    
+
     get_method () {
-        let module = this.get_module ()
-        if (!module) throw `Module not defined: ${this.module_name}`
-        this.module = module
-        var method = module [this.method_name]
-        if (!method) throw `Method not defined: ${this.module_name}.${this.method_name}`
-        return method
+
+        let {module_name, method_name} = this, module = this.get_module ()
+
+        if (!module) throw `Module / method not defined: ${module_name}.${method_name}`
+
+        return (this.module = module) [method_name]
+
     }
     
     get_module_name () {
+
         return this.rq.type
+
     }
 
     send_out_error (x) {
