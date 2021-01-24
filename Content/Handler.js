@@ -169,7 +169,7 @@ module.exports = class {
     
     get_module () {
     
-    	let {conf} = this; if (!(conf instanceof Dia.Config)) throw 'Since some ago, this.conf must inherit Dia.Config, sorry.'
+    	let {conf} = this; if (!(conf instanceof Dia.Config)) throw 'Since 2cfbbdb, this.conf must inherit Dia.Config, sorry.'
 
     	let {module_name, method_name} = this, fn = module_name + '.js'
 
