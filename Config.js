@@ -34,6 +34,8 @@ module.exports = class {
 
 		this._slices = this.load_slices ()
 		
+		this._inc_fresh = {}
+		
 	}
 	
 	is_slice_to_load (name) {

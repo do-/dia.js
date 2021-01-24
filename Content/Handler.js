@@ -171,11 +171,30 @@ module.exports = class {
     
     	let {conf} = this; if (!(conf instanceof Dia.Config)) throw 'Since 2cfbbdb, this.conf must inherit Dia.Config, sorry.'
 
-    	let {module_name, method_name} = this, fn = module_name + '.js'
+    	let {module_name, method_name} = this, fn = module_name + '.js', {_inc_fresh} = conf
 
     	for (let p of conf.get_content_paths (module_name)) {
+    	
+    		let abs = path.resolve (p, fn)
+    		
+    		try {
 
-    		let module = require (path.resolve (p, fn)); if (method_name in module) return module
+				let {mtime} = fs.statSync (abs)
+
+				if (abs in _inc_fresh && _inc_fresh [abs] < mtime) delete require.cache [abs]
+
+				let module = require (abs)
+
+				_inc_fresh [abs] = mtime
+
+				if (method_name in module) return module
+
+    		}
+    		catch (x) {
+    			
+    			continue
+    		
+    		}
 
     	}
     	
