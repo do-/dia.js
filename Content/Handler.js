@@ -175,26 +175,17 @@ module.exports = class {
 
     	for (let p of conf.get_content_paths (module_name)) {
     	
-    		let abs = path.resolve (p, fn)
+    		let abs = path.resolve (p, fn); if (!fs.existsSync (abs)) continue
     		
-    		try {
+			let {mtime} = fs.statSync (abs)
 
-				let {mtime} = fs.statSync (abs)
+			if (abs in _inc_fresh && _inc_fresh [abs] < mtime) delete require.cache [abs]
 
-				if (abs in _inc_fresh && _inc_fresh [abs] < mtime) delete require.cache [abs]
+			let module = require (abs)
 
-				let module = require (abs)
+			_inc_fresh [abs] = mtime
 
-				_inc_fresh [abs] = mtime
-
-				if (method_name in module) return module
-
-    		}
-    		catch (x) {
-    			
-    			continue
-    		
-    		}
+			if (method_name in module) return module
 
     	}
     	
