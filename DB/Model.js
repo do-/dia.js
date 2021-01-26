@@ -45,45 +45,154 @@ module.exports = class {
     reload () {
 
     	for (let k of this.all_types) this [k] = {}
+    	
+    	let all = {}; for (let p of this.o.paths) for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
 
-        for (let p of this.o.paths) this.load_dir (p)
+			let src = path.resolve (p, fn), m = this.load_file (src), {name} = m
+			
+			if (!(name in all)) all [name] = []
 
-        this.adjust_triggers ()
-
-    }
-
-    adjust_triggers () {
-        for (let name in this.tables) {
-            let table = this.tables [name]
-            let triggers = table.triggers
-            if (triggers) {
-                for (let k in triggers) {
-                    let v = triggers [k]
-                    if (typeof v === 'function') triggers [k] = v.apply (table)
-                }
-            }
-        }
-    }
-
-    load_dir (p) {
-    
-        for (let fn of fs.readdirSync (p)) if (/\.js/.test (fn)) {
- 
- 			let name = fn.slice (0, fn.lastIndexOf ('.')), m = this.load_file (p + '/' + fn, name)
-                        
-            this [m.type + 's'] [m.name] = m
+			all [name].push ({m, src})
 
         }
         
+        let merged = Object.values (all).map (l => this.merge (l))
+
+        for (let m of merged) {
+
+        	m.model = this
+
+        	this [m.type + 's'] [m.name] = m
+
+        }
+                
+		let postpone = (o, k) => {
+
+			let f = o [k]; if (!f || typeof f !== 'function') return
+
+			this.todo.push ((async () => {o [k] = await f.apply (o)}) ())
+
+		}
+
+		for (let m of merged) {
+
+	        for (let k of ['data', 'init_data', 'sql', 'body']) postpone (m, k)
+
+			let {triggers} = m; if (triggers) for (let k in triggers) postpone (triggers, k)
+
+		}
+
     }
     
+    merge__name (ov, nv) {
+    
+    	return ov
+    
+    }
+
+    merge__type (ov, nv) {
+    
+    	return this.merge___scalar (ov, nv, 'Type')
+        
+    }
+
+    merge__label (ov, nv) {
+    
+    	return this.merge___scalar (ov, nv, 'Label')
+        
+    }
+
+    merge___scalar (ov, nv, name) {
+    
+		if (nv != ov) throw `${name} mismatch: ${nv} vs. ${ov}`
+
+    	return ov
+    
+    }
+
+    merge__data (ov, nv) {
+
+    	return this.merge___array (ov, nv)
+
+    }
+
+    merge__init_data (ov, nv) {
+
+    	return this.merge___array (ov, nv)
+
+    }
+
+    merge___array (ov, nv) {
+
+    	return [...ov, ...nv]
+
+    }
+
+    merge__p_k (ov, nv) {    	
+
+		if (nv.length == 0) return ov
+		
+		if (ov.length == 0) return nv
+
+		let j = [ov, nv].map (i => JSON.stringify (i))
+
+		if (j [0] != j [1]) `PK mismatch: ${j [0]} vs. ${j [1]}`
+
+    }
+    
+    merge__columns (ov, nv) {
+
+		for (let k in nv) if (k in ov) throw `Found two columns named ${k}`
+		
+		return {...ov, ...nv}
+
+    }
+    
+    merge (list) {
+    
+    	if (list.length == 1) return list [0].m
+    
+    	let r = {}; for (let {m} of list) {
+    	
+    		for (let [k, v] of Object.entries (m)) {
+    		
+    			if (!(k in r)) {
+    			
+    				r [k] = v
+    				
+    				continue
+    			
+    			}
+    			    			    			
+    			try {
+
+					let sub_name = 'merge__' + k, sub = this [sub_name]; if (!sub) throw `Don't know how to merge ${k}`
+
+					r [k] = sub.call (this, r [k], v)
+
+    			}
+    			catch (x) {
+    			
+    				throw new Error (`Cannot load ${m.name} definition from ${list.map (i => i.src)}. ${x}`)
+    			
+    			}
+    			   		
+    		}
+    	
+    	}
+    
+    	return r
+    
+    }
+
     load_file (p, name) {
 
-        let m = require (path.resolve (p))
+        let m = require (p)
 
-        if (!('name' in m)) m.name = name
-        m.model = this
+        if (!('name' in m)) m.name = path.basename (p, '.js')
         
+        if (!m.type && (m.data || m.init_data)) m.type = 'table'
+
         if (m.columns) {
 
 			this.on_before_parse_table_columns (m)
@@ -92,21 +201,11 @@ module.exports = class {
 
 			this.on_after_parse_table_columns (m)
 			
-			if (m.db_link) {
-
-	            m.type = 'foreign_table'
-
-			}
-			else if (m.partition) {
-
-	            m.type = 'partitioned_table'
-
-			}
-			else {
-
-				m.type = m.sql ? 'view' : 'table'
-
-			}
+			if (!m.type) m.type = 
+				m.db_link   ? 'foreign_table'     : 
+				m.partition ? 'partitioned_table' : 
+				m.sql       ? 'view'              : 
+                              'table'
 
 			let {pk} = m; if (pk) {
 
@@ -115,26 +214,18 @@ module.exports = class {
 			}
 			else {
 
-				if (m.type == 'table') throw `No primary key defined for the ${m.type} named "${m.name}"`
-				
 				m.p_k = []
 
 			}
 
         }
-        else {
+        else if (!m.type) {
 
             m.type = m.returns ? 'function' : 'procedure'
             
             if (!m.body) throw `No SQL body defined for the ${m.type} named "${name}"`
 
         }
-
-        for (let k of ['data', 'init_data', 'sql', 'body']) 
-        
-        	if (typeof m [k] === "function")
-        	
-        		this.todo.push ((async () => {m [k] = await m [k].apply (m)}) ())
 
         return m
 

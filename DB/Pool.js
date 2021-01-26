@@ -32,6 +32,8 @@ module.exports = class {
     async load_schema () {
 
     	await this.model.pending ()
+    	
+		this.normalize_model ()    	
 
         try {
             var db = await this.acquire ()
