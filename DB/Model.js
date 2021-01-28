@@ -66,15 +66,15 @@ module.exports = class {
 
         }
                 
-		let postpone = (o, k) => {
-
-			let f = o [k]; if (!f || typeof f !== 'function') return
-
-			this.todo.push ((async () => {o [k] = await f.apply (o)}) ())
-
-		}
-
 		for (let m of merged) {
+
+			let postpone = (o, k) => {
+
+				let f = o [k]; if (!f || typeof f !== 'function') return
+
+				this.todo.push ((async () => {o [k] = await f.apply (m)}) ())
+
+			}
 
 	        for (let k of ['data', 'init_data', 'sql', 'body']) postpone (m, k)
 
