@@ -93,6 +93,7 @@ module.exports = class extends Dia.DB.Client {
     }
 
     async select_hash (sql, params) {
+		params = params.map (v => typeof v == 'object' && v != null ? JSON.stringify (v) : v)
         let all = await this.select_all (sql, params)
         return all.length ? all [0] : {}
     }
