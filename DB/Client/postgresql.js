@@ -487,6 +487,8 @@ module.exports = class extends Dia.DB.Client {
 			  , c.column_name AS name
 			  , UPPER (udt_name) "TYPE_NAME"
 			  , CASE
+			  	WHEN c.identity_generation IS NOT NULL THEN 'AUTO_INCREMENT'
+			  	WHEN c.column_default ILIKE 'NEXTVAL%' THEN 'AUTO_INCREMENT'
 				WHEN c.column_default LIKE '%::%' THEN SPLIT_PART (c.column_default, '''', 2)
 				ELSE c.column_default 
 			  END "COLUMN_DEF"
