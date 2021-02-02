@@ -1147,22 +1147,22 @@ module.exports = class extends require ('../Pool.js') {
 			for (let {name, returns, arg, language, options} of Object.values (this.model [type + 's'])) {
 
 				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
-				
-				if (returns) returns = 'RETURNS ' + returns
-				
+								
 				let body = (() => {
 
 					switch (language) {
 
 						case 'plpgsql': return 'BEGIN NULL; END;'
 
-						case 'sql': return 'SELECT NULL'
+						case 'sql': return 'SELECT NULL::' + returns
 
 						default: throw 'Unsupported language: ' + language
 
 					}
 				
 				}) ()
+				
+				if (returns) returns = 'RETURNS ' + returns				
 				
 				body = '$$' + body + '$$'
 				
@@ -1199,7 +1199,7 @@ module.exports = class extends require ('../Pool.js') {
 				
 				if (returns) returns = 'RETURNS ' + returns
 
-				if (language = 'plpgsql') {
+				if (language == 'plpgsql') {
 
 					body = `BEGIN ${body} END;`
 
