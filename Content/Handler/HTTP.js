@@ -1,7 +1,6 @@
 const Dia = require ('../../Dia.js')
-const url  = require ('url')
+const url  = require ('url'), {URLSearchParams} = url
 const Handler = require ('../Handler')
-const {URL, URLSearchParams} = require ('url')
 const stream = require ('stream')
 const contentDisposition = require ('content-disposition')
 
