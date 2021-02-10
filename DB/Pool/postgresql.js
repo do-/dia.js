@@ -585,8 +585,8 @@ module.exports = class extends require ('../Pool.js') {
     
         let d = col.COLUMN_DEF, ex = existing_columns [col.name], exd = ex.COLUMN_DEF
 
-        if (d != exd) {        	        
-        
+        if (d != exd) {
+
         	if (d == 'AUTO_INCREMENT') {
         	
 				if (exd) {
@@ -1100,6 +1100,10 @@ module.exports = class extends require ('../Pool.js') {
         else if (col.TYPE_NAME == 'CHECKBOX') {
             col.TYPE_NAME = 'INT2'
             col.COLUMN_DEF = '0'
+        }
+        else if (/^BOOL/.test (col.TYPE_NAME)) {
+        	if (col.COLUMN_DEF == '1') col.COLUMN_DEF = 'true'
+        	if (col.COLUMN_DEF == '0') col.COLUMN_DEF = 'false'
         }
         
         if (col.TYPE_NAME == 'NUMERIC') {
