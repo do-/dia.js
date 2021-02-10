@@ -272,6 +272,10 @@ module.exports = class {
         
         if (type.charAt (0) == '(') {
             col.ref = type.replace (/[\(\)]/g, '')
+            if (col.ref.charAt (0) == '-') {
+            	col.ref = col.ref.slice (1)
+            	col.ref_on_delete = 'CASCADE'
+			}
         }
         else {
 

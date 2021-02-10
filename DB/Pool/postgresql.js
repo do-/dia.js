@@ -707,12 +707,16 @@ module.exports = class extends require ('../Pool.js') {
         	
         	let actions = []; for (let column of Object.values (table.columns)) {
         	
-        		let {name, ref} = column; if (!ref) continue
+        		let {name, ref, ref_on_delete} = column; if (!ref || column.ref_no_constraint) continue
         		
         		let rt = tables [ref]; if (rt) {
+        			
+        			let references = 'REFERENCES ' + tables [ref].qname
+        			
+        			if (ref_on_delete) references += ' ON DELETE ' + ref_on_delete
         		
-        			actions.push (`ADD FOREIGN KEY (${name}) REFERENCES ${tables [ref].qname} NOT VALID`)
-        		
+        			actions.push (`ADD FOREIGN KEY (${name}) ${references} NOT VALID`)
+
         		} 
         		else {
         		
