@@ -18,6 +18,22 @@ module.exports = class {
 		return [name + ' ILIKE %?%', value]
 		
 	}
+	
+	to_kv_f_startswith (args) {
+
+		let [{value}, {name}] = args
+
+		return [name + ' ILIKE ?%', value]
+	
+	}
+	
+	to_kv_f_endswith (args) {
+
+		let [{value}, {name}] = args
+
+		return [name + ' ILIKE %?', value]
+
+	}
 
 	to_kv_f (o, v) {
 	
@@ -69,7 +85,7 @@ module.exports = class {
 		if (!src) return
 		
 		let o = parser.parse ('$filter=' + src) ['$filter']
-		
+
 		while (o.type == 'and') {
 		
 			this.add_filter (o.left)
