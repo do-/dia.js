@@ -585,8 +585,8 @@ module.exports = class extends require ('../Pool.js') {
     
         let d = col.COLUMN_DEF, ex = existing_columns [col.name], exd = ex.COLUMN_DEF
 
-        if (d != exd) {        	        
-        
+        if (d != exd) {
+
         	if (d == 'AUTO_INCREMENT') {
         	
 				if (exd) {
@@ -707,12 +707,16 @@ module.exports = class extends require ('../Pool.js') {
         	
         	let actions = []; for (let column of Object.values (table.columns)) {
         	
-        		let {name, ref} = column; if (!ref) continue
+        		let {name, ref, ref_on_delete} = column; if (!ref || column.ref_no_constraint) continue
         		
         		let rt = tables [ref]; if (rt) {
+        			
+        			let references = 'REFERENCES ' + tables [ref].qname
+        			
+        			if (ref_on_delete) references += ' ON DELETE ' + ref_on_delete
         		
-        			actions.push (`ADD FOREIGN KEY (${name}) REFERENCES ${tables [ref].qname} NOT VALID`)
-        		
+        			actions.push (`ADD FOREIGN KEY (${name}) ${references} NOT VALID`)
+
         		} 
         		else {
         		
@@ -1100,6 +1104,10 @@ module.exports = class extends require ('../Pool.js') {
         else if (col.TYPE_NAME == 'CHECKBOX') {
             col.TYPE_NAME = 'INT2'
             col.COLUMN_DEF = '0'
+        }
+        else if (/^BOOL/.test (col.TYPE_NAME)) {
+        	if (col.COLUMN_DEF == '1') col.COLUMN_DEF = 'true'
+        	if (col.COLUMN_DEF == '0') col.COLUMN_DEF = 'false'
         }
         
         if (col.TYPE_NAME == 'NUMERIC') {

@@ -90,7 +90,7 @@ module.exports = class {
                             if (!other) other = this.params.length == 1 && !this.subquery ? '=' : ' IN'
 
                             let sql = `(${part.alias}.${col}`
-                            if (etc) sql += ` IS NULL OR ${col}`
+                            if (etc) sql += ` IS NULL OR ${part.alias}.${col}`
 
                             sql += other
 
