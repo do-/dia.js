@@ -148,7 +148,9 @@ module.exports = class extends Dia.DB.Client {
         function safe (v) {
         
 			if (v == null || v === '') return '\\N'
-			
+
+			if ([Infinity, -Infinity].includes (v)) return '\\N'
+
 			if (v instanceof Date) return v.toJSON ().slice (0, 19)
 			
 			switch (typeof v) {
@@ -251,6 +253,8 @@ module.exports = class extends Dia.DB.Client {
 		let esc = v => {
 
 			if (v == null) return 'NULL'
+
+			if ([Infinity, -Infinity].includes (v)) return 'NULL'
 		
 			switch (typeof v) {
 				case 'boolean': 
