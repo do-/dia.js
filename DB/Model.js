@@ -271,11 +271,19 @@ module.exports = class {
         }
         
         if (type.charAt (0) == '(') {
+            
             col.ref = type.replace (/[\(\)]/g, '')
-            if (col.ref.charAt (0) == '-') {
+            
+            const del = {
+            	'-': 'CASCADE',
+            	'~': 'SET NULL',
+            }
+            
+            let d = del [col.ref.charAt (0)]; if (d) {            
+            	col.ref_on_delete = d
             	col.ref = col.ref.slice (1)
-            	col.ref_on_delete = 'CASCADE'
-			}
+            }
+            
         }
         else {
 
