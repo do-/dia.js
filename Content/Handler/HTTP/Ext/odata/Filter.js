@@ -1,112 +1,131 @@
-const parser = require ('odata-parser')
-
-const ops = {
-	eq: '=',
-	ne: '<>',
-	lt: '<',
-	le: '<=',
-	gt: '>',
-	ge: '>=',
-}
+const path = require ('path')
+const parser = require (path.resolve ('./Ext/Dia/Content/Handler/HTTP/Ext/odata/jaystack-odata-v4-parser/parser.js'))
 
 module.exports = class {
 
-	to_kv_f_substringof (args) {
-	
-		let [{value}, {name}] = args
-		
-		return [name + ' ILIKE %?%', value]
-		
-	}
-	
-	to_kv_f_startswith (args) {
-
-		let [{value}, {name}] = args
-
-		return [name + ' ILIKE ?%', value]
-	
-	}
-	
-	to_kv_f_endswith (args) {
-
-		let [{value}, {name}] = args
-
-		return [name + ' ILIKE %?', value]
-
+	get_field (token) {	
+		let {raw} = token		
+		return raw	
 	}
 
-	to_kv_f (o, v) {
-	
-		return this ['to_kv_f_' + o.func] (o.args.map (i => i.func == 'tolower' ? i.args [0] : i))
+	get_value (token) {	
 
-	}
-
-	to_kv (o) {
-	
-		let {type} = o, croak = () => {throw new Error ('Cannot filter on ' + JSON.stringify (o))}
-
-		if (type == 'functioncall') return this.to_kv_f (o)
-
-		let op = ops [type]; if (!op) croak ()
+		let {raw, value} = token; switch (value) {
 		
-		let k, v = []; for (let i of ['left', 'right']) {
-		
-			let {type, name, value} = o [i]; switch (type) {
-			
-				case 'property':
-					k = `${name} ${op} ?`
-					break
+			case 'Edm.String':
+				return raw.slice (1, raw.length - 1).replace (/''/g, "'") // '	
 
-				case 'literal':
-					v.push (value)
-					break
+			default:
+				return raw
 
-				default:
-					croak ()
-
-			}
-			
-		}
-		
-		return [k, v]
-	
-	}
-
-	add_filter (o) {
-	
-		let [k, v] = this.to_kv (o)
-		
-		this [k] = v
-
-	}
-	
-	parse_filter (src) {
-	
-		if (!src) return
-		
-		let o = parser.parse ('$filter=' + src) ['$filter']
-
-		while (o.type == 'and') {
-		
-			this.add_filter (o.left)
-			
-			o = o.right
-		
 		}
 
-		this.add_filter (o)
-		
+	}
+
+	add_m_contains (token) {
+		let [f, v] = token.value.parameters
+		this.q += this.get_field (f) + ' ILIKE %?%'
+		this.p.push (this.get_value (v))
+	}
+
+	add_m_startswith (token) {
+		let [f, v] = token.value.parameters
+		this.q += this.get_field (f) + ' ILIKE ?%'
+		this.p.push (this.get_value (v))
+	}
+
+	add_m_endswith (token) {
+		let [f, v] = token.value.parameters
+		this.q += this.get_field (f) + ' ILIKE %?'
+		this.p.push (this.get_value (v))
+	}
+	
+	add_MethodCallExpression (token) {
+		let {method} = token.value, k = 'add_m_' + method; if (!(k in this)) throw new Error (method + ' method is not supported')
+		this [k].call (this, token)
+	}
+
+	add_EqualsExpression (token) {
+		let {left, right} = token.value
+		this.q += this.get_field (left) + ' = ?'
+		this.p.push (this.get_value (right))
+	}
+
+	add_NotEqualsExpression (token) {
+		let {left, right} = token.value
+		this.q += this.get_field (left) + ' <> ?'
+		this.p.push (this.get_value (right))
+	}
+
+	add_LesserThanExpression (token) {
+		let {left, right} = token.value
+		this.q += this.get_field (left) + ' < ?'
+		this.p.push (this.get_value (right))
+	}
+
+	add_LesserOrEqualsExpression (token) {
+		let {left, right} = token.value
+		this.q += this.get_field (left) + ' <= ?'
+		this.p.push (this.get_value (right))
+	}
+
+	add_GreaterThanExpression (token) {
+		let {left, right} = token.value
+		this.q += this.get_field (left) + ' > ?'
+		this.p.push (this.get_value (right))
+	}
+
+	add_GreaterOrEqualsExpression (token) {
+		let {left, right} = token.value
+		this.q += this.get_field (left) + ' >= ?'
+		this.p.push (this.get_value (right))
+	}
+
+	add_NotExpression (token) {
+		this.q += 'NOT ('
+		this.add (token.value)
+		this.q += ')'
+	}
+
+	add_AndExpression (token) {
+		let {left, right} = token.value
+		this.q += '(('
+		this.add (left)
+		this.q += ')AND('
+		this.add (right)
+		this.q += '))'
+	}
+	
+	add_BoolParenExpression (token) {
+		this.add (token.value)
+	}
+
+	add (token) {
+		let {type} = token, k = 'add_' + token.type; if (!(k in this)) throw new Error (type + ' tokens are not supported')
+		this [k].call (this, token)
 	}
 
     constructor (rq) {  
     	
     	let {$filter, $top, $skip, $orderby} = rq
-    	
-    	this.parse_filter ($filter)
     
         if ($orderby) this.ORDER = $orderby
 
         if ($top) this.LIMIT = [$top, $skip || 0]
+        
+        if ($filter) {
+        
+        	this.q = ''
+        	this.p = []
+        
+        	this.add (parser.filter ($filter))
+        	
+        	this [this.q] = this.p
+        	
+        	delete this.q
+        	delete this.p
+        
+        }
         
     }
 
