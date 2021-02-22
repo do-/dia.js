@@ -46,9 +46,13 @@ module.exports = class {
 	}
 
 	add_EqualsExpression (token) {
-		let {left, right} = token.value
-		this.q += this.get_field (left) + ' = ?'
-		this.p.push (this.get_value (right))
+		let {left, right} = token.value; if (right.value == 'null') {
+			this.q += this.get_field (left) + ' IS NULL'
+		}
+		else {
+			this.q += this.get_field (left) + ' = ?'
+			this.p.push (this.get_value (right))
+		}
 	}
 
 	add_NotEqualsExpression (token) {
@@ -92,6 +96,15 @@ module.exports = class {
 		this.q += '(('
 		this.add (left)
 		this.q += ')AND('
+		this.add (right)
+		this.q += '))'
+	}
+	
+	add_OrExpression (token) {
+		let {left, right} = token.value
+		this.q += '(('
+		this.add (left)
+		this.q += ')OR('
 		this.add (right)
 		this.q += '))'
 	}
