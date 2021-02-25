@@ -541,6 +541,8 @@ module.exports = class extends require ('../Pool.js') {
 
         let {name} = col, after = table.on_after_add_column
 
+        if (typeof after === 'function') after = after (table)
+
         if (table.p_k.includes (name)) return
         
         if (name in existing_columns) {
