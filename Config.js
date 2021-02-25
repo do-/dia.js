@@ -132,9 +132,13 @@ module.exports = class {
 	
 	get_content_paths (name) {
 	
-		let fn = name + '.js'
+		let fn = name + '.js', {_content_paths} = this
 		
-		return this._content_paths.filter (i => fs.existsSync (Path.resolve (i, fn)))
+		let paths = _content_paths.filter (i => fs.existsSync (Path.resolve (i, fn)))
+		
+		if (paths.length == 0) darn (`Didn't find ${fn} in ${_content_paths}`)
+		
+		return paths
 	
 	}
 

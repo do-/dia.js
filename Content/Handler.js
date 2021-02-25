@@ -173,7 +173,7 @@ module.exports = class {
 
     	let {module_name, method_name} = this, fn = module_name + '.js', {_inc_fresh} = conf
 
-    	for (let p of conf.get_content_paths (module_name)) {
+    	let scanned = []; for (let p of conf.get_content_paths (module_name)) {
     	
     		let abs = path.resolve (p, fn); if (!fs.existsSync (abs)) continue
     		
@@ -186,8 +186,12 @@ module.exports = class {
 			_inc_fresh [abs] = mtime
 
 			if (method_name in module) return module
+			
+			scanned.push (abs)
 
     	}
+    	
+    	darn (`Didn't find ${method_name} in ${scanned}`)
     	
     	return null
 
