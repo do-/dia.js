@@ -191,7 +191,7 @@ module.exports = class {
 
     	}
     	
-    	darn (`Didn't find ${method_name} in ${scanned}`)
+    	if (scanned.length > 0) darn (`Didn't find ${method_name} in ${scanned}`)
     	
     	return null
 
