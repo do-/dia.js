@@ -124,7 +124,7 @@ module.exports = class {
 			
 				.filter (i => i)
 				
-		Object.defineProperty (this, '_content_paths', {value, writable: false})
+		Object.defineProperty (this, '_content_paths', {value, writable: false, configurable: true})
 		
 		return value
 
