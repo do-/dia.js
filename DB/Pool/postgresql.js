@@ -413,6 +413,18 @@ module.exports = class extends require ('../Pool.js') {
 
             result.push ({sql: `INSERT INTO ${tmp_table.qname} (${cols}) SELECT ${cols} FROM ${table.name}`, params: []})
 
+			let on_before_refs = table.on_before_recreate_table_refs; if (on_before_refs) {
+
+				if (typeof on_before_refs === 'function') on_before_refs = on_before_refs (tmp_table)
+
+				if (on_before_refs == null) on_before_refs = []
+
+				if (!Array.isArray (on_before_refs)) on_before_refs = [on_before_refs]
+
+				result.push (...on_before_refs)
+
+			}
+
 			if (tmp_table.p_k.length == 1) {
 				
 				let TYPE_NAME = tmp_table.columns [tmp_table.pk].TYPE_NAME
@@ -426,11 +438,12 @@ module.exports = class extends require ('../Pool.js') {
 						if (col.ref != table.name) continue
 
 						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
-
+						result.push ({sql: `ALTER TABLE ${ref_table.qname} DISABLE TRIGGER USER`, params: []})
 						result.push (this.gen_sql_add_column (ref_table, tmp_col))
 						result.push ({sql: `UPDATE ${ref_table.qname} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} DROP COLUMN ${col.name}`, params: []})
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
+						result.push ({sql: `ALTER TABLE ${ref_table.qname} ENABLE TRIGGER USER`, params: []})
 
 						ref_table.columns [col.name].TYPE_NAME = TYPE_NAME
 
