@@ -342,8 +342,17 @@ module.exports = class extends Dia.DB.Client {
 					sql += ', '
 				else
 					sql = 'WITH ('
-
-				if (typeof v !== "boolean" && k != 'FORMAT') v = "'" + v.replace (/\'/g, "''") + "'" //'
+					
+				if (/^FORCE_/.test (k)) {
+				
+					if (Array.isArray (v)) v = '(' + v + ')'
+				
+				}
+				else if (typeof v !== "boolean" && k != 'FORMAT') {
+					
+					v = "'" + v.replace (/\'/g, "''") + "'" //'
+				
+				}
 				
 				sql += ' ' + k + ' ' + v
 
