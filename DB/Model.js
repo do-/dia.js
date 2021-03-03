@@ -147,6 +147,14 @@ module.exports = class {
 		return {...ov, ...nv}
 
     }
+
+    merge__keys (ov, nv) {
+
+		for (let k in nv) if (k in ov) throw `Found two keys named ${k}`
+		
+		return {...ov, ...nv}
+
+    }
     
     merge (list) {
     
