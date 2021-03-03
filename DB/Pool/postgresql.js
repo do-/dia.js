@@ -900,13 +900,9 @@ module.exports = class extends require ('../Pool.js') {
                 
                 	result.push ({sql: src, params: []})
 
-                	let [, cols] = src.split (/[\(\)]/)
+                	let {columns} = table, cols = src.split (/\W+/).filter (c => columns [c])
 
-                    cols = cols.split (/,\s*/)
-                        .map (c =>  c.match(/^(\w+)/) [0] )
-                        .join (', ')
-
-                	result.push ({sql: `VACUUM ANALYZE ${table.name} (${cols})`, params: []})
+                	if (cols.length > 0) result.push ({sql: `VACUUM ANALYZE ${table.name} (${cols})`, params: []})
 
                 }
 
