@@ -56,4 +56,10 @@ module.exports = class extends Cache {
                         
     }
 
+    async to_get_all_keys (k) {
+
+        return this._.keys ()
+
+    }
+
 }

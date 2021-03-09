@@ -51,4 +51,14 @@ module.exports = class extends Cache {
                         
     }
 
+    async to_get_all_keys (k) {
+
+        let v = await new Promise ((ok, fail) => {
+            this._.keys ("*", this.cb (ok, fail))
+        })
+
+        return v
+
+    }
+
 }
