@@ -37,11 +37,39 @@ module.exports = class {
     }
 
     async add_vocabularies (data, def) {
+    
+    	let keys = [], values = [], {relations} = this.model
 
-        for (let name in def) {            
-            let o = def [name] || {}            
-            if (!o.off) data [name] = await this.select_vocabulary (o.name || name, o)        
+        for (let [k, o] of Object.entries (def)) {
+
+            if (!(o instanceof Object)) o = {}
+
+            if (o.off) continue; delete o.off
+
+            let t = o.name || k; delete o.name
+
+            let rel = relations [t]; if (!rel) throw new Error (`No table nor view named "${t}" is found in model`)
+            
+            if ('data' in rel && Object.keys (o).length == 0) {
+
+				data [k] = rel.data
+            
+            } 
+            else {
+
+            	keys.push (k)
+
+            	values.push (this.select_vocabulary (t, o))
+            	
+            }
+        
         }
+        
+        let {length} = keys; if (!length) return data
+        
+        values = await Promise.all (values)
+        
+        for (let i = 0; i < length; i ++) data [keys [i]] = values [i]
 
         return data
 
