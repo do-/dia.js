@@ -366,7 +366,7 @@ module.exports = class extends Dia.DB.Client {
 
 			let os = this.backend.query (require ('pg-copy-streams').from (sql))
 
-			is.on ('end', () => ok (console.timeEnd (label)))
+			os.on ('end', () => ok (console.timeEnd (label)))
 
 			os.on ('error', fail)
 			is.on ('error', fail)
