@@ -143,7 +143,7 @@ module.exports = class extends require ('../Pool.js') {
 
 		let sql = `CREATE TABLE ${table.name} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (columns [k]))}) ENGINE=${engine} ORDER BY (${p_k})`
 
-		let p = table.partition_by; if (p) sql += ' PARTITION BY ' + p
+		let p = table.partition_by || (table.partition || {}).by; if (p) sql += ' PARTITION BY ' + p
 
         return {sql, params: []}
 
