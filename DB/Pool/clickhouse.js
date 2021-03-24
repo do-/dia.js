@@ -63,6 +63,14 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    normalize_model_table (table) {
+
+    	super.normalize_model_table (table)
+
+    	if (!table.engine) table.engine = 'MergeTree'
+
+	}
+
     normalize_model_table_column (table, col) {
         
         super.normalize_model_table_column (table, col) 
@@ -111,9 +119,9 @@ module.exports = class extends require ('../Pool.js') {
     
     gen_sql_add_tables () {
 
-        let result = []
-
-        for (let table of Object.values (this.model.tables)) if (!table.existing) {
+        let result = [], {model} = this
+        
+        for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values (model [type])) if (!table.existing) {
 
             let pk = table.pk
             let df = table.columns [pk]
@@ -131,10 +139,9 @@ module.exports = class extends require ('../Pool.js') {
 
     gen_sql_add_table (table) {
 
-        let p_k = table.p_k
-		let col = table.columns
+        let {p_k, columns, engine} = table
 
-		let sql = `CREATE TABLE ${table.name} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}) ENGINE=${table.engine} ORDER BY (${p_k})`
+		let sql = `CREATE TABLE ${table.name} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (columns [k]))}) ENGINE=${engine} ORDER BY (${p_k})`
 
 		let p = table.partition_by; if (p) sql += ' PARTITION BY ' + p
 
@@ -150,7 +157,7 @@ module.exports = class extends require ('../Pool.js') {
     
         let result = []
         
-        for (let table of Object.values (this.model.tables)) {
+        for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [type])) {
         
             let existing_columns = table.existing.columns
 
