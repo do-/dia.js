@@ -246,7 +246,7 @@ module.exports = class extends Dia.DB.Client {
 
     bind (original_sql, params) {
     
-    	if (!params.length) return original_sql
+    	if (!params || !params.length) return original_sql
     	
 		let [sql, ...parts] = original_sql.split ('?')
 		
