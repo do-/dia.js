@@ -117,6 +117,7 @@ module.exports = class {
 
         }
 
+        col.TYPE_NAME_ORIGINAL = col.TYPE_NAME
         col.TYPE_NAME = col.TYPE_NAME.toUpperCase ()
 
         if (col.NULLABLE == undefined) col.NULLABLE   =        (col.COLUMN_DEF == null)

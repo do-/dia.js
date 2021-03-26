@@ -75,8 +75,13 @@ module.exports = class extends require ('../Pool.js') {
         
         super.normalize_model_table_column (table, col) 
                 
-        if (/INT|SERIAL/.test (col.TYPE_NAME)) {
-            col.TYPE_NAME = 'Int32'
+        if (/INT|SERIAL/.test (col.TYPE_NAME)) {        
+        	if (/Int/.test (col.TYPE_NAME_ORIGINAL)) {
+        		col.TYPE_NAME = col.TYPE_NAME_ORIGINAL
+        	}
+        	else {
+        		col.TYPE_NAME = 'Int32'
+        	}
         }
         else if (col.TYPE_NAME == 'CHAR') {
             col.TYPE_NAME = 'FixedString'
