@@ -348,8 +348,17 @@ module.exports = class {
     }
 
     trg_check_column_value_min_date (col, table) {
-    
-    	return `Значение поля "${col.REMARK}" не может быть ранее ${col.MIN.split ('-').reverse ().join ('.')}`
+
+    	let v = col.MIN
+
+    	if (v == 'NOW') {
+    		v = 'сегодняшнего числа'
+    	}
+    	else {
+    		v = v.split ('-').reverse ().join ('.')
+    	}
+
+    	return `Значение поля "${col.REMARK}" не может быть ранее ${v}`
     
     }
 
