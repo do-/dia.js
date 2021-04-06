@@ -210,7 +210,7 @@ module.exports = class extends Dia.DB.Client {
 					
 						fields = Object.keys (r).filter (k => columns [k])
 						
-						if (!fields.length) fail (new Error ('No known fields found in 1st record'))
+						if (!fields.length) fail (new Error (`No known fields (${Object.keys (columns)}) found in 1st record: ` + JSON.stringify (r)))
 					
 						ok (this.load (body, table, fields))
 					
