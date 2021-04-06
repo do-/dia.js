@@ -1,3 +1,16 @@
+// Borrowed from https://github.com/sindresorhus/is-stream
+
+const isStream = stream =>
+	stream !== null &&
+	typeof stream === 'object' &&
+	typeof stream.pipe === 'function';
+
+isStream.readable = stream =>
+	isStream(stream) &&
+	stream.readable !== false &&
+	typeof stream._read === 'function' &&
+	typeof stream._readableState === 'object';    
+
 const  Dia          = require ('../../Dia.js')
 const  readline     = require ('readline')
 const {
@@ -126,12 +139,12 @@ module.exports = class extends Dia.DB.Client {
         }
     
     }    
-
+    
     async insert (table, data) {
     
         let def = this.model.relations [table]; if (!def) throw 'Table not found: ' + table
 
-		if (!(data instanceof Readable)) {
+		if (!isStream.readable (data)) {
 		
 	        if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
 	        
