@@ -440,7 +440,7 @@ module.exports = class extends require ('../Pool.js') {
 						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} DISABLE TRIGGER USER`, params: []})
 						result.push (this.gen_sql_add_column (ref_table, tmp_col))
-						result.push ({sql: `UPDATE ${ref_table.qname} r SET ${tmp_col.name} = (SELECT ${tmp_table.pk} FROM ${table.name} v WHERE v.${table.existing.pk}=r.${col.name})`, params: []})
+						result.push ({sql: `UPDATE ${ref_table.qname} r SET ${tmp_col.name} =t. ${tmp_table.pk} FROM ${tmp_table.name} t WHERE t.${table.existing.pk}=r.${col.name})`, params: []})
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} DROP COLUMN ${col.name}`, params: []})
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} RENAME ${tmp_col.name} TO ${col.name}`, params: []})
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} ENABLE TRIGGER USER`, params: []})
