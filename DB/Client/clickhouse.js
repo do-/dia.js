@@ -195,6 +195,8 @@ module.exports = class extends Dia.DB.Client {
 
 			let fields = null, {columns} = def
 
+			data.on ('close', () => {if (!fields) ok ()})
+
 			function line (r) {
 
 				let l = ''
