@@ -384,7 +384,12 @@ module.exports = class extends require ('../Pool.js') {
             delete table.model
 
             let tmp_table = clone (table)
-            
+
+            for (let сol_name of table.existing.p_k) {
+                if (tmp_table.p_k.includes (сol_name)) continue
+                tmp_table.columns [сol_name] = table.existing.columns [сol_name]
+            }
+
             for (let t of [table, tmp_table]) t.model = this.model
             
             tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
