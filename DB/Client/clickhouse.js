@@ -33,7 +33,7 @@ module.exports = class extends Dia.DB.Client {
     
     log_label (sql, params) {
     
-    	return (this.log_prefix || '') + sql
+    	return (this.log_prefix || '') + sql.replace (/\s+/g, ' ').trim ()
     
     }
     
