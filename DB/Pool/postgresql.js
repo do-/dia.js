@@ -474,6 +474,8 @@ module.exports = class extends require ('../Pool.js') {
     
     is_column_to_alter_to_int (ex_col, col) {
     
+	if (ex_col.TYPE_NAME == 'BIT') return true
+
     	if (!this.is_type_int (ex_col.TYPE_NAME)) return false
     	
     	let len = c => parseInt (c.TYPE_NAME.slice (3))
@@ -549,7 +551,18 @@ module.exports = class extends require ('../Pool.js') {
 		}
 
     }
-        
+
+    gen_sql_alter_column_using (ex_col, col) {
+
+        let using = ''
+
+        if (ex_col.TYPE_NAME == 'BIT' && col.TYPE_NAME == 'INT') using = `"${col.name}"::INT`
+        if (ex_col.TYPE_NAME == 'BIT' && col.TYPE_NAME == 'INT2') using = `"${col.name}"::INT::INT2`
+
+        return using ? ` USING ${using}` : ''
+
+    }
+
     add_sql_add_column (table, col, existing_columns, result) {
 
         let {name} = col, after = table.on_after_add_column
@@ -590,7 +603,7 @@ module.exports = class extends require ('../Pool.js') {
 			delete ex_col.COLUMN_DEF
 		}
 		
-		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0], params: []})
+		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0] + this.gen_sql_alter_column_using (ex_col, col), params: []})
 
 		for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
                 
