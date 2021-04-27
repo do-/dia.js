@@ -145,6 +145,22 @@ module.exports = class {
         return data
     }
 
+    async select_col (sql, params) {
+    
+    	return this.select_loop (sql, params, (r, l) => {
+    	
+    		for (let k in r) {
+    		
+    			l.push (r [k])
+    			
+    			break
+    		
+    		}
+    	
+    	}, [])
+    
+    }
+    
     async select_loop (sql, params, cb, data) {
     
     	let rs = await this.select_stream (sql, params)
