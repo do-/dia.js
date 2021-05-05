@@ -610,14 +610,14 @@ module.exports = class extends require ('../Pool.js') {
 			delete ex_col.COLUMN_DEF
 		}
 		
-        	let set_def = this.gen_sql_column_definition (col).split (' DEFAULT') [0]
+        let set_def = this.gen_sql_column_definition (col).split (' DEFAULT') [0]
 
-        	let set_type = set_def.indexOf('NOT NULL') > 0 ? set_def.substr(0,set_def.indexOf('NOT NULL')).trim() : set_def.trim()
+        let set_type_def = set_def.split(' NOT NULL')
 
-        	let set_def_not_null = set_def.indexOf('NOT NULL') > 0 ? set_def.substr(set_def.indexOf('NOT NULL')).trim() : ''
+        let alter_set_def_not_null = set_type_def.length > 1 ? `, ALTER "${col.name}" SET NOT NULL` : ''
 
-		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ${set_type} ${this.gen_sql_alter_column_using (ex_col, col)} ${(set_def_not_null.length>0?`, ALTER "${col.name}" SET NOT NULL`:'')}`, params: []})
-
+		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ${set_type_def[0]} ${this.gen_sql_alter_column_using (ex_col, col)}${alter_set_def_not_null}`, params: []})
+        
 		for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
                 
     }
