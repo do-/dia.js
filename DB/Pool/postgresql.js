@@ -610,7 +610,7 @@ module.exports = class extends require ('../Pool.js') {
 			delete ex_col.COLUMN_DEF
 		}
 		
-		result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ` + this.gen_sql_column_definition (col).split (' DEFAULT') [0] + this.gen_sql_alter_column_using (ex_col, col), params: []})
+        result.push ({sql: `ALTER TABLE ${table.qname} ALTER "${col.name}" TYPE ${this.gen_sql_type_dim (col)} ${this.gen_sql_alter_column_using (ex_col, col)}`, params: []})
 
 		for (let k of ['TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS']) ex_col [k] = col [k]
                 
