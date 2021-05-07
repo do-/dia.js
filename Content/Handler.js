@@ -67,6 +67,12 @@ module.exports = class {
     	])
 
     }
+    
+    async commit () {
+    
+    	for (let db of this.__resources) if (db.commit) await db.commit ()
+
+    }
 
     async run () {
         
@@ -83,7 +89,9 @@ module.exports = class {
             if (!this.module_name) this.module_name = this.get_module_name ()
             if (!this.method_name) this.method_name = this.get_method_name ()
             console.log (this.uuid + ': ' + this.get_log_banner ())            
-            this.send_out_data (await this.get_data ())
+            let data = await this.get_data ()
+            if (this.is_transactional ()) await this.commit ()
+            this.send_out_data (data)
         }
         catch (x) {
             console.log (this.uuid, x)
