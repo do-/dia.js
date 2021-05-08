@@ -22,12 +22,15 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
-    async acquire () {
+    async acquire (o = {}) {
+    
+    	let {log_meta} = o
+    	
+    	let c = new wrapper (await this.http.acquire ({log_meta}))
 
-    	let c = new wrapper (await this.http.acquire ())
-
+		c.log_meta = log_meta
         c.database = this.database
-    	c.model = this.model
+    	c.model    = this.model
     	
         return c
         

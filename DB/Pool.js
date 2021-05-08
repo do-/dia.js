@@ -20,7 +20,8 @@ module.exports = class {
 
         try {
             var db = await this.acquire ()
-            db.log_prefix = '[RUNNING BATCH] '
+            db.log_meta = {prefix: '[RUNNING BATCH]'}
+//            db.log_prefix = '[RUNNING BATCH] '
             for (let i of list) await db.do (i.sql, i.params)
         }
         finally {
@@ -37,7 +38,8 @@ module.exports = class {
 
         try {
             var db = await this.acquire ()
-            db.log_prefix = '[LOADING SCHEMA] '
+            db.log_meta = {prefix: '[LOADING SCHEMA]'}
+//            db.log_prefix = '[LOADING SCHEMA] '
             await db.load_schema ()
         }
         catch (x) {

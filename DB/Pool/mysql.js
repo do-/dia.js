@@ -20,7 +20,7 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
-    async acquire () {
+    async acquire (o = {}) {
 
     	return new Promise ((ok, fail) => {
 
@@ -31,6 +31,7 @@ module.exports = class extends require ('../Pool.js') {
 		        let c = new wrapper (raw)
 
         		c.model = this.model
+		    	c.log_meta = o.log_meta
         		
         		ok (c)
         

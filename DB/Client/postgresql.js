@@ -52,17 +52,15 @@ module.exports = class extends Dia.DB.Client {
     async select_all (original_sql, params = []) {
     
         let sql = this.fix_sql (original_sql)
-        
-        let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-        
-        console.time (label)
+                
+        let log_event = this.log_start (sql, params)
         
         try {
             let result = await this.backend.query (sql, params)
             return result.rows
         }
         finally {
-            console.timeEnd (label)
+            this.log_finish (log_event)
         }
         
     }
@@ -70,16 +68,14 @@ module.exports = class extends Dia.DB.Client {
     async select_stream (original_sql, params, o) {
     	
         let sql = this.fix_sql (original_sql)
-
-        let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
         
-        console.time (label)
+        let log_event = this.log_start (sql, params)
         
         let qs = require ('pg-query-stream')
 
     	let stream = this.backend.query (new qs (sql, params, o))
     	
-    	stream.on ('end', () => console.timeEnd (label))
+    	stream.on ('end', () => this.log_finish (log_event))
     	
     	return stream
 
@@ -264,16 +260,14 @@ module.exports = class extends Dia.DB.Client {
 
     	}
 
-        let label = (this.log_prefix || '') + sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-
-        console.time (label)
+        let log_event = this.log_start (sql, params)
 
         try {
             return await this.backend.query (sql, params)
         }
         finally {
-            console.timeEnd (label)
-        }
+			this.log_finish (log_event)
+		}
 
     }
 
@@ -361,11 +355,11 @@ module.exports = class extends Dia.DB.Client {
 
 			sql = `COPY ${table} (${cols}) FROM STDIN ${sql}`
 
-	        let label = (this.log_prefix || '') + sql; console.time (label)
+	        let log_event = this.log_start (sql)
 
 			let os = this.backend.query (require ('pg-copy-streams').from (sql))
 
-			os.on ('finish', () => ok (console.timeEnd (label)))
+			os.on ('finish', () => ok (this.log_finish (log_event)))
 
 			os.on ('error', fail)
 			is.on ('error', fail)

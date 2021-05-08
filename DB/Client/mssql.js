@@ -38,9 +38,7 @@ module.exports = class extends Dia.DB.Client {
 
     async do (sql, params = []) {
 
-        let label = (this.log_prefix || '') + sql.replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-
-        console.time (label)
+        let log_event = this.log_start (sql, params)
 
     	return new Promise ((ok, fail) => {
 
@@ -50,9 +48,9 @@ module.exports = class extends Dia.DB.Client {
 
             params.forEach (p => request.input (p [0], p[1]));
 
-			request.query (sql, function (x) {
+			request.query (sql, x => {
 
-				console.timeEnd (label)
+				this.log_finish (log_event)
 
 				return x ? fail (x) : ok ()
 
@@ -64,9 +62,7 @@ module.exports = class extends Dia.DB.Client {
 
     async select_hash (sql, params) {
 
-        let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-
-        console.time (label)
+        let log_event = this.log_start (sql, params)
 
     	return new Promise ((ok, fail) => {
 
@@ -76,9 +72,9 @@ module.exports = class extends Dia.DB.Client {
 
             params.forEach (p => request.input (p [0], p[1]));
 
-			request.query (sql, function (x, all, fields) {
+			request.query (sql, (x, all, fields) => {
 
-				console.timeEnd (label)
+				this.log_finish (log_event)
 
 				return x ? fail (x) : ok (all.recordset [0] || {})
 
@@ -90,9 +86,7 @@ module.exports = class extends Dia.DB.Client {
 
     async select_all (sql, params) {
 
-        let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-
-        console.time (label)
+        let log_event = this.log_start (sql, params)
 
     	return new Promise ((ok, fail) => {
 
@@ -102,9 +96,9 @@ module.exports = class extends Dia.DB.Client {
 
             params.forEach (p => request.input (p [0], p[1]));
 
-			request.query (sql, function (x, all) {
+			request.query (sql, (x, all) => {
 
-				console.timeEnd (label)
+				this.log_finish (log_event)
 
 				return x ? fail (x) : ok (all.recordset)
 
@@ -116,9 +110,7 @@ module.exports = class extends Dia.DB.Client {
 
     async select_stream (sql, params, o) {
 
-        let label = (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-
-        console.time (label)
+        let log_event = this.log_start (sql, params)
 
         const request = this.backend.request()
 
@@ -158,7 +150,7 @@ module.exports = class extends Dia.DB.Client {
 
     	request.query (sql, params)
 
-    	stream.on ('end', () => console.timeEnd (label))
+    	stream.on ('end', () => this.log_finish (log_event))
 
     	return stream
 

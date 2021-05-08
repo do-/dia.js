@@ -30,24 +30,16 @@ module.exports = class extends Dia.DB.Client {
         params.push (offset)
         return [original_sql + ' LIMIT ? OFFSET ?', params]
     }
-    
-    log_label (sql, params) {
-    
-    	return (this.log_prefix || '') + sql.replace (/\s+/g, ' ').trim ()
-    
-    }
-    
+        
     async select_stream (sql, params, o = {}) {
 
+        let log_event = this.log_start (sql, params)
+
     	sql = this.bind (sql, params)
-
-    	let label = this.log_label (sql); console.time (label)        
-
-        this.backend.log_prefix = this.log_prefix
        	       	
        	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
 
-		input.on ('end', () => console.timeEnd (label))
+		input.on ('end', () => this.log_finish (log_event))
 
 		let reader = readline.createInterface ({input})
 
@@ -108,12 +100,10 @@ module.exports = class extends Dia.DB.Client {
     async load (is, table, fields) {
     
     	let sql = `INSERT INTO ${table} (${fields})`
-
-    	let label = this.log_label (sql)
-    	
+   
         try {        
         
-        	console.time (label)        
+	        let log_event = this.log_start (sql)
         	
         	let body = new Transform ({transform (chunk, encoding, callback) {
 				
@@ -122,9 +112,7 @@ module.exports = class extends Dia.DB.Client {
 				callback (null, chunk)			
 					
 			}})        	
-			
-	        this.backend.log_prefix = this.log_prefix
-	        
+				        
 			let res_promise = this.backend.response ({}, body)
 			
 			is.pipe (body)
@@ -134,7 +122,7 @@ module.exports = class extends Dia.DB.Client {
         }
         finally {
         
-        	console.timeEnd (label)
+        	this.log_finish (log_event)
         
         }
     
@@ -291,19 +279,15 @@ module.exports = class extends Dia.DB.Client {
     
     async do (sql, params = []) {
     
+        let log_event = this.log_start (sql, params)
+
     	sql = this.bind (sql, params)
-    	
-    	let label = this.log_label (sql)
-        
+    	        
         try {        
-        	console.time (label)        
-	        this.backend.log_prefix = this.log_prefix        	
 			await this.backend.response ({}, sql)			
         }
-        finally {
-        
-        	console.timeEnd (label)
-        
+        finally {        
+            this.log_finish (log_event)        
         }
     
     }        

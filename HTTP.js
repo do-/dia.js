@@ -19,12 +19,18 @@ module.exports = class {
         
     }
     
-    async acquire () {
+    async acquire (ao = {}) {
+    	
+    	let {log_meta} = ao
 
         return new class {
         
-			constructor (o) {		
-				this.o = o				
+			constructor (o) {
+				let {log_meta} = o; if (log_meta) {
+					let {prefix, request, resource_name} = log_meta
+					this.log_prefix = prefix || [(request || {}).uuid, resource_name].filter (i => i).join (' ')
+				}
+				this.o = o
 			}
 			
 			async release () {
@@ -100,6 +106,8 @@ module.exports = class {
 			
 				o = Object.assign ({method: has_body ? 'POST' : 'GET'}, this.o, o)
 				
+				delete o.log_meta
+				
 				if (has_body && !is_body_stream && !o.headers && body.length > 1) o.headers = {'Content-Type': this.guess_content_type (body.charAt (0))}
 
 				return new Promise ((ok, fail) => {
@@ -108,7 +116,7 @@ module.exports = class {
 						oo = clone (o)
 						oo.auth = oo.auth.split (':') [0] + ':XXXXXX'
 					}
-
+					
 					darn (this.log_prefix + ' HTTP rq ' + JSON.stringify ([oo, body]))
 
 					try {
@@ -149,7 +157,7 @@ module.exports = class {
 
 			}
         
-        } (this.o)
+        } ({...this.o, log_meta})
         
     }    
 

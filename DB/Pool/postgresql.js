@@ -98,16 +98,10 @@ module.exports = class extends require ('../Pool.js') {
 
     }    
     
-    async acquire () {  // darn (`${this.backend.totalCount} ${this.backend.idleCount} ${this.backend.waitingCount}`)
+    async acquire (o = {}) {
         let raw = await this.backend.connect ()
         let c = new wrapper (raw)
-        
-/*    
-        if (this.backend.is_txn_pending) {
-            darn ('[WARNING] Got a dirty connection, rolling back uncommitted transaction')            
-            (async () => {await this.rollback ()}) ()
-        }
-*/
+    	c.log_meta = o.log_meta
         c.model = this.model
         return c
     }

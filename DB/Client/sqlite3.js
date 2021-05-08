@@ -46,17 +46,9 @@ module.exports = class extends Dia.DB.Client {
         return [original_sql + ' LIMIT ? OFFSET ?', params]
     }
     
-    log_label (sql, params) {
-    
-    	return (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
-    
-    }
-    
     async do (sql, params = []) {
             
-        let label = this.log_label (sql, params)
-        
-        console.time (label)
+        let log_event = this.log_start (sql, params)
 
         return new Promise ((ok, fail) => {
         
@@ -72,29 +64,25 @@ module.exports = class extends Dia.DB.Client {
         	
         	)
         
-        }).finally (() => console.timeEnd (label))
+        }).finally (() => this.log_finish (log_event))
 
     }    
 
     async select_all (sql, params = []) {
             
-        let label = this.log_label (sql, params)
-        
-        console.time (label)
-        
+        let log_event = this.log_start (sql, params)
+                
         return new Promise ((ok, fail) => {
         
         	this.backend.all (sql, params, (x, d) => x ? fail (x) : ok (d))
         
-        }).finally (() => console.timeEnd (label))
+        }).finally (() => this.log_finish (log_event))
 
     }
     
     async select_loop (sql, params, callback, data) {
     
-        let label = this.log_label (sql, params)
-        
-        console.time (label)
+        let log_event = this.log_start (sql, params)
         
         return new Promise ((ok, fail) => {
         
@@ -103,21 +91,19 @@ module.exports = class extends Dia.DB.Client {
         		(x, cnt) => x ? fail (x) : ok (data)
         	)
         
-        }).finally (() => console.timeEnd (label))
+        }).finally (() => this.log_finish (log_event))
     
     }
 
     async select_hash (sql, params) {
     
-        let label = this.log_label (sql, params)
-        
-        console.time (label)
-        
+        let log_event = this.log_start (sql, params)
+                
         return new Promise ((ok, fail) => {
         
         	this.backend.get (sql, params, (x, d) => x ? fail (x) : ok (d || {}))
         
-        }).finally (() => console.timeEnd (label))
+        }).finally (() => this.log_finish (log_event))
 
     }
 
