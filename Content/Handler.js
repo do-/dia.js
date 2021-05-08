@@ -75,9 +75,8 @@ module.exports = class {
     }
 
     async run () {
-        
-        let old_uuid = this.uuid
-        console.time (old_uuid)        
+
+        console.time (this.uuid)        
 
         try {
             this.check ()
@@ -108,8 +107,7 @@ module.exports = class {
                 darn (x)
             }
             finally {
-            	if (old_uuid != this.uuid) console.log (`request id was changed: ${this.uuid} -> ${old_uuid}`)
-                console.timeEnd (old_uuid)
+                console.timeEnd (this.uuid)
             }
 
         }
