@@ -1,3 +1,4 @@
+const Dia = require ('./Dia.js')
 const fs = require ('fs')
 const Path = require ('path')
 
@@ -139,6 +140,60 @@ module.exports = class {
 		if (paths.length == 0) darn (`Didn't find ${fn} in ${_content_paths}`)
 		
 		return paths
+	
+	}
+	
+	adjust_log_event (e) {
+	
+		if (!('uuid'  in e)) e.uuid  = Dia.new_uuid ()
+
+		if (!('ts'    in e)) e.ts    = new Date ()
+
+		if (!('level' in e)) e.level = 'info'
+
+		if (e.phase == 'after' && !('duration' in e)) {
+			e.duration = (e.ts_to = new Date ()) - e.ts
+			e.message  = e.duration + ' ms'
+		}
+
+	}
+
+	log_event (e) {
+
+		this.adjust_log_event (e)
+
+		this.get_logger (e.category).write (e)
+
+	}
+	
+	get_logger () {
+	
+		return new (class {
+		
+			write (e) {
+
+				let {level, prefix, uuid, phase, request, resource_name, message} = e
+
+				let parts = [level, prefix]
+				
+				if (request) parts.push (request.get_log_fields ())
+
+				parts.push (resource_name)
+				parts.push (uuid)
+
+				parts.push (
+					phase == 'after'  ? '<' : 
+					phase == 'before' ? '>' : 
+					'-'
+				)
+
+				parts.push (message)
+				
+				console.log (parts.filter (i => i != null).join (' '))
+
+			}
+		
+		})()
 	
 	}
 

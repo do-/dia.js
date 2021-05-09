@@ -16,6 +16,13 @@ module.exports = class {
         
     }
     
+    inject (c, o) {
+    	c.log_meta = o.log_meta
+        c.model = this.model
+        c.pool = this
+        return c
+    }
+    
     async run (list) {
 
         try {

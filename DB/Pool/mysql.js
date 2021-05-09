@@ -27,13 +27,8 @@ module.exports = class extends require ('../Pool.js') {
     		this.backend.getConnection ((x, raw) => {
 
     			if (x) return fail (x)
-    		
-		        let c = new wrapper (raw)
 
-        		c.model = this.model
-		    	c.log_meta = o.log_meta
-        		
-        		ok (c)
+        		ok (this.inject (new wrapper (raw), o))
         
     		})
     	

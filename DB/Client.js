@@ -337,33 +337,10 @@ module.exports = class {
     async load_schema_table_keys () {}
     
     async load_schema_table_triggers () {}
-    
-    log_format (e) {
-    
-    	let {prefix, uuid, phase, request, resource_name, db_query, duration} = e
-    	
-    	let s = prefix ? prefix + ' ' : ''
-    	
-    	if (request) s += request.uuid + ' '
-    	if (resource_name) s += resource_name + ' '
-
-		switch (phase) {
-			case 'after':
-				return s + '< ' + uuid + ' ' + duration + ' ms'
-			case 'before':
-				let {sql, params} = db_query
-				s += '> ' + uuid + ' ' + sql.replace (/\s+/g, ' ').trim () 
-				if (params && params.length) s += ' ' + JSON.stringify (params)
-				return s
-			default:
-				return null
-		}    	
-    
-    }
 
     log_write (e) {
 
-    	let s = this.log_format (e); if (s) console.log (s)
+    	this.model.conf.log_event (e)
     
     	return e
     
@@ -372,22 +349,22 @@ module.exports = class {
     log_finish (e) {
     
 		e.phase = 'after'
-		
-		e.duration = (e.ts_to = new Date ()) - e.ts
     	
-    	this.log_write (e)
+    	return this.log_write (e)
 
     }
     
     log_start (sql, params) {
-        	
+
+		let message = sql.replace (/\s+/g, ' ').trim ()
+
+		if (params && params.length) message += ' ' + JSON.stringify (params)
+
     	return this.log_write ({
 			...(this.log_meta || {}),
-			level    : 'info',
-			uuid     : Dia.new_uuid (),
-			db_query : {sql, params},
+			message,
 			phase    : 'before',
-			ts       : new Date ()
+			category : 'db',
     	})
 
     }

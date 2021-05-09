@@ -7,8 +7,8 @@ module.exports = class {
     constructor (o = {}) {
 
     	if (o instanceof Config) o = {conf: o}
-    	
-    	this.conf = o.conf || {}
+
+    	if (!((this.conf = o.conf) instanceof Config)) throw new Error ('Sorry, an instance of Dia Config is now mandatory to initialize a Model')
 
         if (!o.paths) o.paths = o.path ? [o.path] : this.conf._model_paths || ['./Model']
 

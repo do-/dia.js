@@ -26,13 +26,7 @@ module.exports = class extends require ('../Pool.js') {
     
     	let {log_meta} = o
     	
-    	let c = new wrapper (await this.http.acquire ({log_meta}))
-
-		c.log_meta = log_meta
-        c.database = this.database
-    	c.model    = this.model
-    	
-        return c
+        return this.inject (new wrapper (await this.http.acquire ({log_meta})), o)
         
     }
 

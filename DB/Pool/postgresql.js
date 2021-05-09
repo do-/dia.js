@@ -100,10 +100,7 @@ module.exports = class extends require ('../Pool.js') {
     
     async acquire (o = {}) {
         let raw = await this.backend.connect ()
-        let c = new wrapper (raw)
-    	c.log_meta = o.log_meta
-        c.model = this.model
-        return c
+        return this.inject (new wrapper (raw), o)
     }
 
     async release (client) {

@@ -17,6 +17,10 @@ module.exports = class {
     	for (let i of m) to [i] = from [i]
     }
     
+    get_log_fields () {
+    	return this.uuid
+    }
+    
     get_log_banner () {
         return `${this.module_name}.${this.method_name}`
     }
@@ -143,9 +147,11 @@ module.exports = class {
 
         if (this.pools) for (let k in this.pools) {
         
-            let pool = this.pools [k]
+            let o = this.pools [k]
+            
+            if (o.acquire) o = await this.acquire_resource (o, k)
 
-            this [k] = pool.acquire ? await this.acquire_resource (pool, k) : pool
+            this [k] = o
 
         }
 
@@ -153,7 +159,13 @@ module.exports = class {
 
     async acquire_resource (pool, k) {
 
-        let db = await pool.acquire ({log_meta: {request: this, resource_name: k}})
+        let db = await pool.acquire ({
+        	conf: this.conf,
+        	log_meta: {
+        		request: this, 
+        		resource_name: k
+        	}
+        })
 
         let {product} = pool; if (product) db.product = product
 

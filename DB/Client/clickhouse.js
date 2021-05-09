@@ -293,7 +293,7 @@ module.exports = class extends Dia.DB.Client {
     }        
 
     async select_all (sql, params = []) {
-    
+
     	return this.select_loop (sql, params, (d, a) => a.push (d), [])
 
     }
@@ -307,10 +307,10 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async load_schema_tables () {
-    
+
         let {tables, partitioned_tables} = this.model
 
-		let rs = await this.select_all ("SELECT * FROM system.tables WHERE database=?", [this.database])
+		let rs = await this.select_all ("SELECT * FROM system.tables WHERE database=?", [this.pool.database])
 
         for (let r of rs) {
             let t = tables [r.name] || partitioned_tables [r.name]
@@ -324,7 +324,7 @@ module.exports = class extends Dia.DB.Client {
     
     async load_schema_table_columns () {
     
-		let rs = await this.select_all ("SELECT * FROM system.columns WHERE database=?", [this.database])
+		let rs = await this.select_all ("SELECT * FROM system.columns WHERE database=?", [this.pool.database])
 
         let {tables, partitioned_tables} = this.model
         
