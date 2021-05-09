@@ -1,6 +1,7 @@
 const Dia = require ('./Dia.js')
 const fs = require ('fs')
 const Path = require ('path')
+const ConsoleLogger = require ('./Log/ConsoleLogger.js')
 
 const get_subdirs_1 = (p) => 
 
@@ -166,34 +167,9 @@ module.exports = class {
 
 	}
 	
-	get_logger () {
+	get_logger (category) {
 	
-		return new (class {
-		
-			write (e) {
-
-				let {level, prefix, uuid, phase, request, resource_name, message} = e
-
-				let parts = [level, prefix]
-				
-				if (request) parts.push (request.get_log_fields ())
-
-				parts.push (resource_name)
-				parts.push (uuid)
-
-				parts.push (
-					phase == 'after'  ? '<' : 
-					phase == 'before' ? '>' : 
-					'-'
-				)
-
-				parts.push (message)
-				
-				console.log (parts.filter (i => i != null).join (' '))
-
-			}
-		
-		})()
+		return new ConsoleLogger ({category})
 	
 	}
 
