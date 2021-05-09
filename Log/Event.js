@@ -4,23 +4,28 @@ module.exports = class {
 
     constructor (o = {}) {
 
-		for (let k in o) this [k] = o [k]
+		if (!('level' in o)) o.level = 'info'
 
-		if (!('level' in this)) this.level = 'info'
+		o.ts = new Date ()
 
-		this.ts   = new Date ()
-		this.uuid = Dia.new_uuid ()
-		
-		this.reset_message ()
+		if (!('uuid' in o)) o.uuid = Dia.new_uuid ()
+
+		o.path = []; for (let i = o; i; i = i.parent) o.path.unshift (i.uuid)
+
+		this.set (o)
 
 	}
 	
-	finish () {
-		this.phase = 'after'
-		this.ts_to = new Date ()
-		this.duration = this.ts_to - this.ts
-		this.reset_message ()
-		return this
+	finish () {	
+	
+		let ts_to = new Date ()
+		
+		return this.set ({
+			ts_to,
+			duration: ts_to - this.ts,
+			phase: 'after',
+		})
+
 	} 
 	
 	get_message () {
@@ -28,8 +33,14 @@ module.exports = class {
 		return ''
 	}
 
-	reset_message () {
+	set (o = {}) {
+	
+		for (let k in o) this [k] = o [k]
+
 		this.message = this.get_message ()
+	
+		return this
+	
 	}
 	
 	get_sigil () {

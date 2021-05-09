@@ -3,6 +3,7 @@ const url = require ('url')
 const http = require ('http')
 const path = require ('path')
 const fs   = require ('fs')
+const LogEvent = require ('../Log/Events/Request.js')
 
 module.exports = class {
 
@@ -16,12 +17,8 @@ module.exports = class {
     	let from = c.prototype, to = this.constructor.prototype
     	for (let i of m) to [i] = from [i]
     }
-    
-    get_log_fields () {
-    	return this.uuid
-    }
-    
-    get_log_banner () {
+
+    get_log_banner () { // DEPRECATED
         return `${this.module_name}.${this.method_name}`
     }
     
@@ -78,23 +75,42 @@ module.exports = class {
 
     }
 
+    log_write (e) {
+
+    	this.conf.log_event (e)
+
+    	return e
+    
+    }
+
     async run () {
-
-        console.time (this.uuid)        
-
+		
+		this.log_event = this.log_write (new LogEvent ({
+    		...(this.log_meta || {}),
+    		request: this,
+			phase: 'before',
+    	}))
+    	
         try {
+
             this.check ()
             await this.read_params ()
             this.check_params ()
+
             this.session = this.get_session ()
             await this.acquire_resources ()
+
             if (!this.is_anonymous ()) this.user = await this.get_user ()
             if (!this.module_name) this.module_name = this.get_module_name ()
             if (!this.method_name) this.method_name = this.get_method_name ()
-            console.log (this.uuid + ': ' + this.get_log_banner ())            
+
+			this.log_write (this.log_event.set ({phase: undefined}))
+
             let data = await this.get_data ()
             if (this.is_transactional ()) await this.commit ()
+
             this.send_out_data (data)
+
         }
         catch (x) {
             console.log (this.uuid, x)
@@ -111,7 +127,7 @@ module.exports = class {
                 darn (x)
             }
             finally {
-                console.timeEnd (this.uuid)
+                this.log_write (this.log_event.finish ())
             }
 
         }
@@ -162,7 +178,7 @@ module.exports = class {
         let db = await pool.acquire ({
         	conf: this.conf,
         	log_meta: {
-        		request: this, 
+        		parent: this.log_event,
         		resource_name: k
         	}
         })
