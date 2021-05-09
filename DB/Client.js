@@ -1,4 +1,5 @@
 const Dia = require ('../Dia.js')
+const LogEvent = require ('../Log/Events/DB.js')
 
 module.exports = class {
 
@@ -341,31 +342,25 @@ module.exports = class {
     log_write (e) {
 
     	this.model.conf.log_event (e)
-    
+
     	return e
     
     }
 
     log_finish (e) {
-    
-		e.phase = 'after'
-    	
-    	return this.log_write (e)
+        	
+    	return this.log_write (e.finish ())
 
     }
     
     log_start (sql, params) {
 
-		let message = sql.replace (/\s+/g, ' ').trim ()
-
-		if (params && params.length) message += ' ' + JSON.stringify (params)
-
-    	return this.log_write ({
-			...(this.log_meta || {}),
-			message,
-			phase    : 'before',
-			category : 'db',
-    	})
+    	return this.log_write (new LogEvent ({
+    		...(this.log_meta || {}),
+			phase: 'before',
+			sql,
+			params,
+    	}))
 
     }
 

@@ -144,24 +144,7 @@ module.exports = class {
 	
 	}
 	
-	adjust_log_event (e) {
-	
-		if (!('uuid'  in e)) e.uuid  = Dia.new_uuid ()
-
-		if (!('ts'    in e)) e.ts    = new Date ()
-
-		if (!('level' in e)) e.level = 'info'
-
-		if (e.phase == 'after' && !('duration' in e)) {
-			e.duration = (e.ts_to = new Date ()) - e.ts
-			e.message  = e.duration + ' ms'
-		}
-
-	}
-
 	log_event (e) {
-
-		this.adjust_log_event (e)
 
 		this.get_logger (e.category).write (e)
 
