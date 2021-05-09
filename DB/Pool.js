@@ -1,3 +1,5 @@
+const LogEvent = require ('../Log/Events/Text.js')
+
 module.exports = class {
 
     constructor (o) {
@@ -23,41 +25,61 @@ module.exports = class {
         return c
     }
     
-    async run (list) {
+    log_write (e) {
+
+    	this.model.conf.log_event (e)
+
+    	return e
+    
+    }
+
+    async do_with_db (o) {
+    
+    	let {f, label} = o
+    
+    	let {log_meta} = this; if (!log_meta) log_meta = {}
+    
+		let log_event = this.log_write (new LogEvent ({
+    		...log_meta,
+			category: 'db',
+			label,
+			phase: 'before',
+    	}))
 
         try {
             var db = await this.acquire ()
-            db.log_meta = {prefix: '[RUNNING BATCH]'}
-//            db.log_prefix = '[RUNNING BATCH] '
-            for (let i of list) await db.do (i.sql, i.params)
+            db.log_meta = {...log_meta, parent: log_event}
+            await f (db)
         }
         finally {
             this.release (db)
+            this.log_write (log_event.finish ())
         }
         
     }    
 
+    async run (list) {
+
+    	return this.do_with_db ({
+			label : 'Running batch',
+			f     : async db => {for (let {sql, params} of list) await db.do (sql, params)} 
+    	})
+
+    }
+    
     async load_schema () {
 
     	await this.model.pending ()
     	
-		this.normalize_model ()    	
+		this.normalize_model ()
 
-        try {
-            var db = await this.acquire ()
-            db.log_meta = {prefix: '[LOADING SCHEMA]'}
-//            db.log_prefix = '[LOADING SCHEMA] '
-            await db.load_schema ()
-        }
-        catch (x) {
-        	darn (x)
-        }
-        finally {
-            this.release (db)
-        }
+    	return this.do_with_db ({
+			label : 'Loading schema',
+			f     : db => db.load_schema ()
+    	})
 
-    }
-    
+	}
+
     gen_sql_patch () {
     
         let patch = []
