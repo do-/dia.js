@@ -24,9 +24,9 @@ module.exports = class extends require ('../Pool.js') {
     
     async acquire (o = {}) {
     
-    	let {log_meta} = o
-    	
-        return this.inject (new wrapper (await this.http.acquire ({log_meta})), o)
+    	let {conf, log_meta} = o
+
+        return this.inject (new wrapper (await this.http.acquire ({conf, log_meta})), o)
         
     }
 

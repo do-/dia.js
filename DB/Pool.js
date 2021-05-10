@@ -47,8 +47,11 @@ module.exports = class {
     	}))
 
         try {
-            var db = await this.acquire ()
-            db.log_meta = {...log_meta, parent: log_event}
+        	let {conf} = this.model
+            var db = await this.acquire ({
+            	conf,
+            	log_meta: {...log_meta, parent: log_event},
+            })
             await f (db)
         }
         finally {

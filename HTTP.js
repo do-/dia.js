@@ -1,7 +1,8 @@
-const url    = require ('url')
-const http   = require ('http')
-const https  = require ('https')
-const stream = require ('stream')
+const url      = require ('url')
+const http     = require ('http')
+const https    = require ('https')
+const stream   = require ('stream')
+const LogEvent = require ('./Log/Events/HTTP.js')
 
 module.exports = class {
 
@@ -21,16 +22,21 @@ module.exports = class {
     
     async acquire (ao = {}) {
     	
-    	let {log_meta} = ao
+    	let {conf, log_meta} = ao
 
         return new class {
         
 			constructor (o) {
-				let {log_meta} = o; if (log_meta) {
-					let {prefix, request, resource_name} = log_meta
-					this.log_prefix = prefix || [(request || {}).uuid, resource_name].filter (i => i).join (' ')
-				}
 				this.o = o
+				this.log_meta = log_meta
+			}
+			
+			log_write (e) {
+
+				conf.log_event (e)
+
+				return e
+
 			}
 			
 			async release () {
@@ -73,7 +79,10 @@ module.exports = class {
 
 					rp.on ('end', () => {
 
-						darn (this.log_prefix + ' HTTP rp b ' + JSON.stringify ([rp_body]))
+						this.log_write (rp.log_event.set ({
+							response_body: rp_body,
+							phase: 'response_body',
+						}))
 
 						switch (rp.statusCode) {
 							case 200 : return ok   (rp_body)
@@ -90,7 +99,7 @@ module.exports = class {
 
 			}
 			
-			async responseStream (o, body) {
+			async responseStream (o, body, log_event) {
 
 				if (o.url) {
 
@@ -105,20 +114,29 @@ module.exports = class {
 				let is_body_stream = has_body && body instanceof stream.Readable
 			
 				o = Object.assign ({method: has_body ? 'POST' : 'GET'}, this.o, o)
-				
-				delete o.log_meta
-				
+								
 				if (has_body && !is_body_stream && !o.headers && body.length > 1) o.headers = {'Content-Type': this.guess_content_type (body.charAt (0))}
+
+				if (!log_event) {
+
+					log_event = this.log_write (new LogEvent ({
+						...(this.log_meta || {}),
+						o,
+						phase: 'before',
+					}))
+				
+				}
+				else {
+
+					this.log_write (log_event.set ({
+						o,
+						phase: 'retry',
+					}))
+					
+				}
 
 				return new Promise ((ok, fail) => {
 					
-					let oo = o; if (o.auth) {
-						oo = clone (o)
-						oo.auth = oo.auth.split (':') [0] + ':XXXXXX'
-					}
-					
-					darn (this.log_prefix + ' HTTP rq ' + JSON.stringify ([oo, body]))
-
 					try {
 
 						let rq = (/^https/.test (o.protocol) ? https : http).request (o, async rp => {
@@ -126,11 +144,23 @@ module.exports = class {
 							let code    = rp.statusCode							
 							let headers = rp.headers
 
-							darn (this.log_prefix + ' HTTP rp h ' + JSON.stringify ([code, headers]))
+							this.log_write (log_event.set ({
+								code,
+								response_headers: headers,
+								phase: 'response_headers',
+							}))
 
 							rp.on ('error', x => fail (x))
 							
-							let {location} = headers; if (!location) return ok (rp)
+							let {location} = headers; if (!location) {
+
+								rp.on ('close', () => {this.log_write (log_event.finish ())})
+								
+								rp.log_event = log_event
+
+								return ok (rp)
+
+							}
 							
 				    		let u = url.parse (location)
 
@@ -157,7 +187,7 @@ module.exports = class {
 
 			}
         
-        } ({...this.o, log_meta})
+        } ({...this.o})
         
     }    
 
