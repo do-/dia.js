@@ -3,7 +3,7 @@ module.exports = class {
     constructor (o = {}) {
 
 		this.category = o.category || 'app'
-		
+
 	}
 	
 	write (e) {

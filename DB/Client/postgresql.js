@@ -1,5 +1,6 @@
 const Dia = require ('../../Dia.js')
 const {Readable, Transform, PassThrough} = require ('stream')
+const WrappedError = require ('../../Log/WrappedError.js')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {}
 
@@ -48,6 +49,11 @@ module.exports = class extends Dia.DB.Client {
         params.push (offset)
         return [original_sql + ' LIMIT ? OFFSET ?', params]
     }
+    
+    wrap_error (e, log_event) {
+    	for (let k of ['file', 'line', 'position']) delete e [k]
+		return new WrappedError (e, {log_meta: {...this.log_meta, parent: log_event}})
+    }
 
     async select_all (original_sql, params = []) {
     
@@ -58,6 +64,9 @@ module.exports = class extends Dia.DB.Client {
         try {
             let result = await this.backend.query (sql, params)
             return result.rows
+        }
+        catch (e) {
+        	throw this.wrap_error (e, log_event)
         }
         finally {
             this.log_finish (log_event)
@@ -265,6 +274,9 @@ module.exports = class extends Dia.DB.Client {
         try {
             return await this.backend.query (sql, params)
         }
+        catch (e) {
+        	throw this.wrap_error (e, log_event)
+        }
         finally {
 			this.log_finish (log_event)
 		}
@@ -360,9 +372,11 @@ module.exports = class extends Dia.DB.Client {
 			let os = this.backend.query (require ('pg-copy-streams').from (sql))
 
 			os.on ('finish', () => ok (this.log_finish (log_event)))
+			
+			let croak = e => fail (this.wrap_error (e, log_event))
 
-			os.on ('error', fail)
-			is.on ('error', fail)
+			os.on ('error', croak)
+			is.on ('error', croak)
 
 			is.pipe (os)
 

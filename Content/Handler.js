@@ -4,6 +4,8 @@ const http = require ('http')
 const path = require ('path')
 const fs   = require ('fs')
 const LogEvent = require ('../Log/Events/Request.js')
+const ErrorEvent = require ('../Log/Events/Error.js')
+const WrappedError = require ('../Log/WrappedError.js')
 
 module.exports = class {
 
@@ -113,10 +115,10 @@ module.exports = class {
 
         }
         catch (x) {
-            console.log (this.uuid, x)
             this.is_failed = true
-            this.error = x
-            this.send_out_error (x)
+        	let e = x; if (!('log_meta' in e)) e = new WrappedError (e, {log_meta: {parent: this.log_event}})
+			this.log_write (new ErrorEvent (e))
+            this.send_out_error (this.error = x)
         }
         finally {
 
@@ -253,7 +255,6 @@ module.exports = class {
     }
 
     send_out_error (x) {
-    	darn (x)
     }
 
     call (method_name) {

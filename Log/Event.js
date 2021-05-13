@@ -11,6 +11,8 @@ module.exports = class {
 		if (!('uuid' in o)) o.uuid = Dia.new_uuid ()
 
 		o.path = []; for (let i = o; i; i = i.parent) o.path.unshift (i.uuid)
+		
+		if (!o.category) o.category = 'app'
 
 		this.set (o)
 
@@ -44,11 +46,20 @@ module.exports = class {
 	}
 	
 	get_sigil () {
-		switch (this.phase) {
-			case 'after'  : return '<'
-			case 'before' : return '>'
-			default       : return '-'
+
+		switch (this.level) {
+
+			case 'error':   return '!'
+			case 'warning': return '?'
+
+			default: switch (this.phase) {
+				case 'after'  : return '<'
+				case 'before' : return '>'
+				default       : return '-'
+			}
+
 		}
+
 	}
 
 }
