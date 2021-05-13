@@ -36,11 +36,11 @@ module.exports = class extends CookieSession {
 
     async get_user () {
 
-        if (!this.id) return this.h.no_user ()
+    	let {id} = this; if (!id) return this.h.no_user ()
         
         try {
         
-        	this.user = jwt.verify (this.id, await this.get_public_key (), this.o.verify).sub
+        	this.user = jwt.verify (id, await this.get_public_key (), this.o.verify).sub
 
         	await this.keep_alive ()
 
@@ -49,7 +49,7 @@ module.exports = class extends CookieSession {
         }
         catch (x) {
 
-        	darn (x)
+        	this.h.warn (x.message, {id})
 
         	return this.h.no_user ()
 

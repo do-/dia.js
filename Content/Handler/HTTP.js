@@ -4,7 +4,31 @@ const Handler = require ('../Handler')
 const stream = require ('stream')
 const contentDisposition = require ('content-disposition')
 
+class HttpError extends Error {
+
+	constructor (line) {
+	
+		super (line.slice (4))
+		
+		this.http_line = line
+		
+		this.code = parseInt (line.slice (0, 3))
+		
+		this.is_not_an_error = this.code < 400 || this.code == 401
+	
+	}
+	
+}
+
 exports.Handler = class extends Handler {
+
+    to_error (x) {
+    
+    	if (typeof x == 'string' && /^\d\d\d /.test (x)) return new HttpError (x)
+
+    	return super.to_error (x)
+    	    	    	
+    }
 
     check () {
         if (!this.http.request) throw '400 Empty http_request'
@@ -186,9 +210,17 @@ exports.Handler = class extends Handler {
 		
     }
 
+    log_error (e) {
+
+    	if (e.http_line && e.is_not_an_error) return
+
+    	super.log_error (e)
+
+    }
+
     send_out_error (x) {
-    
-        if (/^\d\d\d /.test (x)) return this.send_out_text (x)
+
+    	let {http_line} = x; if (http_line) return this.send_out_text (http_line)
 
         let message = 
         	typeof x == 'string' ? x : 

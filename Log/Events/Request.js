@@ -20,16 +20,23 @@ module.exports = class extends Event {
 
 			case 'after'  : return super.get_message ()
 			
-			default:
+			case 'params' : 
 
-				let {method_name, rq, user, session} = this.request
+				let {method_name, rq} = this.request
 
 				return [
 					method_name,
 					JSON.stringify (rq),
+				].join (' ')
+				
+			case 'user' : 
+
+				let {user, session} = this.request
+
+				return [
 					user ? user.id || user.uuid : null,
 					session ? session.id : null,
-				].filter (i => i).join (' ')
+				].filter (i => i).join ('@')
 				
 		}
 

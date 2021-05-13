@@ -28,7 +28,7 @@ module.exports = class extends Event {
 
 	get_message () {
 			
-		let {error} = this, {message} = error, o = {}
+		let {error} = this, {message, stack} = error, o = {stack}
 		
 		let f = false; for (let k in error) switch (k) {
 			case 'message':
@@ -39,7 +39,7 @@ module.exports = class extends Event {
 				f = true
 		}
 		
-		return !f ? message : message + ' ' + JSON.stringify (o)
+		return message + ' ' + JSON.stringify (o)
 
 	}
 

@@ -24,12 +24,14 @@ module.exports = class extends CookieSession {
     }
 
     async get_user () {
+    
+    	let {id} = this
 
-        if (!this.id) return this.h.no_user ()
+        if (!id) return this.h.no_user ()
         
-        if (this.user = await this.o.sessions.to_get (this.id)) return this.keep_alive ()
+        if (this.user = await this.o.sessions.to_get (id)) return this.keep_alive ()
 
-		darn (`session ${this.id} not found`)
+		this.h.warn ('Session not found', {id})
 		
 		return this.h.no_user ()
 

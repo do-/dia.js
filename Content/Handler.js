@@ -4,6 +4,7 @@ const http = require ('http')
 const path = require ('path')
 const fs   = require ('fs')
 const LogEvent = require ('../Log/Events/Request.js')
+const WarningEvent = require ('../Log/Events/Warning.js')
 const ErrorEvent = require ('../Log/Events/Error.js')
 const WrappedError = require ('../Log/WrappedError.js')
 
@@ -84,6 +85,61 @@ module.exports = class {
     	return e
     
     }
+    
+    to_error (x) {
+    
+    	switch (typeof x) {
+    		case 'number':
+    			x = '' + x
+    		case 'string':
+    			break
+    		default:
+    			return x
+    	} 
+    	
+    	return new Error (x)
+    	    	    	
+    }
+
+    sign_error (e) {
+
+    	if ('log_meta' in e) return e
+
+    	return new WrappedError (e, {log_meta: {parent: this.log_event}})
+
+    }
+    
+    log_error (e) {
+
+    	this.log_write (new ErrorEvent (e))
+
+    }
+
+    warn (label, o = {}) {
+
+    	this.log_write (new WarningEvent ({
+    		label,
+    		parent: this.log_event,
+    		...o
+    	}))
+
+    }
+
+    log_exception (x) {
+
+		let e = this.sign_error (this.to_error (x))
+
+		this.log_error (e)
+		
+		return e
+
+    }
+
+    process_error (x) {
+
+		this.send_out_error (this.error = this.log_exception (x))
+
+    }
 
     async run () {
 		
@@ -99,15 +155,19 @@ module.exports = class {
             await this.read_params ()
             this.check_params ()
 
-            this.session = this.get_session ()
-            await this.acquire_resources ()
-
-            if (!this.is_anonymous ()) this.user = await this.get_user ()
             if (!this.module_name) this.module_name = this.get_module_name ()
             if (!this.method_name) this.method_name = this.get_method_name ()
 
-			this.log_write (this.log_event.set ({phase: undefined}))
+			this.log_write (this.log_event.set ({phase: 'params'}))
 
+            await this.acquire_resources ()
+
+			this.session = this.get_session ()
+            if (!this.is_anonymous ()) {
+            	this.user = await this.get_user ()
+				this.log_write (this.log_event.set ({phase: 'user'}))
+            }
+            
             let data = await this.get_data ()
             if (this.is_transactional ()) await this.commit ()
 
@@ -115,10 +175,11 @@ module.exports = class {
 
         }
         catch (x) {
+
             this.is_failed = true
-        	let e = x; if (!('log_meta' in e)) e = new WrappedError (e, {log_meta: {parent: this.log_event}})
-			this.log_write (new ErrorEvent (e))
-            this.send_out_error (this.error = x)
+
+            this.process_error (x)
+
         }
         finally {
 
