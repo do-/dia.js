@@ -14,18 +14,6 @@ module.exports = class extends Dia.DB.Client {
 
     }
 
-    async finish_txn (success) {
-    
-        if (success) {
-            await this.commit ()
-        }
-        else {
-            darn ('[WARNING] Rolling back uncommitted transaction')
-            await this.rollback ()
-        }
-
-    }
-    
     async release (success) {
     
         if (this.backend.is_txn_pending) try {        

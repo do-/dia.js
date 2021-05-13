@@ -221,13 +221,14 @@ exports.Handler = class extends Handler {
     send_out_error (x) {
 
     	let {http_line} = x; if (http_line) return this.send_out_text (http_line)
-
-        let message = 
-        	typeof x == 'string' ? x : 
-        	x instanceof Error   ? x.message : 
-        	''
-
-        if (message.charAt (0) == '#') return this.send_out_json (422, this.to_validation_error (message))
+    	
+    	if (x.is_validation_error) {
+    		
+    		let {field, message} = x;
+    		
+    		return this.send_out_json (422, {field, message})
+    	
+    	}
 
         this.send_out_json (500, this.to_fault (x))
 
@@ -237,11 +238,6 @@ exports.Handler = class extends Handler {
         success: true, 
         content: data 
     }}
-
-    to_validation_error (x) {
-        let [_, field, message] = /^#(.*)#:(.*)$/.exec (x)
-        return {field, message}
-    }
 
     to_fault (x) {return {
         success: false, 

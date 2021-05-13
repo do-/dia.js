@@ -9,18 +9,6 @@ module.exports = class extends Dia.DB.Client {
     is_pk_violation (e) {
         return e.code == '23505' && /_pkey$/.test (e.constraint)
     }
-
-    async finish_txn (success) {
-    
-        if (success) {
-            await this.commit ()
-        }
-        else {
-            darn ('[WARNING] Rolling back uncommitted transaction')
-            await this.rollback ()
-        }
-
-    }
     
     async release (success) {
     

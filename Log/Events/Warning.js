@@ -30,6 +30,7 @@ module.exports = class extends Event {
 			case 'parent':
 			case 'label':
 			case 'path':
+			case 'resource_name':
 				break
 			default: 
 				o [k] = this [k]

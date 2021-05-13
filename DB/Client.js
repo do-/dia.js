@@ -1,5 +1,6 @@
 const Dia = require ('../Dia.js')
 const LogEvent = require ('../Log/Events/DB.js')
+const WarningEvent = require ('../Log/Events/Warning.js')
 
 module.exports = class {
 
@@ -361,6 +362,28 @@ module.exports = class {
 			sql,
 			params,
     	}))
+
+    }
+    
+    warn (label, o = {}) {
+
+    	return this.log_write (new WarningEvent ({
+    		...(this.log_meta || {}),
+			label,
+			...o
+    	}))
+
+    }
+    
+    async finish_txn (success) {
+    
+        if (success) {
+            await this.commit ()
+        }
+        else {
+        	this.warn ('Rolling back uncommitted transaction')
+            await this.rollback ()
+        }
 
     }
 

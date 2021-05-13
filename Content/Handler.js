@@ -8,6 +8,20 @@ const WarningEvent = require ('../Log/Events/Warning.js')
 const ErrorEvent = require ('../Log/Events/Error.js')
 const WrappedError = require ('../Log/WrappedError.js')
 
+class ValidationError extends Error {
+
+	constructor (message, field) {
+	
+		super (message)
+		
+		this.field = field
+
+		this.is_validation_error = true
+	
+	}
+	
+}
+
 module.exports = class {
 
     constructor (o) {
@@ -97,6 +111,8 @@ module.exports = class {
     			return x
     	} 
     	
+    	let fm = /^#([^#]+)#:\s*(.*)$/.exec (x); if (fm) return new ValidationError (fm [2], fm [1])
+    	
     	return new Error (x)
     	    	    	
     }
@@ -110,8 +126,14 @@ module.exports = class {
     }
     
     log_error (e) {
-
-    	this.log_write (new ErrorEvent (e))
+    
+    	if (e.is_validation_error) {
+    		let {field} = e
+    		this.warn (e.message, {field})
+    	}
+    	else {
+	    	this.log_write (new ErrorEvent (e))
+    	}
 
     }
 
