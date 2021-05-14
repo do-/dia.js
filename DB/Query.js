@@ -170,8 +170,30 @@ module.exports = class {
                             return chunks.join ('')
                             
                         }
+                        
+                        adjust_date_filter (columns) {
+                        
+                        	if (this.params.length != 1) return
+                        	let [param] = this.params
+                        	
+                        	if (typeof param != 'string') return
+                        	if (param.length != 10) return
+                        	
+                        	if (!/ = \?$/.test (this.sql)) return
 
-                        constructor (src, val) {
+                        	if (this.cols.length != 1) return   
+                        	let def = columns [this.cols [0]]; if (!def) return
+                        	if (!/^(DATETIME|TIMESTAMP)$/.test (def.TYPE_NAME)) return
+                        	
+                        	let d = new Date (param); d.setDate (1 + d.getDate ())
+                        	let [col] = this.sql.split (/ = /)
+                        	
+                        	this.sql    = `(${col} >= ? AND ${col} < ?)`
+                        	this.params = [param + ' 00:00:00', d.toJSON ().slice (0, 10) + ' 00:00:00']
+
+                        }
+
+                        constructor (src, val, columns) {
                         
                             if (typeof val === 'object' && val != null && val.sql && val.params) this.subquery = val
 
@@ -195,7 +217,9 @@ module.exports = class {
                             else {
                             
                                 this.sql = this.adjust_field_names (src)
-                            
+                                
+                                this.adjust_date_filter (columns)
+                                
                             }
 
                             this.adjust_wildcards ()
@@ -230,13 +254,12 @@ module.exports = class {
                                 break
                                 
                             default:                            
-                            	let filter = new this.Filter (fs, val)
-                            	let existing = def.columns
+                            	let existing = def.columns, filter = new this.Filter (fs, val, existing)
                             	if (0 == filter.cols.filter (name => !existing [name]).length) 
                             		this.filters.push (filter)
 
                         }
-                        
+
                     }
 
                 }
