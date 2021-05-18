@@ -138,6 +138,8 @@ module.exports = class {
 
 		if (j [0] != j [1]) `PK mismatch: ${j [0]} vs. ${j [1]}`
 
+		return ov
+
     }
     
     merge__columns (ov, nv) {
