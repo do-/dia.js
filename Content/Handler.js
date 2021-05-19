@@ -102,18 +102,24 @@ module.exports = class {
     
     to_error (x) {
     
+    	const try_validation_error = s => {
+
+	    	let fm = /^#([^#]+)#:\s*(.*)$/.exec (s); if (!fm) return null
+	    	
+	    	return new ValidationError (fm [2], fm [1])
+    		
+    	}
+    
     	switch (typeof x) {
     		case 'number':
     			x = '' + x
     		case 'string':
     			break
     		default:
-    			return x
-    	} 
+    			return try_validation_error (x.message) || x
+    	}
     	
-    	let fm = /^#([^#]+)#:\s*(.*)$/.exec (x); if (fm) return new ValidationError (fm [2], fm [1])
-    	
-    	return new Error (x)
+    	return try_validation_error (x) || new Error (x)
     	    	    	
     }
 
