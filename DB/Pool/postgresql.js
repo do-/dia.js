@@ -163,7 +163,7 @@ module.exports = class extends require ('../Pool.js') {
 		let col = table.columns
 
         return {
-            sql: `CREATE TABLE ${table.qname} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}, PRIMARY KEY (${p_k}))`,
+            sql: `CREATE ${table.unlogged ? 'UNLOGGED ' : ''}TABLE ${table.qname} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (col [k]))}, PRIMARY KEY (${p_k}))`,
             params: []
         }
 
@@ -356,7 +356,10 @@ module.exports = class extends require ('../Pool.js') {
         
             let table = this.model.tables [table_name]
             
-            if (!table.existing) continue
+            let {existing} = table; if (!existing) continue
+            
+            if ( table.unlogged && !existing.unlogged) result.push ({sql: `ALTER TABLE ${table.qname} SET UNLOGGED`})
+            if (!table.unlogged &&  existing.unlogged) result.push ({sql: `ALTER TABLE ${table.qname} SET LOGGED`})
 
             if ('' + table.p_k == '' + table.existing.p_k) continue
             

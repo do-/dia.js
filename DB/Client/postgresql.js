@@ -405,6 +405,7 @@ module.exports = class extends Dia.DB.Client {
 					pg_class.relname
 				) AS name
                 , pg_description.description AS label
+                , pg_class.relpersistence = 'u' AS unlogged
             FROM 
                 pg_namespace
                 LEFT JOIN pg_class ON (
