@@ -49,8 +49,8 @@ module.exports = class {
 
 		switch (this.level) {
 
-			case 'error':   return '!'
-			case 'warning': return '?'
+			case 'error' : return '!'
+			case 'warn'  : return '?'
 
 			default: switch (this.phase) {
 				case 'after'  : return '<'

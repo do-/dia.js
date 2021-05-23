@@ -1,7 +1,6 @@
 const Dia = require ('./Dia.js')
 const fs = require ('fs')
 const Path = require ('path')
-const ConsoleLogger = require ('./Log/ConsoleLogger.js')
 
 const get_subdirs_1 = (p) => 
 
@@ -152,7 +151,7 @@ module.exports = class {
 	
 	get_logger (category) {
 	
-		return new ConsoleLogger ({category})
+		return new Dia.Logger ({category})
 	
 	}
 

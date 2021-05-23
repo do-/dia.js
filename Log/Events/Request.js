@@ -4,9 +4,11 @@ module.exports = class extends Event {
 
     constructor (o) {
 
-		if (!o.request) throw new Error ('Request handler not provided')
+		let {request} = o; if (!request) throw new Error ('Request handler not provided')
 		
-		o.uuid = o.request.uuid
+		for (let k of ['uuid', 'method_name', 'rq', 'user', 'session']) o [k] = request [k]
+		
+		delete o.request
 
 		super (o)
 		
@@ -22,7 +24,7 @@ module.exports = class extends Event {
 			
 			case 'params' : 
 
-				let {method_name, rq} = this.request
+				let {method_name, rq} = this
 
 				return [
 					method_name,
@@ -31,7 +33,7 @@ module.exports = class extends Event {
 				
 			case 'user' : 
 
-				let {user, session} = this.request
+				let {user, session} = this
 
 				return [
 					user ? user.id || user.uuid : null,

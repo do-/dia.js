@@ -6,7 +6,7 @@ module.exports = class extends Event {
 
 		if (!o.label) throw new Error ('Warning message not provided')
 
-		o.level = 'warning'
+		o.level = 'warn'
 
 		let {parent} = o; delete o.parent; if (parent) {
 			
