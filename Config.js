@@ -146,6 +146,8 @@ module.exports = class {
 	log_event (e) {
 
 		this.get_logger (e.category).write (e)
+		
+		return e
 
 	}
 	
