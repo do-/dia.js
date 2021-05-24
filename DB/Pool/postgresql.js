@@ -112,7 +112,7 @@ module.exports = class extends require ('../Pool.js') {
 			}
 			catch (x) {
 
-				this.log_write (new ErrorEvent (e))
+				this.log_write (new ErrorEvent (x))
 
 			}
 

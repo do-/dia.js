@@ -1,8 +1,12 @@
+const LogEvent = require ('./Log/Events/Text.js')
+
 const Dia = require ('./Dia.js')
 
 module.exports = class {
 
 	constructor (o) {
+		
+		if (!(this.conf = o.conf)) throw new Error ('Sorry, conf is now mandatory here')
 
 		o.period = (p => {
 		
@@ -19,6 +23,9 @@ module.exports = class {
 		if (Array.isArray (o.todo)) {
 
 			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
+			
+				if (!params.conf) params.conf = this.conf
+				if (!params.pools) params.pools = params.conf.pools
 
 				let h = new clazz (params, ok, fail)
 				
@@ -53,7 +60,10 @@ module.exports = class {
 			m += new Date (ms).toJSON ()
 		}
 		
-		darn (m)
+    	this.conf.log_event (new LogEvent ({
+			category: 'queue',
+			label: m
+		}))
 
 	}
 	
