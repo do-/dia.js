@@ -8,6 +8,15 @@ module.exports = class {
 
     }
     
+    log_info (label) {
+
+    	let log_event = this.log_write (new LogEvent ({
+			category: 'db',
+			label
+		}))
+
+    }
+
     async update_model () {
     
     	let patch = this.gen_sql_patch ()

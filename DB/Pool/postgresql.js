@@ -1,6 +1,8 @@
 const {Pool} = require ('pg')
 const wrapper = require ('../Client/postgresql.js')
 const crypto  = require ('crypto')
+const LogEvent = require ('../../Log/Events/Text.js')
+const ErrorEvent = require ('../../Log/Events/Error.js')
 
 module.exports = class extends require ('../Pool.js') {
 
@@ -10,6 +12,15 @@ module.exports = class extends require ('../Pool.js') {
     }
     
     async listen (o) {
+
+		let log_meta = o.log_meta || {}
+
+		let log_event = this.log_write (new LogEvent ({
+			...log_meta,
+			category: 'db',
+			label: 'Subscribing on for PostgreSQL notifications on ' + o.name,
+			phase: 'before',
+		}))
 
 		let db = new (require ('pg')).Client (this.options.connectionString)		
 		
@@ -24,28 +35,41 @@ module.exports = class extends require ('../Pool.js') {
 			hash.update (key)
 			
 			let digest = hash.digest ('hex').slice (0, 16)
-			
-			darn (`Trying to aquire cluster wide lock for ${key} (${digest})...`)
-			
-			let sql = `SELECT pg_try_advisory_lock (x'${digest}'::int8) AS ok`
-			
-			darn (sql)			
 
-			let rs = await db.query (sql)
-			
-			if (rs && rs.rows && rs.rows.length == 1 && rs.rows [0].ok) {
-			
-				darn (`... lock for ${key} (${digest}) acquired.`)
-			
-			}
-			else {
-						
-				darn (rs)
+			let log_event_1 = this.log_write (new LogEvent ({
+				...log_meta,
+				parent: log_event,
+				category: 'db',
+				label: `Aquiring cluster wide lock for ${key} (${digest})`,
+				phase: 'before',
+			}))
+
+			try {
+
+				let rs = await db.query (`SELECT pg_try_advisory_lock (x'${digest}'::int8) AS ok`)
 				
-				throw new Error (`... can't acquire lock for ${key} (${digest}), bailing out.`)
+				if (!rs) throw new Error ('!rs')
+				
+				let {rows} = rs; if (!rows) throw new Error ('!rs.rows')
+
+				let {length} = rows; if (length != 1) throw new Error ('rs.rows.length == ' + length + ' != 1')
+
+				if (!rows [0].ok) throw new Error ('!rs [0].ok')
+
+			}
+			catch (e) {
+			
+				e.log_meta = {parent: log_event_1}
+			
+				this.log_write (new ErrorEvent (e))
 			
 			}
-			
+			finally {
+
+				this.log_write (log_event_1.finish ())
+
+			}
+
 		}
 		
 		let sql = 'LISTEN ' + o.name
@@ -62,7 +86,7 @@ module.exports = class extends require ('../Pool.js') {
 
 						let timer = o.timers [payload]; if (timer) {
 						
-							darn (sql + ': ' + payload + ' -> ' + timer.uuid)
+							this.log_info (sql + ': ' + payload + ' -> ' + timer.uuid)
 
 							timer.on ()
 
@@ -77,7 +101,7 @@ module.exports = class extends require ('../Pool.js') {
 
 						let h = new o.handler (Object.assign ({rq: JSON.parse (payload)}, o.params), ok, fail)
 
-						darn (sql + ': ' + payload + ' -> ' + h.uuid)
+						this.log_info (sql + ': ' + payload + ' -> ' + h.uuid)
 
 						h.run ()
 
@@ -88,16 +112,16 @@ module.exports = class extends require ('../Pool.js') {
 			}
 			catch (x) {
 
-				darn (x)
+				this.log_write (new ErrorEvent (e))
 
 			}
 
 		})
 
-		darn ('Listening for PostgreSQL notifications on ' + o.name)
+		this.log_write (log_event.finish ())
 
     }    
-    
+        
     async acquire (o = {}) {
         let raw = await this.backend.connect ()
         return this.inject (new wrapper (raw), o)
