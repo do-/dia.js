@@ -170,13 +170,7 @@ module.exports = class {
     }
 
     async run () {
-		
-		this.log_event = this.log_write (new LogEvent ({
-    		...(this.log_meta || {}),
-    		request: this,
-			phase: 'before',
-    	}))
-    	
+		    	
         try {
 
             this.check ()
@@ -186,14 +180,21 @@ module.exports = class {
             if (!this.module_name) this.module_name = this.get_module_name ()
             if (!this.method_name) this.method_name = this.get_method_name ()
 
-			this.log_write (this.log_event.set ({phase: 'params'}))
+			this.log_event = this.log_write (new LogEvent ({
+				...(this.log_meta || {}),
+				request: this,
+				phase: 'before',
+			}))
 
             await this.acquire_resources ()
 
-			this.session = this.get_session ()
-            if (!this.is_anonymous ()) {
+			this.session = this.get_session (); if (!this.is_anonymous ()) {
             	this.user = await this.get_user ()
-				this.log_write (this.log_event.set ({phase: 'user'}))
+            	let {user, session} = this; if (user) this.log_write (this.log_event.set ({
+            		phase: 'auth',
+            		user,
+            		session
+            	}))
             }
             
             let data = await this.get_data ()

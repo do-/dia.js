@@ -40,7 +40,7 @@ module.exports = class {
 		for (let k in o) this [k] = o [k]
 
 		this.message = this.get_message ()
-	
+
 		return this
 	
 	}
@@ -55,6 +55,7 @@ module.exports = class {
 			default: switch (this.phase) {
 				case 'after'  : return '<'
 				case 'before' : return '>'
+				case 'auth'   : return 'A'
 				default       : return '-'
 			}
 

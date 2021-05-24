@@ -18,11 +18,9 @@ module.exports = class extends Event {
 	
 		switch (this.phase) {
 		
-			case 'before' : return ''
-
 			case 'after'  : return super.get_message ()
 			
-			case 'params' : 
+			case 'before' : 
 
 				let {method_name, rq} = this
 
@@ -31,14 +29,15 @@ module.exports = class extends Event {
 					JSON.stringify (rq),
 				].join (' ')
 				
-			case 'user' : 
+			case 'auth' : 
 
-				let {user, session} = this
+				let {user, session} = this; if (!user) user = {id: null}
+				
+				let o = {user: user.id || user.uuid}
+				
+				if (session && session.id) o.session = session.id
 
-				return [
-					user ? user.id || user.uuid : null,
-					session ? session.id : null,
-				].filter (i => i).join ('@')
+				return JSON.stringify (o)
 				
 		}
 
