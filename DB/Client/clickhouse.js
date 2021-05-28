@@ -33,6 +33,8 @@ module.exports = class extends Dia.DB.Client {
         
     async select_stream (sql, params, o = {}) {
 
+        sql = sql.replace (/\blower\b\s*\(/gsmi, 'lowerUTF8(')
+
         let log_event = this.log_start (sql, params)
 
     	sql = this.bind (sql, params)
