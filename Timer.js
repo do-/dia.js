@@ -1,4 +1,6 @@
 const LogEvent = require ('./Log/Events/Text.js')
+const ErrorEvent = require ('./Log/Events/Error.js')
+const WrappedError = require ('./Log/WrappedError.js')
 
 const Dia = require ('./Dia.js')
 
@@ -7,6 +9,9 @@ module.exports = class {
 	constructor (o) {
 		
 		if (!(this.conf = o.conf)) throw new Error ('Sorry, conf is now mandatory here')
+		
+		if (!o.log_meta) o.log_meta = {}
+		if (!o.log_meta.category) o.log_meta.category = 'queue'
 
 		o.period = (p => {
 		
@@ -61,7 +66,7 @@ module.exports = class {
 		}
 		
     	this.conf.log_event (new LogEvent ({
-			category: 'queue',
+    		...this.o.log_meta,
 			label: m
 		}))
 
@@ -201,16 +206,38 @@ module.exports = class {
 		this.log ('run () called, next time may be at', this.next)
 		
 		this.is_busy = 1
+		
+		{
 
 			this.clear ()
 
 			try {
-				await this.o.todo ()
+			
+				delete this.result
+
+				this.result = await this.o.todo ()
+
 			}
 			catch (x) {
-				darn (x)
+
+				let {o, conf} = this, {log_meta} = o
+
+		    	conf.log_event (new WrappedError (x, {log_meta}))
+
+				if (this.o.stop_on_error) {
+
+					this.clear ()
+
+					delete this.when
+
+				}
+
+				this.error = x
+
 			}
-		
+			
+		}
+
 		delete this.is_busy
 		
 		let when = this.is_reset_to; if (when) {
@@ -222,7 +249,43 @@ module.exports = class {
 			this.at (when)
 
 		}
-	
+		
+		if (!this.t && !this.when) this.finish ()
+
+	}
+
+	finish () {
+
+		let {o, result, error} = this, {done, fail} = o
+
+		if (error) {
+
+			if (fail) fail (error)
+
+		}
+		else {
+
+			if (done) done (result)
+
+		}
+
+	}
+
+	promise () {
+
+		return new Promise ((done, fail) => {
+
+			let {o} = this
+
+			o.stop_on_error = true
+
+			o.done = done
+			o.fail = fail
+
+			this.on ()
+
+		})
+
 	}
 	
 	lock (keys) {
