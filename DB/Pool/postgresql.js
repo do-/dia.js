@@ -54,7 +54,7 @@ module.exports = class extends require ('../Pool.js') {
 
 				let {length} = rows; if (length != 1) throw new Error ('rs.rows.length == ' + length + ' != 1')
 
-				if (!rows [0].ok) throw new Error ('!rs [0].ok')
+				if (!rows [0].ok) throw new Error ('!rows [0].ok, rows = ' + JSON.stringify (rows))
 
 			}
 			catch (e) {
