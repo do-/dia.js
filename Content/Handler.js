@@ -168,36 +168,53 @@ module.exports = class {
 		this.send_out_error (this.error = this.log_exception (x))
 
     }
+    
+    async check_auth () {
+
+		this.session = this.get_session ()
+		
+		if (this.is_anonymous ()) return
+		
+		this.user = await this.get_user ()
+		
+		let {user, session} = this
+
+		if (user) this.log_write (this.log_event.set ({
+			phase: 'auth',
+			user,
+			session
+		}))
+
+    }
 
     async run () {
 		    	
         try {
 
-            this.check ()
-            await this.read_params ()
-            this.check_params ()
+			this.log_event = new LogEvent ({...(this.log_meta || {}), request: this})
 
-            if (!this.module_name) this.module_name = this.get_module_name ()
-            if (!this.method_name) this.method_name = this.get_method_name ()
+			try {
+			
+				this.check ()
+				await this.read_params ()
+				this.check_params ()
 
-			this.log_event = this.log_write (new LogEvent ({
-				...(this.log_meta || {}),
-				request: this,
-				phase: 'before',
-			}))
+				if (!this.module_name) this.module_name = this.get_module_name ()
+				if (!this.method_name) this.method_name = this.get_method_name ()
+			
+			}
+			finally {
+
+				let {method_name} = this
+				this.log_write (this.log_event.set ({method_name, phase: 'before'}))
+
+			}
 
             await this.acquire_resources ()
+            await this.check_auth ()
 
-			this.session = this.get_session (); if (!this.is_anonymous ()) {
-            	this.user = await this.get_user ()
-            	let {user, session} = this; if (user) this.log_write (this.log_event.set ({
-            		phase: 'auth',
-            		user,
-            		session
-            	}))
-            }
-            
             let data = await this.get_data ()
+
             if (this.is_transactional ()) await this.commit ()
 
             this.send_out_data (data)
@@ -213,13 +230,19 @@ module.exports = class {
         finally {
 
             try {
+            
                 await this.release_resources ()
+            
             }
             catch (x) {
-                darn (x)
+            
+	            this.process_error (x)
+            
             }
             finally {
+            
                 this.log_write (this.log_event.finish ())
+            
             }
 
         }
@@ -285,13 +308,19 @@ module.exports = class {
 
     }
 
-    async release_resources () {    
+    async release_resources () {
+
         for (let resource of this.__resources) try {
+
             resource.release (!this.is_failed)
+
         }
         catch (x) {
-            darn (x)
+
+			this.process_error (x)
+
         }
+    
     }
 
     get_method_name () {
@@ -322,7 +351,7 @@ module.exports = class {
 
     	}
     	
-    	if (scanned.length > 0) darn (`Didn't find ${method_name} in ${scanned}`)
+    	if (scanned.length > 0) this.warn (`Didn't find ${method_name} in ${scanned}`)
     	
     	return null
 
@@ -332,7 +361,7 @@ module.exports = class {
 
         let {module_name, method_name} = this, module = this.get_module ()
 
-        if (!module) throw `Module / method not defined: ${module_name}.${method_name}`
+        if (!module) throw new Error (`Module / method not defined: ${module_name}.${method_name}`)
 
         return (this.module = module) [method_name]
 
@@ -340,7 +369,7 @@ module.exports = class {
     
     get_module_name () {
 
-        return this.rq.type
+        return this.rq.type || ''
 
     }
 

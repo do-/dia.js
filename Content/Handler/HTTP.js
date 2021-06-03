@@ -167,10 +167,12 @@ exports.Handler = class extends Handler {
 
     }
 
-    get_module_name () {
-        let type = this.rq.type
-        if (!type) throw '204 No content for you'
-        return type
+    get_method () {
+
+        if (!this.module_name) throw '204 No content for you'
+
+        return super.get_method ()
+    
     }
     
     get_log_banner () {
