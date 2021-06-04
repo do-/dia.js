@@ -360,8 +360,10 @@ module.exports = class extends require ('../Pool.js') {
                 }
                 
                 let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
+                
+                v = v.map (s => this.gen_sql_quoted_literal (s))
                             
-                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO ${something}`, params: v})
+                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (${v}) ON CONFLICT (${table.pk}) DO ${something}`})
 
             }
         
