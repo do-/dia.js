@@ -636,6 +636,81 @@ module.exports = class extends Dia.DB.Client {
 
         }
 
-	}    
+	}
+	
+    async load_schema_table_data () {
+    
+    	let tables = []
+
+    	for (let table of Object.values (this.model.tables)) {
+
+    		let {name, data} = table
+
+    		if (!data || !data.length) continue
+
+    		let idx = {}, f = {}, {p_k} = table, pk = r => p_k.map (k => '' + r [k]).join (' ')
+    		
+    		for (let r of Object.values (table.data)) {
+
+    			for (let k in r) if (!(k in f)) f [k] = 1
+    		
+    			idx [pk (r)] = clone (r)
+    			
+    		}
+    		
+    		let {existing} = table; if (!existing) continue
+    		
+    		let cols = Object.keys (f).filter (n => existing.columns [n]); if (!cols.length) continue
+    		
+			let ids = Object.keys (idx); if (!ids.length) continue
+			
+			tables.push ({
+				name, 
+				cols, 
+				ids, 
+				idx,
+				pk,
+				key: p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")}`
+			})
+			
+		}
+    		
+		let qq = s => this.pool.gen_sql_quoted_literal (s)
+
+		while (tables.length) {
+		
+			let part = tables.splice (0, 50)
+
+			let args = []; for (let {name, cols, ids, key} of part) {
+			
+				args.push (qq (name))
+				
+				args.push (`(SELECT json_agg (t) FROM (SELECT ${cols} FROM ${name}) t WHERE ${key} IN (${ids.map (qq)}))`)
+
+			}
+
+			let data = await this.select_hash (`SELECT json_build_object (${args}) v`)
+			
+			for (let [name, list] of Object.entries (data.v)) {
+			
+				let table = this.model.tables [name], {p_k} = table, {cols, idx, pk} = part.find (i => i.name == name)
+
+				main: for (let r of list) {
+
+					let id = pk (r), d = idx [id]; if (!d) continue main
+
+					for (let k in d) if (!p_k.includes (k) && '' + r [k] != '' + d [k]) continue main
+
+					delete idx [id]
+					
+				}
+				
+				table._data_modified = Object.values (idx)
+
+			}
+
+		}
+
+    }    	
 
 }
