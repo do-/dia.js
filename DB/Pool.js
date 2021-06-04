@@ -17,13 +17,13 @@ module.exports = class {
 
     }
 
-    async update_model () {
+    async update_model (o = {}) {
     
-    	let patch = this.gen_sql_patch ()
+    	let patch = this.gen_sql_patch (o)
     	
     	if (!patch.length) return
     	
-        return this.run (patch)
+        return this.run (patch, o)
         
     }
     
@@ -69,8 +69,41 @@ module.exports = class {
         }
         
     }    
+    
+    merge_sql (list) {
+    
+    	let short_list = [], sql = '', flush = (i) => {
 
-    async run (list) {
+    		if (sql) short_list.push ({sql})
+    		
+    		if (i)   short_list.push (i)
+
+    	}
+    	
+    	for (let i of list) {
+    		
+    		let {params} = i; if (params && params.length) {
+    		
+    			flush (i)
+    		
+    		} 
+    		else {
+    		
+    			if (sql) sql += ';'
+    		
+    			sql += i.sql
+    		
+    		}
+    		
+    	}
+    	
+    	flush ()
+
+    	return short_list
+
+    }    
+
+    async run (list, o = {}) {
 
     	return this.do_with_db ({
 			label : 'Running batch',

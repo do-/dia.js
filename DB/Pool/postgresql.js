@@ -10,7 +10,15 @@ module.exports = class extends require ('../Pool.js') {
         super (o)
         this.backend = new Pool (o)
     }
+
+    async run (list, o = {}) {
     
+    	if (!o.no_merge_sql) list = this.merge_sql (list)
+    
+    	return super.run (list)
+
+    }
+
     async listen (o) {
 
 		let log_meta = o.log_meta || {}
