@@ -1,6 +1,6 @@
 const mysql = require ('mysql')
-
 const wrapper = require ('../Client/mysql.js')
+const LogEvent = require ('../../Log/Events/Text.js')
 
 module.exports = class extends require ('../Pool.js') {
 
@@ -20,6 +20,61 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    async run (list, o = {}) {
+    
+    	if (!o.no_merge_sql) list = this.merge_sql (list)
+    
+    	return super.run (list)
+
+    }
+
+    async do_with_db (o) {
+    
+    	let {f, label} = o
+    
+    	let {log_meta} = this; if (!log_meta) log_meta = {}
+    
+		let log_event = this.log_write (new LogEvent ({
+    		...log_meta,
+			category: 'db',
+			label,
+			phase: 'before',
+    	}))
+    	
+    	let {connectionConfig} = this.backend.config
+    	
+    	connectionConfig.multipleStatements = true
+
+    	let raw = mysql.createConnection (connectionConfig)
+
+    	try {
+    	
+        	let {conf} = this.model
+
+    		let db = await new Promise ((ok, fail) => raw.connect (x => x ? fail (x) : ok (this.inject (new wrapper (raw), {
+            	conf,
+            	log_meta: {...log_meta, parent: log_event},
+    		}))))
+
+            await f (db)
+    	
+    	}
+        finally {
+        
+        	try {
+        		await new Promise ((ok, fail) => raw.end (x => x ? fail (x) : ok ()))
+        	}
+        	catch (x) {
+        		raw.destroy ()
+        	}
+        	finally {
+	            this.log_write (log_event.finish ())
+        	}
+        
+        }
+        
+    }    
+
     async acquire (o = {}) {
 
     	return new Promise ((ok, fail) => {
