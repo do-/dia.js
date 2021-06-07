@@ -219,7 +219,14 @@ module.exports = class {
         
 			if (table._is_just_added) {
 
-				let a = table.on_after_add_table; if (a) result.push (a)
+				let a = table.on_after_add_table
+
+				if (a) {
+					if (typeof a === 'function') a = a (table)
+					if (a == null) a = []
+					if (!Array.isArray (a)) a = [a]
+					for (let i of a) result.push (i)
+				}
 
 				let data = table.init_data; if (data) table._data_modified = table.data = data
 
