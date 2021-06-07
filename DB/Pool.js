@@ -70,6 +70,14 @@ module.exports = class {
         
     }    
     
+    is_not_to_merge (i) {
+
+    	let {params} = i; if (params && params.length) return true
+
+    	return false
+
+    }
+    
     merge_sql (list) {
     
     	let short_list = [], sql = '', flush = (i) => {
@@ -82,7 +90,7 @@ module.exports = class {
     	
     	for (let i of list) {
     		
-    		let {params} = i; if (params && params.length) {
+    		if (this.is_not_to_merge (i)) {
     		
     			flush (i)
     		

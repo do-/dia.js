@@ -11,6 +11,18 @@ module.exports = class extends require ('../Pool.js') {
         this.backend = new Pool (o)
     }
 
+    is_not_to_merge (i) {
+    
+    	if (super.is_not_to_merge (i)) return true
+    
+    	let {sql} = i
+    	
+    	if (/^\s*VACUUM\b/i.test (sql)) return true
+    	
+    	return false
+    
+    }
+
     async run (list, o = {}) {
     
     	if (!o.no_merge_sql) list = this.merge_sql (list)
