@@ -85,6 +85,8 @@ module.exports = class {
     		if (sql) short_list.push ({sql})
     		
     		if (i)   short_list.push (i)
+    		
+    		sql = ''
 
     	}
     	
