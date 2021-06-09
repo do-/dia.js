@@ -695,7 +695,7 @@ module.exports = class extends Dia.DB.Client {
 			
 				let table = this.model.tables [name], {p_k} = table, {cols, idx, pk} = part.find (i => i.name == name)
 
-				main: for (let r of list) {
+				main: for (let r of list || []) {
 
 					let id = pk (r), d = idx [id]; if (!d) continue main
 
