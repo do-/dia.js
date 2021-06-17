@@ -345,7 +345,7 @@ module.exports = class {
 	
     trg_check_column_value_min_num (col, table) {
     
-    	return `Значение поля "${col.REMARK}" не может быть менее ${col.MIN}`
+    	return `Значение поля "${col.REMARK.replace(/%/g, '%%')}" не может быть менее ${col.MIN}`
     
     }
 
@@ -360,13 +360,13 @@ module.exports = class {
     		v = v.split ('-').reverse ().join ('.')
     	}
 
-    	return `Значение поля "${col.REMARK}" не может быть ранее ${v}`
+    	return `Значение поля "${col.REMARK.replace(/%/g, '%%')}" не может быть ранее ${v}`
     
     }
 
     trg_check_column_value_max_num (col, table) {
     
-    	return `Значение поля "${col.REMARK}" не может быть более ${col.MAX}`
+    	return `Значение поля "${col.REMARK.replace(/%/g, '%%')}" не может быть более ${col.MAX}`
     
     }
 
@@ -381,19 +381,19 @@ module.exports = class {
     		v = v.split ('-').reverse ().join ('.')
     	}
     
-    	return `Значение поля "${col.REMARK}" не может быть позднее ${v}`
+    	return `Значение поля "${col.REMARK.replace(/%/g, '%%')}" не может быть позднее ${v}`
 
     }
 
     trg_check_column_value_min_length (col, table) {
     
-    	return `Значение поля "${col.REMARK}" не может быть короче ${col.MIN_LENGTH} символов`
+    	return `Значение поля "${col.REMARK.replace(/%/g, '%%')}" не может быть короче ${col.MIN_LENGTH} символов`
     
     }
 
     trg_check_column_value_pattern (col, table) {
 
-    	return `Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK}"`
+    	return `Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK.replace(/%/g, '%%')}"`
     
     }
 	
