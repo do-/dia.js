@@ -18,6 +18,7 @@ module.exports = class extends Event {
 			category: category || 'http',
 			phase,
 			o: oo,
+			parent: o.parent,
 		})
 		
 	}
