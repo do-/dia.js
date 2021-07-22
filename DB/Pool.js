@@ -166,6 +166,11 @@ module.exports = class {
         return s
     }
 
+    gen_sql_quoted_literal (s) {
+        if (s == null) return 'NULL'
+        return "'" + String (s).replace (/'/g, "''") + "'"
+    }
+
     normalize_model () {
 
     	let {model} = this; if (model._is_normalized) return; model._is_normalized = 1
