@@ -554,9 +554,11 @@ module.exports = class extends require ('../Pool.js') {
 
     	let {TYPE_NAME} = ex_col
 
-		if (/CHAR$/.test (TYPE_NAME)) return true
+        if (/CHAR$/.test (TYPE_NAME)) return true
 
-		if (/^INT/.test (TYPE_NAME)) return true
+        if (/^INT/.test (TYPE_NAME)) return true
+
+        if (TYPE_NAME == 'NUMERIC') return true
 
     	return false
 
