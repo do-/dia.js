@@ -48,7 +48,7 @@ module.exports = class {
     
     	let {log_meta} = this; if (!log_meta) log_meta = {}
     
-		let log_event = this.log_write (new LogEvent ({
+		this.log_event = this.log_write (new LogEvent ({
     		...log_meta,
 			category: 'db',
 			label,
@@ -59,13 +59,13 @@ module.exports = class {
         	let {conf} = this.model
             var db = await this.acquire ({
             	conf,
-            	log_meta: {...log_meta, parent: log_event},
+            	log_meta: {...log_meta, parent: this.log_event},
             })
-            await f (db)
+            await f.call (this, db)
         }
         finally {
             this.release (db)
-            this.log_write (log_event.finish ())
+            this.log_write (this.log_event.finish ())
         }
         
     }    
@@ -129,12 +129,13 @@ module.exports = class {
     async load_schema () {
 
         await this.do_with_db ({
-            label : 'Checking version',
+            label : `Checking ${this.product} version`,
             f     : async db => {
                 this.version = await this.select_version (db)
                 this.log_write (new LogEvent ({
                     category: 'db',
                     label: `${this.product} version is ${JSON.stringify (this.version)}`,
+                    parent: this.log_event,
                 }))
             }
         })
