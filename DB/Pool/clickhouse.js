@@ -33,6 +33,18 @@ module.exports = class extends require ('../Pool.js') {
     async release (client) {
     }
 
+    async select_version (db) {
+        let label = await db.select_scalar (`SELECT version()`)
+        let [m, major, minor] = label.match (/^(\d+)\.(\d+)\b/i)
+        major = +major
+        minor = +minor
+        return {
+            major,
+            minor,
+            label,
+        }
+    }
+
     gen_sql_column_definition (col) {
     
         let sql = col.TYPE_NAME

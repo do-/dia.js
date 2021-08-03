@@ -151,6 +151,18 @@ module.exports = class extends require ('../Pool.js') {
         return await client.release ()
     }
 
+    async select_version (db) {
+        let label = await db.select_scalar (`SELECT version()`)
+        let [m, major, minor] = label.match (/PostgreSQL\s+(\d+)\.(\d+)\b/i)
+        major = +major
+        minor = +minor
+        return {
+            major,
+            minor,
+            label,
+        }
+    }
+
     quote_name (s) {
         return ('' + s).split ('.').map (s => '"' + s.replace (/"/g, '""') + '"').join ('.')
     }
@@ -1140,7 +1152,7 @@ module.exports = class extends require ('../Pool.js') {
 
         if (table.p_k.includes (col.name)) col.NULLABLE = false
 
-        if (col.TYPE_NAME == 'SERIAL') {
+        if (col.TYPE_NAME == 'SERIAL' && this.version.major >= 10) {
 			col.TYPE_NAME = 'INT'
 			if (!col.ref) col.COLUMN_DEF = 'AUTO_INCREMENT'
         }
