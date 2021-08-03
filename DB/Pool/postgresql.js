@@ -1058,7 +1058,7 @@ module.exports = class extends require ('../Pool.js') {
 	    let v = `'${col.MIN}'`; if (v == "'NOW'") v = 'now()'
 
 	    return `
-		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < '${v}' THEN
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < ${v} THEN
 			RAISE '#${col.name}#: ${table.model.trg_check_column_value_min_date (col, table)}';
 		END IF;
 	    `
