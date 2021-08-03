@@ -121,8 +121,23 @@ module.exports = class {
     	})
 
     }
-    
+
+    async select_version () {
+        return {}
+    }
+
     async load_schema () {
+
+        await this.do_with_db ({
+            label : 'Checking version',
+            f     : async db => {
+                this.version = await this.select_version (db)
+                this.log_write (new LogEvent ({
+                    category: 'db',
+                    label: `${this.product} version is ${JSON.stringify (this.version)}`,
+                }))
+            }
+        })
 
     	await this.model.pending ()
     	
