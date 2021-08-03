@@ -291,7 +291,11 @@ module.exports = class extends require ('../Pool.js') {
     			
     				Object.values (columns).map (
     				
-    					col => `NULL::${this.gen_sql_type_dim (col)} AS ${col.name}`
+						col => {
+							let type = this.gen_sql_type_dim (col)
+							if (type == 'SERIAL') type = 'INT'
+							return `NULL::${type} AS ${col.name}`
+						}
     					
     				)
     			
@@ -309,7 +313,11 @@ module.exports = class extends require ('../Pool.js') {
     		
     			Object.values (columns).map (
 
-					col => `${col.name}::${this.gen_sql_type_dim (col)} AS ${col.name}`
+					col => {
+						let type = this.gen_sql_type_dim (col)
+						if (type == 'SERIAL') type = 'INT'
+						return `${col.name}::${type} AS ${col.name}`
+					}
 
     			)
     		
