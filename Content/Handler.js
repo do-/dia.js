@@ -211,6 +211,9 @@ module.exports = class {
 			}
 
             await this.acquire_resources ()
+
+            await this.log_start ()
+
             await this.check_auth ()
 
             let data = await this.get_data ()
@@ -230,7 +233,13 @@ module.exports = class {
         finally {
 
             try {
-            
+
+                try {
+                    await this.log_finish ()
+                } catch (x) {
+                    this.process_error (x)
+                }
+
                 await this.release_resources ()
             
             }
@@ -255,7 +264,11 @@ module.exports = class {
 
     check_params () {}
 
+    log_start () {}
+
     send_out_data () {}
+
+    log_finish () {}
 
     get_session () {
         return undefined
