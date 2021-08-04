@@ -677,6 +677,8 @@ module.exports = class extends require ('../Pool.js') {
     
         let d = col.COLUMN_DEF, ex = existing_columns [col.name], exd = ex.COLUMN_DEF
 
+        if (col.TYPE_NAME == 'SERIAL') return
+
         if (d != exd) {
 
         	if (d == 'AUTO_INCREMENT') {
