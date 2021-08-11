@@ -22,7 +22,7 @@ module.exports = class extends require ('../Pool.js') {
 
     async acquire (o = {}) {
         let raw = await this.backend.connect ()
-		this.inject (new wrapper (raw), o)
+		    return this.inject (new wrapper (raw), o)
     }
 
     async release (client) {
