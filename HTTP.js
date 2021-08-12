@@ -64,7 +64,9 @@ module.exports = class {
 				x.code = rp.statusCode
 			
 				x.body = rp_body
-				
+
+				x.parent = rp.log_event
+
 				return x
 
 			}
