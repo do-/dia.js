@@ -47,12 +47,7 @@ module.exports = class extends require ('../Pool.js') {
     async release (client) {
         return await this.backend.release (client.backend)
     }
-    
-    gen_sql_quoted_literal (s) {
-        if (s == null) s = ''
-        return "'" + String (s).replace(/'/g, "''") + "'"
-    }
-    
+
     gen_sql_column_definition (col) {
     
         let sql = col.TYPE_NAME

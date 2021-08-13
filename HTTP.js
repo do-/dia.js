@@ -64,7 +64,9 @@ module.exports = class {
 				x.code = rp.statusCode
 			
 				x.body = rp_body
-				
+
+				x.parent = rp.log_event
+
 				return x
 
 			}
@@ -111,8 +113,8 @@ module.exports = class {
 
 				let has_body = body != null
 				
-				let is_body_stream = has_body && body instanceof stream.Readable
-			
+				let is_body_stream = has_body && (body instanceof stream.Readable || o.is_body_stream)
+
 				o = Object.assign ({method: has_body ? 'POST' : 'GET'}, this.o, o)
 								
 				if (has_body && !is_body_stream && !o.headers && body.length > 1) o.headers = {'Content-Type': this.guess_content_type (body.charAt (0))}

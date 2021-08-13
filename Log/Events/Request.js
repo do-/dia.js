@@ -24,10 +24,7 @@ module.exports = class extends Event {
 
 				let {method_name, rq} = this
 
-				return [
-					method_name,
-					JSON.stringify (rq),
-				].join (' ')
+				return [method_name, JSON.stringify (rq)].filter (i => i).join (' ')
 				
 			case 'auth' : 
 

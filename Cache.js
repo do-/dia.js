@@ -8,7 +8,7 @@ module.exports = class {
         
     async to_fetch (k, f) {
 
-        let v = await this.go_get (k)
+        let v = await this.to_get (k)
                 
         if (v != null) return v
 

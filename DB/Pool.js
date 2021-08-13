@@ -17,13 +17,13 @@ module.exports = class {
 
     }
 
-    async update_model () {
+    async update_model (o = {}) {
     
-    	let patch = this.gen_sql_patch ()
+    	let patch = this.gen_sql_patch (o)
     	
     	if (!patch.length) return
     	
-        return this.run (patch)
+        return this.run (patch, o)
         
     }
     
@@ -48,7 +48,7 @@ module.exports = class {
     
     	let {log_meta} = this; if (!log_meta) log_meta = {}
     
-		let log_event = this.log_write (new LogEvent ({
+		this.log_event = this.log_write (new LogEvent ({
     		...log_meta,
 			category: 'db',
 			label,
@@ -59,18 +59,61 @@ module.exports = class {
         	let {conf} = this.model
             var db = await this.acquire ({
             	conf,
-            	log_meta: {...log_meta, parent: log_event},
+            	log_meta: {...log_meta, parent: this.log_event},
             })
-            await f (db)
+            await f.call (this, db)
         }
         finally {
             this.release (db)
-            this.log_write (log_event.finish ())
+            this.log_write (this.log_event.finish ())
         }
         
     }    
+    
+    is_not_to_merge (i) {
 
-    async run (list) {
+    	let {params} = i; if (params && params.length) return true
+
+    	return false
+
+    }
+    
+    merge_sql (list) {
+    
+    	let short_list = [], sql = '', flush = (i) => {
+
+    		if (sql) short_list.push ({sql})
+    		
+    		if (i)   short_list.push (i)
+    		
+    		sql = ''
+
+    	}
+    	
+    	for (let i of list) {
+    		
+    		if (this.is_not_to_merge (i)) {
+    		
+    			flush (i)
+    		
+    		} 
+    		else {
+    		
+    			if (sql) sql += ';'
+    		
+    			sql += i.sql
+    		
+    		}
+    		
+    	}
+    	
+    	flush ()
+
+    	return short_list
+
+    }    
+
+    async run (list, o = {}) {
 
     	return this.do_with_db ({
 			label : 'Running batch',
@@ -78,8 +121,24 @@ module.exports = class {
     	})
 
     }
-    
+
+    async select_version () {
+        return {}
+    }
+
     async load_schema () {
+
+        await this.do_with_db ({
+            label : `Checking ${this.product} version`,
+            f     : async db => {
+                this.version = await this.select_version (db)
+                this.log_write (new LogEvent ({
+                    category: 'db',
+                    label: `${this.product} version is ${JSON.stringify (this.version)}`,
+                    parent: this.log_event,
+                }))
+            }
+        })
 
     	await this.model.pending ()
     	
@@ -121,6 +180,11 @@ module.exports = class {
     
     quote_name (s) {
         return s
+    }
+
+    gen_sql_quoted_literal (s) {
+        if (s == null) return 'NULL'
+        return "'" + String (s).replace (/'/g, "''") + "'"
     }
 
     normalize_model () {
@@ -176,7 +240,14 @@ module.exports = class {
         
 			if (table._is_just_added) {
 
-				let a = table.on_after_add_table; if (a) result.push (a)
+				let a = table.on_after_add_table
+
+				if (a) {
+					if (typeof a === 'function') a = a (table)
+					if (a == null) a = []
+					if (!Array.isArray (a)) a = [a]
+					for (let i of a) result.push (i)
+				}
 
 				let data = table.init_data; if (data) table._data_modified = table.data = data
 

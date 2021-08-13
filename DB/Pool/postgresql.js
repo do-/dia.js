@@ -10,7 +10,27 @@ module.exports = class extends require ('../Pool.js') {
         super (o)
         this.backend = new Pool (o)
     }
+
+    is_not_to_merge (i) {
     
+    	if (super.is_not_to_merge (i)) return true
+    
+    	let {sql} = i
+    	
+    	if (/^\s*VACUUM\b/i.test (sql)) return true
+    	
+    	return false
+    
+    }
+
+    async run (list, o = {}) {
+    
+    	if (!o.no_merge_sql) list = this.merge_sql (list)
+    
+    	return super.run (list)
+
+    }
+
     async listen (o) {
 
 		let log_meta = o.log_meta || {}
@@ -54,7 +74,7 @@ module.exports = class extends require ('../Pool.js') {
 
 				let {length} = rows; if (length != 1) throw new Error ('rs.rows.length == ' + length + ' != 1')
 
-				if (!rows [0].ok) throw new Error ('!rs [0].ok')
+				if (!rows [0].ok) throw new Error ('!rows [0].ok, rows = ' + JSON.stringify (rows))
 
 			}
 			catch (e) {
@@ -131,13 +151,20 @@ module.exports = class extends require ('../Pool.js') {
         return await client.release ()
     }
 
-    quote_name (s) {
-        return ('' + s).split ('.').map (s => '"' + s.replace (/"/g, '""') + '"').join ('.')
+    async select_version (db) {
+        let label = await db.select_scalar (`SELECT version()`)
+        let [m, major, minor] = label.match (/PostgreSQL\s+(\d+)\.(\d+)\b/i)
+        major = +major
+        minor = +minor
+        return {
+            major,
+            minor,
+            label,
+        }
     }
 
-    gen_sql_quoted_literal (s) {
-        if (s == null) s = ''
-        return "'" + String (s).replace (/'/g, "''") + "'"
+    quote_name (s) {
+        return ('' + s).split ('.').map (s => '"' + s.replace (/"/g, '""') + '"').join ('.')
     }
     
     gen_sql_type_dim (col) {
@@ -264,7 +291,11 @@ module.exports = class extends require ('../Pool.js') {
     			
     				Object.values (columns).map (
     				
-    					col => `NULL::${this.gen_sql_type_dim (col)} AS ${col.name}`
+						col => {
+							let type = this.gen_sql_type_dim (col)
+							if (type == 'SERIAL') type = 'INT'
+							return `NULL::${type} AS ${col.name}`
+						}
     					
     				)
     			
@@ -282,7 +313,11 @@ module.exports = class extends require ('../Pool.js') {
     		
     			Object.values (columns).map (
 
-					col => `${col.name}::${this.gen_sql_type_dim (col)} AS ${col.name}`
+					col => {
+						let type = this.gen_sql_type_dim (col)
+						if (type == 'SERIAL') type = 'INT'
+						return `${col.name}::${type} AS ${col.name}`
+					}
 
     			)
     		
@@ -333,9 +368,9 @@ module.exports = class extends require ('../Pool.js') {
         let result = []
         
         for (let table of Object.values (this.model.tables)) {
-        
-            let data = table._data_modified
-            
+
+            let data = table._data_modified || table.data
+
             if (!data || !data.length) continue
             
             for (let record of data) {
@@ -352,8 +387,10 @@ module.exports = class extends require ('../Pool.js') {
                 }
                 
                 let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
+                
+                v = v.map (s => this.gen_sql_quoted_literal (s))
                             
-                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (?${',?'.repeat (f.length - 1)}) ON CONFLICT (${table.pk}) DO ${something}`, params: v})
+                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (${v}) ON CONFLICT (${table.pk}) DO ${something}`})
 
             }
         
@@ -537,9 +574,11 @@ module.exports = class extends require ('../Pool.js') {
 
     	let {TYPE_NAME} = ex_col
 
-		if (/CHAR$/.test (TYPE_NAME)) return true
+        if (/CHAR$/.test (TYPE_NAME)) return true
 
-		if (/^INT/.test (TYPE_NAME)) return true
+        if (/^INT/.test (TYPE_NAME)) return true
+
+        if (TYPE_NAME == 'NUMERIC') return true
 
     	return false
 
@@ -637,6 +676,8 @@ module.exports = class extends require ('../Pool.js') {
     add_sql_set_default_column (table, col, existing_columns, result) {
     
         let d = col.COLUMN_DEF, ex = existing_columns [col.name], exd = ex.COLUMN_DEF
+
+        if (col.TYPE_NAME == 'SERIAL') return
 
         if (d != exd) {
 
@@ -1039,7 +1080,7 @@ module.exports = class extends require ('../Pool.js') {
 	    let v = `'${col.MIN}'`; if (v == "'NOW'") v = 'now()'
 
 	    return `
-		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < '${v}' THEN
+		IF NEW.${col.name} IS NOT NULL AND NEW.${col.name} < ${v} THEN
 			RAISE '#${col.name}#: ${table.model.trg_check_column_value_min_date (col, table)}';
 		END IF;
 	    `
@@ -1121,7 +1162,7 @@ module.exports = class extends require ('../Pool.js') {
 
         if (table.p_k.includes (col.name)) col.NULLABLE = false
 
-        if (col.TYPE_NAME == 'SERIAL') {
+        if (col.TYPE_NAME == 'SERIAL' && this.version.major >= 10) {
 			col.TYPE_NAME = 'INT'
 			if (!col.ref) col.COLUMN_DEF = 'AUTO_INCREMENT'
         }

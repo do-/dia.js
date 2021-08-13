@@ -39,7 +39,9 @@ module.exports = class {
 	
 		for (let k in o) this [k] = o [k]
 
-		this.message = this.get_message ()
+		let m = this.get_message ()
+
+		if (m) this.message = m
 
 		return this
 	

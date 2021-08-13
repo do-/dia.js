@@ -33,11 +33,18 @@ module.exports = class extends require ('../Pool.js') {
     async release (client) {
     }
 
-    gen_sql_quoted_literal (s) {
-        if (s == null) s = ''
-        return "'" + String (s).replace(/'/g, "''") + "'"
+    async select_version (db) {
+        let label = await db.select_scalar (`SELECT version()`)
+        let [m, major, minor] = label.match (/^(\d+)\.(\d+)\b/i)
+        major = +major
+        minor = +minor
+        return {
+            major,
+            minor,
+            label,
+        }
     }
-    
+
     gen_sql_column_definition (col) {
     
         let sql = col.TYPE_NAME
@@ -143,7 +150,11 @@ module.exports = class extends require ('../Pool.js') {
 
         let {p_k, columns, engine} = table
 
-		let sql = `CREATE TABLE ${table.name} (${p_k.map (k => k + ' ' + this.gen_sql_column_definition (columns [k]))}) ENGINE=${engine} ORDER BY (${p_k})`
+        let {model} = this, {conf} = model
+
+        let on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
+
+		let sql = `CREATE TABLE ${table.name}${on_cluster}(${p_k.map (k => k + ' ' + this.gen_sql_column_definition (columns [k]))}) ENGINE=${engine} ORDER BY (${p_k})`
 
 		let p = table.partition_by || (table.partition || {}).by; if (p) sql += ' PARTITION BY ' + p
 
@@ -175,8 +186,10 @@ module.exports = class extends require ('../Pool.js') {
 
 					if (/UInt32/.test (ex.TYPE_NAME) && !/UInt32/.test (col.TYPE_NAME)) {
 
+                        let on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
+
 		                result.push ({
-							sql: `ALTER TABLE ${table.name} MODIFY COLUMN ${col.name} ` + this.gen_sql_column_definition (col), 
+							sql: `ALTER TABLE ${table.name}${on_cluster} MODIFY COLUMN ${col.name} ` + this.gen_sql_column_definition (col),
 							params: []
 						})
 						
@@ -206,9 +219,11 @@ module.exports = class extends require ('../Pool.js') {
     }
     
     gen_sql_add_column (table, col) {
-    
+
+        let on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
+
         return {
-            sql: `ALTER TABLE ${table.name} ADD COLUMN ${col.name} ` + this.gen_sql_column_definition (col), 
+            sql: `ALTER TABLE ${table.name}${on_cluster} ADD COLUMN ${col.name} ` + this.gen_sql_column_definition (col),
             params: []
         }
     
@@ -243,8 +258,10 @@ module.exports = class extends require ('../Pool.js') {
                 let label = col.REMARK || ''
 
                 if (label == (existing_columns [col.name] || {}).REMARK) continue
-                
-                result.push ({sql: `ALTER TABLE ${table.name} COMMENT COLUMN ${col.name} ` + this.gen_sql_quoted_literal (label), params: []})
+
+                let on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
+
+                result.push ({sql: `ALTER TABLE ${table.name}${on_cluster} COMMENT COLUMN ${col.name} ` + this.gen_sql_quoted_literal (label), params: []})
 
             }
 

@@ -3,8 +3,10 @@ module.exports = class extends Error {
     constructor (e, o = {}) {
 
 		super (e.message)
-		
+
 		this.stack = e.stack
+
+		this.path = [o.log_meta.parent]
 		
 		for (let [k, v] of [...Object.entries ({...e, ...o})]) 
 		
@@ -14,4 +16,7 @@ module.exports = class extends Error {
 
 	}
 
+	get_sigil () {
+		return '!'
+	}
 }

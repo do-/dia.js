@@ -310,17 +310,19 @@ module.exports = class {
     		
     			let cols = Object.keys (f).filter (n => existing.columns [n]); if (cols.length) {
 
-					let ids = Object.keys (idx); await this.select_loop (`SELECT ${cols} FROM ${table.name} WHERE ${p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")})`} IN (${ids.map (i => '?')})`, ids, r => {
+					let ids = Object.keys (idx)
+					
+					let list = await this.select_all (`SELECT ${cols} FROM ${table.name} WHERE ${p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")})`} IN (${ids.map (i => '?')})`, ids)
 
-						let id = pk (r)
+					main: for (let r of list) {
 
-						let d = idx [id]; if (!d) return
+						let id = pk (r), d = idx [id]; if (!d) continue main
 
-						for (let k in d) if ('' + d [k] != '' + r [k]) return
+						for (let k in d) if (!p_k.includes (k) && '' + r [k] != '' + d [k]) continue main
 
 						delete idx [id]
-
-					})
+						
+					}
 
     			}    			
     			

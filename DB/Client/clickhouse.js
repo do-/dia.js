@@ -103,9 +103,10 @@ module.exports = class extends Dia.DB.Client {
     
     	let sql = `INSERT INTO ${table} (${fields})`
    
+		let log_event = this.log_start (sql)
+
         try {        
         
-	        let log_event = this.log_start (sql)
         	
         	let body = new Transform ({transform (chunk, encoding, callback) {
 				
