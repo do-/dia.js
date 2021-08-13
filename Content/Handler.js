@@ -212,9 +212,9 @@ module.exports = class {
 
             await this.acquire_resources ()
 
-            await this.log_start ()
-
             await this.check_auth ()
+
+            await this.log_start ()
 
             let data = await this.get_data ()
 
