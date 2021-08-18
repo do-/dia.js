@@ -423,6 +423,8 @@ module.exports = class extends Dia.DB.Client {
         for (let r of rs) {
         
 			let t = tables [r.name] || partitioned_tables [r.name]; if (!t) continue
+			
+			r.p_k = []
         
         	for (let k of ['columns', 'keys', 'triggers']) r [k] = {}
             
