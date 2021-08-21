@@ -907,7 +907,15 @@ module.exports = class extends require ('../Pool.js') {
 
         let src = table.keys [k]
 
-        if (src != null) {
+        if (src != null) {        
+        	if (typeof src == 'object') {
+        		{
+        			const K = 'constraint_error_messages'
+        			if (!table [K]) table [K] = {}
+        			table [K] [glob] = src.error
+        		}
+        		src = src.src
+        	}        
             src = src.trim ()
             if (src.indexOf ('(') < 0) src = `(${src})`
             if (src.indexOf ('USING') < 0) src = src.replace ('(', 'USING btree (')
