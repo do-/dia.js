@@ -222,6 +222,8 @@ module.exports = class {
 
 				let {o, conf} = this, {log_meta} = o
 
+				if (x.parent) log_meta.parent = x.parent
+
 		    	conf.log_event (new WrappedError (x, {log_meta}))
 
 				if (this.o.stop_on_error) {

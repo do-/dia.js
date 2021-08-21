@@ -222,6 +222,8 @@ exports.Handler = class extends Handler {
 
     send_out_error (x) {
 
+        if (this.is_sent) return; this.is_sent = 1
+
     	let {http_line} = x; if (http_line) return this.send_out_text (http_line)
     	
     	if (x.is_validation_error) {
