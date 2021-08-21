@@ -214,6 +214,10 @@ module.exports = class {
         for (let k in data) {
             let v = data [k]
             if (!(k in def.columns) || typeof v === 'undefined') continue
+            if (v === null) {
+				let {NULLABLE, COLUMN_DEF} = def.columns [k]
+				if (!NULLABLE && COLUMN_DEF) v = COLUMN_DEF
+            }
             fields.unshift (`${k}=?`)
             params.unshift (v)
         }
