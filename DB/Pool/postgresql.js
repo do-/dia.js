@@ -513,7 +513,7 @@ module.exports = class extends require ('../Pool.js') {
 				
 			}
 
-            result.push ({sql: `DROP TABLE ${table.qname}`, params: []})
+            result.push ({sql: `DROP TABLE ${table.qname} CASCADE`, params: []})
             result.push ({sql: `ALTER TABLE ${tmp_table.qname} RENAME TO ${table.qname}`, params: []})
             
             table.existing.pk  = table.pk
