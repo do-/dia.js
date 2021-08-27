@@ -98,30 +98,35 @@ module.exports = class extends require ('../Pool.js') {
 		
 		db.on ('notification', async e => {
 
+			let log_event = this.log_write (new LogEvent ({
+				...log_meta,
+				category: 'db',
+				label: 'PostgreSQL notification: ' + JSON.stringify (e),
+				phase: 'before',
+			}))
+
 			try {
 
-				let {payload} = e; if (payload.charAt (0) != '{') {
+				let {payload} = e; 
+				
+				if (payload.charAt (0) != '{') {
+				
+					let {timers} = o; if (!timers) throw new Error ('The payload is scalar, but no timers were defined')
+					
+					let timer = timers [payload]; if (!timer)  throw new Error (`Timer '${payload}' not found`)
 
-					if (o.timers) {
-
-						let timer = o.timers [payload]; if (timer) {
-						
-							this.log_info (sql + ': ' + payload + ' -> ' + timer.uuid)
-
-							timer.on ()
-
-						}
-
-					}				
+					timer.on ()
 
 				}
 				else {
 
+					let {handler} = o; if (!handler) throw new Error ('The payload is object, but no handler was defined')
+					
+					let rq = JSON.parse (payload)
+
 					await new Promise ((ok, fail) => {
 
-						let h = new o.handler (Object.assign ({rq: JSON.parse (payload)}, o.params), ok, fail)
-
-						this.log_info (sql + ': ' + payload + ' -> ' + h.uuid)
+						let h = new handler (Object.assign ({rq}, o.params), ok, fail)
 
 						h.run ()
 
@@ -132,7 +137,14 @@ module.exports = class extends require ('../Pool.js') {
 			}
 			catch (x) {
 
+				x.log_meta = {parent: log_event}
+
 				this.log_write (new ErrorEvent (x))
+
+			}
+			finally {
+
+				this.log_write (log_event.finish ())
 
 			}
 
