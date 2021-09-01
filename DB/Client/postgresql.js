@@ -54,7 +54,24 @@ module.exports = class extends Dia.DB.Client {
             return result.rows
         }
         catch (e) {
-        	throw this.wrap_error (e, log_event)
+
+            if (e.code == 23505) {
+
+                let {model} = this; if (model) {
+
+                    let {constraint_error_messages} = model.tables [e.table]; if (constraint_error_messages) {
+
+                        let message = constraint_error_messages [e.constraint];
+
+                        if (message) throw this.wrap_error ({message}, log_event)
+
+                    }
+
+                }
+
+            }
+
+            throw this.wrap_error (e, log_event)
         }
         finally {
             this.log_finish (log_event)
