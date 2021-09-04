@@ -389,8 +389,8 @@ module.exports = class {
     send_out_error (x) {
     }
 
-    call (method_name) {
-    	return this.module [method_name].call (this)
+    call (method_name, ...args) {
+    	return this.module [method_name].apply (this, args)
     }
 
 }
