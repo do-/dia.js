@@ -255,6 +255,10 @@ module.exports = class extends Dia.DB.Client {
             if (typeof v === 'undefined') continue            
             fields.push (k)
             args.push ('?')
+            if (v === null) {
+				let {NULLABLE, COLUMN_DEF} = def.columns [k]
+				if (!NULLABLE && COLUMN_DEF) v = COLUMN_DEF
+            }                        
             params.push (v)
         }
         
