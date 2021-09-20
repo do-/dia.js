@@ -110,9 +110,9 @@ module.exports = class extends Dia.DB.Client {
     
     async get (def) {
         let q =  this.query (def)
-        let [limited_sql, limited_params] = this.to_limited_sql_params (q.sql, q.params, 1)
+        let [limited_sql, limited_params] = this.to_limited_sql_params (q.sql, q.params, 1, 0)
         let getter = q.parts [0].cols.length == 1 ? this.select_scalar : this.select_hash
-        return getter.call (this, q.sql, q.params)
+        return getter.call (this, limited_sql, limited_params)
     }
     
     async call (name, params = []) {
