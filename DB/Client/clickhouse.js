@@ -100,34 +100,31 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async load (is, table, fields) {
-    
+        
     	let sql = `INSERT INTO ${table} (${fields})`
    
 		let log_event = this.log_start (sql)
+		
+		return new Promise (async (ok, fail) => {
 
-        try {        
-        
-        	
-        	let body = new Transform ({transform (chunk, encoding, callback) {
-				
+			is.on ('error', fail)
+
+			let body = new Transform ({transform (chunk, encoding, callback) {
+
 				if (sql) {this.push (sql + ' FORMAT TSV\n'); sql = null}
-									
+
 				callback (null, chunk)			
-					
+
 			}})        	
-				        
-			let res_promise = this.backend.response ({}, body)
-			
+
+			this.backend.response ({}, body)
+				.then (ok)
+				.catch (fail)
+				.finally (() => this.log_finish (log_event))
+
 			is.pipe (body)
-			
-			await res_promise
-    	
-        }
-        finally {
-        
-        	this.log_finish (log_event)
-        
-        }
+
+		}) 
     
     }    
     
@@ -194,11 +191,32 @@ module.exports = class extends Dia.DB.Client {
 
 				for (let k of fields) {
 
+					let v = r [k], def = columns [k]
+					
+					if (!def.NULLABLE && v == null) {
+					
+						let message = `Null value not allowed for ${table}.${k}`
+						
+						try {
+						
+							message += ' Record: ' + JSON.stringify (r)
+						
+						}
+						catch (xxx) {
+
+							for (let f of fields) message += `, ${f} = ${r [f]}`
+						
+						}
+
+						throw new Error (message)
+					
+					}
+
 					if (l) l += '\t'
 
-					let s = safe (r [k])
+					let s = safe (v)
 
-					let len = lens [columns [k].TYPE_NAME]; if (len && s.length > len) s = s.slice (0, len)
+					let len = lens [def.TYPE_NAME]; if (len && s.length > len) s = s.slice (0, len)
 
 					l += s
 
@@ -217,7 +235,7 @@ module.exports = class extends Dia.DB.Client {
 						fields = Object.keys (r).filter (k => columns [k])
 						
 						if (!fields.length) fail (new Error (`No known fields (${Object.keys (columns)}) found in 1st record: ` + JSON.stringify (r)))
-					
+											
 						ok (this.load (body, table, fields))
 					
 					}
@@ -228,8 +246,18 @@ module.exports = class extends Dia.DB.Client {
 					}
 
 				}
-
-				body.write (line (r))
+				
+				try {
+				
+					body.write (line (r))
+				
+				}
+				catch (x) {
+				
+					body.destroy (x)
+					data.destroy (x)
+				
+				}
 
 			})
 
