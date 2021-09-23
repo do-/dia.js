@@ -150,10 +150,8 @@ module.exports = class extends Dia.DB.Client {
         }
         
         function safe (v) {
-        
-			if (v == null || v === '') return '\\N'
 
-			if ([Infinity, -Infinity].includes (v)) return '\\N'
+			if (v == null || v === Infinity || v === -Infinity) return '\\N'
 
 			if (v instanceof Date) return v.toJSON ().slice (0, 19)
 			
@@ -257,7 +255,7 @@ module.exports = class extends Dia.DB.Client {
 				
 				}
 				catch (x) {
-				
+darn (x)				
 					data.destroy (x)
 				
 				}

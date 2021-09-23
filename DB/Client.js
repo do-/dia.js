@@ -1,6 +1,7 @@
 const Dia = require ('../Dia.js')
 const LogEvent = require ('../Log/Events/DB.js')
 const WarningEvent = require ('../Log/Events/Warning.js')
+const {Transform} = require ('stream')
 
 module.exports = class {
 
@@ -10,6 +11,52 @@ module.exports = class {
     
     query (def) {
         return new Dia.DB.Query (this.model, def)
+    }
+    
+    zero_value (t) {
+
+		if (t == 'UUID') return ZERO_UUID
+		
+    	if (/(CHAR|TEXT|STRING)$/.test (t)) return ''
+
+    	if (/^(DATE|TIMES)/.test (t)) return '1970-01-01'
+
+    	if (/INT|NUM|DEC|BOOL|FLO|MONEY/.test (t)) return 0
+
+		return null
+    
+    }
+    
+    not_nuller (table) {
+    
+    	let def = this.model.relations [table]; if (!def) throw new Error ('Relation not found: ' + table)
+
+		let {columns} = def; if (!columns) throw new Error ('Relation has no columns: ' + table)
+        
+    	let cols = []; for (let {name, TYPE_NAME, NULLABLE, COLUMN_DEF} of Object.values (columns)) if (!NULLABLE) {
+    	
+    		let value = COLUMN_DEF
+    		
+    		if (value == null) value = this.zero_value (TYPE_NAME.toUpperCase ())
+
+    		if (value != null) cols.push ([name, value])
+    	
+    	}
+			
+		return new Transform ({objectMode: true, transform (r, encoding, callback) {
+
+			for (let [name, value] of cols) 
+			
+				if (name in r && r [name] == null) 
+				
+					r [name] = value
+
+			this.push (r)
+
+			callback ()
+
+		}})
+    
     }
 
     async select_vocabulary (t, o = {}) {
