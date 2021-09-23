@@ -618,23 +618,15 @@ module.exports = class extends Dia.DB.Client {
     async load_schema_foreign_keys () {
 
         let rs = await this.select_all (`
-			SELECT
-                CONCAT_WS ('.', 
-                	CASE 
-                    	WHEN tc.table_schema = 'public' THEN NULL
-                        ELSE tc.table_schema
-                    END
-                    , tc.table_name
-                ) AS table_name,
-			    tc.constraint_name AS ref_name, 
-				kcu.column_name, 
-				ccu.table_name AS ref
-			FROM 
-				information_schema.table_constraints AS tc 
-				JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
-				JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
-			WHERE 
-				tc.constraint_type = 'FOREIGN KEY' 
+            SELECT
+                CONCAT_WS ('.', CASE WHEN x.table_schema = 'public' THEN NULL ELSE x.table_schema END, x.table_name) AS table_name
+                , c.constraint_name AS ref_name
+                , x.column_name
+                , y.table_name AS ref
+            FROM
+                information_schema.referential_constraints c
+                JOIN information_schema.key_column_usage x ON x.constraint_name = c.constraint_name
+                JOIN information_schema.key_column_usage y ON y.ordinal_position = x.position_in_unique_constraint AND y.constraint_name = c.unique_constraint_name
         `, [])          
 
         let tables = this.model.tables
