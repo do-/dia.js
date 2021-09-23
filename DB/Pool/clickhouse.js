@@ -108,6 +108,9 @@ module.exports = class extends require ('../Pool.js') {
             col.COLUMN_DEF = '0'
             delete col.COLUMN_SIZE
         }
+        else if (/^BOOL/.test (col.TYPE_NAME)) {
+            col.TYPE_NAME = 'UInt8'
+        }
         
         if (col.TYPE_NAME == 'Decimal') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
