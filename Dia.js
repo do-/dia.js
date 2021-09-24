@@ -22,3 +22,16 @@ function reExport (module_name) {
     }
 
 }
+
+this.factory = class {
+
+    constructor (clazz, o = {}) {    
+		this.clazz = clazz
+		this.o     = o
+    }
+    
+    async acquire (o) {    
+		return new (this.clazz) ({...this.o, ...o})
+    }
+
+}
