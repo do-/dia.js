@@ -7,7 +7,7 @@ module.exports = class {
 
     constructor (o) {    
 
-		for (let k of ['root', 'log_meta']) 
+		for (let k of ['root', 'rq', 'log_meta']) 
 		
 			if (!(this [k] = o [k])) 
 			
@@ -15,51 +15,70 @@ module.exports = class {
 
     }
     
+	async release () {
+		// do nothing
+	}			
+
     get_name () {
-    
-    	return this.log_meta.parent.rq.type
-    
-    }
-    
-	abs (fn) {
-	
-		return path.join (this.root, fn)
-		
-	}
 
-    to_path (id, fn, o) {
-    
-    	return [
-
-    		get_name (),
-
-    		...(new Date ().toJSON ().slice (0, 10).split ('-')),
-
-    		path.extname (path),
-
-    	].join ('/')
+    	return this.rq.type
     
     }
+    
+	abs (p) {
 	
-	create (id, fn, o = {}) {
-	
-		let p = this.to_path (id, fn, o)
+		return path.join (this.root, p)
 		
-		fs.mkdirSync (this.abs (p), {recursive: true})
-		
-		return p
-	
 	}
 	
-	async len (path) {
+	async construct_directory_path (id, fn, o) {
+	
+		let p = this.get_name () + '/' + new Date ().toJSON ().slice (0, 10).replace (/-/g, '/')
+
+		return new Promise ((ok, fail) => 
+		
+			fs.mkdir (this.abs (p), {recursive: true}, x => 
+			
+				x ? fail (x) : ok (p)
+				
+			)
+		
+		)
+
+	}
+
+	async construct_file_name (id, fn, o) {
+	
+    	let is_gz = /\.gz/.test (fn); if (is_gz) fn = fn.slice (0, fn.length - 3)
+    	
+    	let file_name = id + path.extname (fn)
+    	
+    	if (is_gz) file_name += '.gz'
+    	
+    	return file_name
+
+	}
+	
+	async construct_file_path (id, fn, o = {}) {
+		
+		let [d, f] = await Promise.all ([
+			this.construct_directory_path (id, fn, o),
+			this.construct_file_name      (id, fn, o),
+		])
+
+		return d + '/' + f
+
+	}
+	
+	async size (path) {
 
 		let abs = this.abs (path)
 	
-		if (!fs.existsSync (path)) return 0
+		if (!fs.existsSync (abs)) return 0
 
 		return new Promise ((ok, fail) => {
 		
-			fs.stat (path, (x, d) => x ? fail (x) : ok (d.size))
+			fs.stat (abs, (x, d) => x ? fail (x) : ok (d.size))
 			
 		})
 
@@ -69,17 +88,19 @@ module.exports = class {
 
 		if (encoding) chunk = Buffer.from (chunk, encoding)
 
+		let abs = this.abs (path)
+
 		await new Promise ((ok, fail) => {
 
-			fs.appendFile (this.abs (path), chunk, (x) => x ? fail (x) : ok ())
+			fs.appendFile (abs, chunk, (x) => x ? fail (x) : ok ())
 
 		})
 		
-		return this.len (path)
+		return await this.size (path)
 
 	}
 
-	get (path) {
+	async get (path) {
 		
 		let abs = this.abs (path)
 	
@@ -89,19 +110,23 @@ module.exports = class {
 
 	}
 
-	put (path, o) {
+	async put (path, o) {
 
     	return fs.createWriteStream (this.abs (path), o)
 
 	}
 
-	del (path) {
+	async delete (path) {
 
 		let abs = this.abs (path)
 	
 		if (!fs.existsSync (abs)) return
 		
-		fs.unlinkSync (abs)
+		return new Promise ((ok, fail) => {
+
+			fs.unlink (abs, x => x ? fail (x) : ok ())
+			
+		})
 
 	}
 	
@@ -109,28 +134,22 @@ module.exports = class {
 		
 		if (!options.level) options.level = 9
 				
-		return new Promise ((ok, fail) => {
+		let new_path = path + '.gz'
 		
-			let new_path = path + '.gz'
+		let [is, os] = await Promise.all ([
+			this.get (path),
+			this.put (new_path),
+		])
 
-			let os = this.put (new_path).on ('error', fail).on ('close', () => {
-			
-				try {
-				
-					fs.unlinkSync (this.abs (path))
+		return new Promise ((ok, fail) => {		
 
-					ok (new_path)
-				
-				}
-				catch (e) {
-				
-					fail (e)
-				
-				}			
-			
-			})
+			os.on ('error', fail).on ('close', () => 			
+				this.delete (path)
+					.catch (fail)
+					.then (() => ok (new_path))			
+			)
 		
-			let is = this.get (path).on ('error', fail)
+			is.on ('error', fail)
 				.pipe (zlib.createGzip (options))
 				.pipe (os)
 

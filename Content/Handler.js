@@ -303,8 +303,7 @@ module.exports = class {
 
     async acquire_resource (pool, k) {
 
-        let db = await pool.acquire ({
-        	conf: this.conf,
+        let {conf, rq} = this, db = await pool.acquire ({conf, rq,
         	log_meta: {
         		parent: this.log_event,
         		resource_name: k
