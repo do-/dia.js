@@ -116,8 +116,16 @@ module.exports = class extends Dia.DB.Client {
 			}})        	
 
 			is.on ('error', x => {
-				body.end ()
+			
 				fail (x)
+
+				try {
+					body.end ()
+				}
+				catch (e) {
+					darn (e)
+				}
+			
 			})
 
 			this.backend.response ({}, body)
@@ -243,7 +251,7 @@ module.exports = class extends Dia.DB.Client {
 					}
 					catch (x) {
 					
-						fail (x)
+						return fail (x)
 					
 					}
 
