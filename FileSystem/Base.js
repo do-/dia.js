@@ -130,29 +130,28 @@ module.exports = class {
 
 	}
 	
-	async gzip (path, options = {}) {
-		
-		if (!options.level) options.level = 9
-				
-		let new_path = path + '.gz'
-		
+	async construct_gzip_file_path (old_path) {
+
+		let fn = old_path.split ('/').pop (), [id] = fn.split ('.')
+	
+		return this.construct_file_path (id, fn + '.gz')
+
+	}
+	
+	async gzip (old_path, o = {}) {
+
+		if (!o.level) o.level = 9; let gzip = zlib.createGzip (o)
+
+		let new_path = await this.construct_gzip_file_path (old_path)
+
 		let [is, os] = await Promise.all ([
-			this.get (path),
+			this.get (old_path),
 			this.put (new_path),
 		])
 
 		return new Promise ((ok, fail) => {		
-
-			os.on ('error', fail).on ('close', () => 			
-				this.delete (path)
-					.catch (fail)
-					.then (() => ok (new_path))			
-			)
-		
-			is.on ('error', fail)
-				.pipe (zlib.createGzip (options))
-				.pipe (os)
-
+			os.on ('error', fail).on ('close', () => ok (new_path))		
+			is.on ('error', fail).pipe (gzip).pipe (os)
 		})
 
 	}
