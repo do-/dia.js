@@ -261,8 +261,13 @@ exports.Handler = class extends Handler {
     	let rp = this.http.response
     	
 		rp.setHeader ('Content-Type', 'application/octet-stream')
-		if (o.size > 0) rp.setHeader ('Content-Length', o.size)
-		rp.setHeader ('Content-Disposition', contentDisposition (o.filename))
+		
+		for (let [k, n] of [
+			['size',     'Content-Length'],
+			['encoding', 'Content-Encoding'],
+		]) if (k in o) rp.setHeader (n, o [k])
+
+		rp.setHeader ('Content-Disposition', contentDisposition (o.filename || o.file_name))
 
     }
 
