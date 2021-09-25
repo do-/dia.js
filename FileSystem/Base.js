@@ -2,16 +2,53 @@ const fs         = require ('fs')
 const path       = require ('path')
 const {Readable} = require ('stream')
 const zlib       = require ('zlib')
+const LogEvent     = require ('../Log/Events/FS.js')
+const WarningEvent = require ('../Log/Events/Warning.js')
 
 module.exports = class {
 
     constructor (o) {    
 
-		for (let k of ['root', 'rq', 'log_meta']) 
+		for (let k of ['root', 'conf', 'rq', 'log_meta']) 
 		
 			if (!(this [k] = o [k])) 
 			
 				throw new Error (k + ' not defined')
+
+    }
+    
+    log_write (e) {
+
+    	this.conf.log_event (e)
+
+    	return e
+    
+    }
+
+    log_finish (e) {
+        	
+    	return this.log_write (e.finish ())
+
+    }
+    
+    log_start (file_id, action) {
+
+    	return this.log_write (new LogEvent ({
+    		...(this.log_meta || {}),
+			phase: 'before',
+			file_id, 
+			action,
+    	}))
+
+    }
+    
+    warn (label, o = {}) {
+
+    	return this.log_write (new WarningEvent ({
+    		...(this.log_meta || {}),
+			label,
+			...o
+    	}))
 
     }
     
@@ -70,17 +107,25 @@ module.exports = class {
 
 	}
 	
+	size_sync_abs (abs) {
+	
+		return fs.statSync (abs).size
+	
+	}
+	
 	async size (path) {
 
 		let abs = this.abs (path)
 	
-		if (!fs.existsSync (abs)) return 0
-
-		return new Promise ((ok, fail) => {
+		if (!fs.existsSync (abs)) {
 		
-			fs.stat (abs, (x, d) => x ? fail (x) : ok (d.size))
+			this.warn (abs + ' not found, returning zero size')
+
+			return 0
 			
-		})
+		}
+		
+		return this.size_sync_abs (abs)
 
 	}
 	
@@ -90,29 +135,73 @@ module.exports = class {
 
 		let abs = this.abs (path)
 
-		await new Promise ((ok, fail) => {
-
-			fs.appendFile (abs, chunk, (x) => x ? fail (x) : ok ())
-
-		})
+		let log_event = this.log_start (path, 'append').measure (chunk)
 		
-		return await this.size (path)
+		try {
 
+			await new Promise ((ok, fail) => {
+
+				fs.appendFile (abs, chunk, (x) => x ? fail (x) : ok ())
+
+			})
+
+			let size = await this.size (path)
+			
+			log_event.set_size (size)
+
+			return size
+
+		}
+		finally {
+
+			this.log_finish (log_event)
+
+		}
+    	
 	}
 
 	async get (path) {
 		
 		let abs = this.abs (path)
 	
-		if (!fs.existsSync (abs)) return Readable.from ([])
-
+		if (!fs.existsSync (abs)) {
+		
+			this.warn (abs + ' not found, returning empty stream')
+		
+			return Readable.from ([])
+		
+		}
+		
+		let log_event = this.log_start (path, 'get')
+    	
     	return fs.createReadStream (abs)
+    		.on ('data', chunk => log_event.measure (chunk))
+    		.on ('close', () => this.log_finish (log_event))
 
 	}
 
 	async put (path, o) {
+	
+		let log_event = this.log_start (path, 'put')
+		
+		let abs = this.abs (path)
 
-    	return fs.createWriteStream (this.abs (path), o)
+    	return fs.createWriteStream (abs, o)
+
+    		.on ('close', () => {
+    			
+    			try {
+
+    				log_event.set_size (this.size_sync_abs (abs))
+
+    			}
+    			finally {
+
+    				this.log_finish (log_event)
+
+    			}
+
+    		})
 
 	}
 
@@ -120,11 +209,13 @@ module.exports = class {
 
 		let abs = this.abs (path)
 	
-		if (!fs.existsSync (abs)) return
+		if (!fs.existsSync (abs)) return this.warn (abs + ' not found, returning empty stream')
 		
+		let log_event = this.log_start (path, 'delete'), log_finish = () => this.log_finish (log_event)
+
 		return new Promise ((ok, fail) => {
 
-			fs.unlink (abs, x => x ? fail (x) : ok ())
+			fs.unlink (abs, x => log_finish (x ? fail (x) : ok ()))
 			
 		})
 
@@ -140,19 +231,36 @@ module.exports = class {
 	
 	async gzip (old_path, o = {}) {
 
-		if (!o.level) o.level = 9; let gzip = zlib.createGzip (o)
+		let log_event = this.log_start (old_path, 'gzip')
 
-		let new_path = await this.construct_gzip_file_path (old_path)
+		let {log_meta} = this, {parent} = log_meta; log_meta.parent = log_event
+		
+		try {
 
-		let [is, os] = await Promise.all ([
-			this.get (old_path),
-			this.put (new_path),
-		])
+			if (!o.level) o.level = 9; let gzip = zlib.createGzip (o)
 
-		return new Promise ((ok, fail) => {		
-			os.on ('error', fail).on ('close', () => ok (new_path))		
-			is.on ('error', fail).pipe (gzip).pipe (os)
-		})
+			let new_path = await this.construct_gzip_file_path (old_path)
+
+			let [is, os] = await Promise.all ([
+				this.get (old_path),
+				this.put (new_path),
+			])
+
+			await new Promise ((ok, fail) => {		
+				os.on ('error', fail).on ('close', () => ok (new_path))		
+				is.on ('error', fail).pipe (gzip).pipe (os)
+			})
+			
+			return new_path
+
+		}
+		finally {
+		
+			this.log_finish (log_event)
+			
+			log_meta.parent = parent
+		
+		}
 
 	}
 
