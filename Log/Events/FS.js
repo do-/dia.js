@@ -1,3 +1,4 @@
+const {Transform} = require ('stream')
 const Event = require ('../Event.js')
 
 module.exports = class extends Event {
@@ -8,12 +9,24 @@ module.exports = class extends Event {
 		if (!o.action) throw new Exception ('Action not provided')
 		
 		super ({category: 'f_s', ...o})
+		
+		if (this.action == 'append') this.size = 0n
 
-		switch (this.action) {
-			case 'append':
-			case 'get':
-				this.size = 0n
-		}
+	}
+	
+	get_meter () {
+	
+		this.size = 0n
+	
+		let me = this
+
+		return new Transform ({transform (chunk, encoding, callback) {
+		
+			me.measure (chunk)
+
+			callback (null, chunk)			
+
+		}})        	
 
 	}
 		
@@ -26,7 +39,7 @@ module.exports = class extends Event {
 	}
 	
 	measure (chunk) {
-	
+
 		this.size += BigInt (chunk.length)
 		
 		if (!this.units) this.units = Buffer.isBuffer (chunk) ? 'B' : 'C'

@@ -145,7 +145,7 @@ module.exports = class {
 
 			})
 
-			let size = await this.size (path)
+			let size = this.size_sync_abs (abs)
 			
 			log_event.set_size (size)
 
@@ -175,8 +175,8 @@ module.exports = class {
 		let log_event = this.log_start (path, 'get')
     	
     	return fs.createReadStream (abs)
-    		.on ('data', chunk => log_event.measure (chunk))
     		.on ('close', () => this.log_finish (log_event))
+    		.pipe (log_event.get_meter ())
 
 	}
 
