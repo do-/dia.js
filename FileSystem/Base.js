@@ -1,65 +1,20 @@
+const Abstract   = require ('./Abstract.js')
 const fs         = require ('fs')
 const path       = require ('path')
 const {Readable} = require ('stream')
-const zlib       = require ('zlib')
-const LogEvent     = require ('../Log/Events/FS.js')
-const WarningEvent = require ('../Log/Events/Warning.js')
 
-module.exports = class {
+module.exports = class extends Abstract {
 
     constructor (o) {    
 
-		for (let k of ['root', 'conf', 'rq', 'log_meta']) 
+		super (o)
+
+		for (let k of ['root']) 
 		
 			if (!(this [k] = o [k])) 
 			
 				throw new Error (k + ' not defined')
 
-    }
-    
-    log_write (e) {
-
-    	this.conf.log_event (e)
-
-    	return e
-    
-    }
-
-    log_finish (e) {
-        	
-    	return this.log_write (e.finish ())
-
-    }
-    
-    log_start (file_id, action) {
-
-    	return this.log_write (new LogEvent ({
-    		...(this.log_meta || {}),
-			phase: 'before',
-			file_id, 
-			action,
-    	}))
-
-    }
-    
-    warn (label, o = {}) {
-
-    	return this.log_write (new WarningEvent ({
-    		...(this.log_meta || {}),
-			label,
-			...o
-    	}))
-
-    }
-    
-	async release () {
-		// do nothing
-	}			
-
-    get_name () {
-
-    	return this.rq.type
-    
     }
     
 	abs (p) {
@@ -106,6 +61,10 @@ module.exports = class {
 		return d + '/' + f
 
 	}
+
+	async new_path (id, fn, o = {}) {
+		return this.construct_file_path (id, fn, o)
+	}
 	
 	size_sync_abs (abs) {
 	
@@ -129,9 +88,7 @@ module.exports = class {
 
 	}
 	
-	async append (path, chunk, encoding) {
-
-		if (encoding) chunk = Buffer.from (chunk, encoding)
+	async append_buffer (path, chunk, encoding) {
 
 		let abs = this.abs (path)
 
@@ -226,41 +183,6 @@ module.exports = class {
 		let fn = old_path.split ('/').pop (), [id] = fn.split ('.')
 	
 		return this.construct_file_path (id, fn + '.gz')
-
-	}
-	
-	async gzip (old_path, o = {}) {
-
-		let log_event = this.log_start (old_path, 'gzip')
-
-		let {log_meta} = this, {parent} = log_meta; log_meta.parent = log_event
-		
-		try {
-
-			if (!o.level) o.level = 9; let gzip = zlib.createGzip (o)
-
-			let new_path = await this.construct_gzip_file_path (old_path)
-
-			let [is, os] = await Promise.all ([
-				this.get (old_path),
-				this.put (new_path),
-			])
-
-			await new Promise ((ok, fail) => {		
-				os.on ('error', fail).on ('close', () => ok (new_path))		
-				is.on ('error', fail).pipe (gzip).pipe (os)
-			})
-			
-			return new_path
-
-		}
-		finally {
-		
-			this.log_finish (log_event)
-			
-			log_meta.parent = parent
-		
-		}
 
 	}
 
