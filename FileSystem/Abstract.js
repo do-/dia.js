@@ -12,8 +12,20 @@ module.exports = class {
 			if (!(this [k] = o [k])) 
 			
 				throw new Error (k + ' not defined')
+				
+		this.read_only = !!o.read_only
+		
+		if (this.is_read_only ()) for (let k of ['put', 'append', 'delete', 'gzip']) this [k] = this.carp_read_only
 
     }
+    
+    is_read_only () {
+    	return this.read_only
+    }
+
+	carp_read_only () {
+		throw Error ('This file store is read only')
+	}
     
     log_write (e) {
 

@@ -195,21 +195,25 @@ Base.prototype.check_options = function (o) {
 	if (!fs.existsSync (root)) throw new Error ('Root directory not found: ' + root)
 
 	if (!fs.statSync (root).isDirectory ()) throw new Error ('This is not a directory: ' + root)
+	
+	if (!o.read_only) {
 
-	let temp
-	
-	try {
-		temp = fs.mkdtempSync (path.normalize (root) + path.sep)
-	}
-	catch (e) {
-		throw new Error ("Can't create subdirectory in " + root + '. Perhaps, some permissions are missing or the directory path is wrong: ' + e.message)
-	}
-	
-	try {
-		fs.rmdirSync (temp)
-	}
-	catch (e) {
-		throw new Error ("Managed to create temporary directory " + temp + "but can't remove it. Something wrong with file permissions: " + e.message)
+		let temp
+
+		try {
+			temp = fs.mkdtempSync (path.normalize (root) + path.sep)
+		}
+		catch (e) {
+			throw new Error ("Can't create subdirectory in " + root + '. Perhaps, some permissions are missing or the directory path is wrong: ' + e.message)
+		}
+
+		try {
+			fs.rmdirSync (temp)
+		}
+		catch (e) {
+			throw new Error ("Managed to create temporary directory " + temp + "but can't remove it. Something wrong with file permissions: " + e.message)
+		}
+
 	}
 
 }
