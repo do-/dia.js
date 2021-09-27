@@ -26,6 +26,7 @@ function reExport (module_name) {
 this.factory = class {
 
     constructor (clazz, o = {}) {    
+    	let {check_options} = clazz.prototype; if (check_options) check_options (o)
 		this.clazz = clazz
 		this.o     = o
     }

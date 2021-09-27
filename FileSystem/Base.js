@@ -3,7 +3,7 @@ const fs         = require ('fs')
 const path       = require ('path')
 const {Readable} = require ('stream')
 
-module.exports = class extends Abstract {
+let Base = class extends Abstract {
 
     constructor (o) {    
 
@@ -187,3 +187,31 @@ module.exports = class extends Abstract {
 	}
 
 }
+
+Base.prototype.check_options = function (o) {
+
+	let {root} = o; if (!root) throw new Error ('`root` option not set')
+	
+	if (!fs.existsSync (root)) throw new Error ('Root directory not found: ' + root)
+
+	if (!fs.statSync (root).isDirectory ()) throw new Error ('This is not a directory: ' + root)
+
+	let temp
+	
+	try {
+		temp = fs.mkdtempSync (path.normalize (root) + path.sep)
+	}
+	catch (e) {
+		throw new Error ("Can't create subdirectory in " + root + '. Perhaps, some permissions are missing or the directory path is wrong: ' + e.message)
+	}
+	
+	try {
+		fs.rmdirSync (temp)
+	}
+	catch (e) {
+		throw new Error ("Managed to create temporary directory " + temp + "but can't remove it. Something wrong with file permissions: " + e.message)
+	}
+
+}
+
+module.exports = Base
