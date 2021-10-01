@@ -203,7 +203,9 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async insert (table, data) {
-    
+
+        if (arguments.length == 1) return this.select_scalar (`INSERT INTO ${table} DEFAULT VALUES`, [])
+
         if (Array.isArray (data)) {
         	if (!data.length) return
 			return this.load (Readable.from (data), table, Object.keys (data [0]))
