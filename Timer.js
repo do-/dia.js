@@ -255,8 +255,18 @@ module.exports = class {
 		if (!this.t && !this.when) this.finish ()
 
 	}
+	
+	get_next_tick () {
+	
+		let {ticker} = this.o; if (!ticker) return null
+		
+		return ticker ()
+	
+	}
 
 	finish () {
+	
+		let when = this.get_next_tick (); if (when) return this.at (when)
 
 		let {o, result, error} = this, {done, fail} = o
 
