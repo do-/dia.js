@@ -53,6 +53,10 @@ module.exports = class {
     get_default_pools (rq) {
     	throw new Error ('Please define get_default_pools (rq)')
     }
+    
+    get_cron_parser () {
+	    return (require ('./Timer/CronTicker.js'))
+    }
 	
 	add_timer (timer) {
 

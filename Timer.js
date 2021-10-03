@@ -258,6 +258,14 @@ module.exports = class {
 
 	}
 	
+	set_ticker (v) {
+	
+		this.o.ticker = v
+		
+		this.tick ()
+	
+	}
+	
 	get_next_tick () {
 	
 		let {ticker} = this.o; if (!ticker) return null
@@ -265,10 +273,22 @@ module.exports = class {
 		return ticker ()
 	
 	}
+	
+	tick () {
+	
+		let when = this.get_next_tick (); if (!when) return null
+		
+		this.clear ()
+		
+		this.at (when)
+		
+		return when
+	
+	}
 
 	finish () {
 	
-		let when = this.get_next_tick (); if (when) return this.at (when)
+		if (this.tick ()) return
 
 		let {o, result, error} = this, {done, fail} = o
 

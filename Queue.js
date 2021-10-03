@@ -35,10 +35,37 @@ module.exports = class {
 		this.timer = new Timer ({conf, name, label, period, todo}) 
 		
 	}
+
+	set_ticker (v) {
+
+		this.timer.set_ticker (v)
+
+	}
+	
+	set_cron (cron) {
+	
+		let gen = this.conf.get_cron_parser ()
+		
+		let ticker = gen (cron)
+		
+		this.set_ticker (ticker)
+
+	}
 	
 	async init () {
-
-		this.timer.on ()
+	
+		let {o, timer} = this, {cron} = o
+		
+		if (cron) {
+		
+			this.set_cron (cron)
+		
+		}
+		else {
+		
+			this.timer.on ()
+		
+		}
 
 	}
 
