@@ -1,10 +1,13 @@
 const LogEvent = require ('../Log/Events/Text.js')
+const Timer = require ('../Timer.js')
 
 module.exports = class {
 
     constructor (o) {
 
         this.options = o
+
+		this._timers = {}
 
     }
     
@@ -16,9 +19,53 @@ module.exports = class {
 		}))
 
     }
+    
+    async init_queues (o = {}) {
+    
+    	let {model, _timers} = this, {conf} = model
+    	
+    	let {default_action, default_part} = {
+    		default_action: 'check', 
+    		default_part: 'some',
+    		...o
+    	}
+
+		for (let relation of Object.values (model.relations)) {
+		
+			let {name, queue} = relation; if (!queue) continue
+			
+			let {type, action, part, label, period} = {
+				type: name,
+				action: default_action,
+				part: default_part,
+				label: relation.label,
+				...queue
+			}
+			
+			let 
+				rq = {type, action}
+				, handler = conf.get_default_handler (rq)
+				, pools   = conf.get_default_pools (rq)
+				, user    = clone (conf.get_default_user (rq))
+
+			let options = {name, label, period, todo: 
+				[handler, {rq, pools, conf, user}]
+			}
+			
+			let timer = new Timer ({conf, name, label, period, todo: 
+				[handler, {rq, pools, conf, user}]
+			})
+			
+			this._timers [name] = timer
+			
+			timer.on ()
+    	
+    	}
+
+    }
 
     async update_model (o = {}) {
-    
+
     	let patch = this.gen_sql_patch (o)
     	
     	if (!patch.length) return

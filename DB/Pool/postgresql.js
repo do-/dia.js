@@ -31,7 +31,7 @@ module.exports = class extends require ('../Pool.js') {
 
     }
 
-    async listen (o) {
+    async listen (o = {}) {
 
 		let log_meta = o.log_meta || {}
 
@@ -46,7 +46,9 @@ module.exports = class extends require ('../Pool.js') {
 		
 		db.connect ()
 		
-		if (o.timers) for (let name in o.timers) {
+		if (!o.timers) o.timers = this._timers
+		
+		for (let name in o.timers) {
 		
 			let key = 'timer_' + name
 		

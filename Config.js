@@ -37,6 +37,30 @@ module.exports = class {
 		
 		this._inc_fresh = {}
 		
+		this._timers = {}
+		
+	}
+
+    get_default_handler (rq) {
+    	throw new Error ('Please define get_default_handler (rq)')
+    }
+    
+    get_default_user (rq) {
+    	throw new Error ('Please define get_default_user (rq)')
+    }
+
+    get_default_pools (rq) {
+    	throw new Error ('Please define get_default_pools (rq)')
+    }
+	
+	add_timer (timer) {
+
+		let {name} = timer.o; if (name == null) throw new Error ('Timer name not set')
+
+		let {_timers} = this; if (name in _timers) throw new Error (`Timer named "${name}" was already registered`)
+		
+		_timers [name] = timer
+
 	}
 	
 	is_slice_to_load (name) {

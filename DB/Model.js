@@ -76,7 +76,7 @@ module.exports = class {
 
 			}
 
-	        for (let k of ['data', 'init_data', 'sql', 'body']) postpone (m, k)
+	        for (let k of ['data', 'init_data', 'sql', 'body', 'queue']) postpone (m, k)
 
 			let {triggers} = m; if (triggers) for (let k in triggers) postpone (triggers, k)
 
