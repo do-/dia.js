@@ -38,6 +38,7 @@ module.exports = class {
 		this._inc_fresh = {}
 		
 		this._timers = {}
+		this._queues = {}
 		
 	}
 
@@ -60,6 +61,16 @@ module.exports = class {
 		let {_timers} = this; if (name in _timers) throw new Error (`Timer named "${name}" was already registered`)
 		
 		_timers [name] = timer
+
+	}
+
+	add_queue (queue) {
+
+		let {name} = queue.o; if (name == null) throw new Error ('queue name not set')
+
+		let {_queues} = this; if (name in _queues) throw new Error (`Queue named "${name}" was already registered`)
+		
+		_queues [name] = queue
 
 	}
 	

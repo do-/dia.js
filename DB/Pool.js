@@ -1,5 +1,5 @@
 const LogEvent = require ('../Log/Events/Text.js')
-const Timer = require ('../Timer.js')
+const Queue = require ('../Queue.js')
 
 module.exports = class {
 
@@ -20,47 +20,35 @@ module.exports = class {
 
     }
     
-    async init_queues (o = {}) {
-    
-    	let {model, _timers} = this, {conf} = model
-    	
-    	let {default_action, default_part} = {
-    		default_action: 'check', 
-    		default_part: 'some',
-    		...o
-    	}
+    async init_queue (relation, o) {
 
-		for (let relation of Object.values (model.relations)) {
+    	let {model, _timers} = this, {conf} = model, {name, label, queue} = relation
+
+    	for (let k of ['label']) if (!queue [k]) queue [k] = relation [k]
+    	
+    	if (!queue.name && !queue.type) queue.name = name
+    	
+    	let q = new Queue ({conf, ...queue})
+    	
+    	await q.init ()
+    	
+    	let {timer} = q; _timers [timer.o.name] = timer
 		
-			let {name, queue} = relation; if (!queue) continue
-			
-			let {type, action, part, label, period} = {
-				type: name,
-				action: default_action,
-				part: default_part,
-				label: relation.label,
-				...queue
-			}
-			
-			let 
-				rq = {type, action}
-				, handler = conf.get_default_handler (rq)
-				, pools   = conf.get_default_pools (rq)
-				, user    = clone (conf.get_default_user (rq))
+		return q
+		
+    }
+    
+    async init_queues (o = {}) {
 
-			let options = {name, label, period, todo: 
-				[handler, {rq, pools, conf, user}]
-			}
+		await Promise.all (
+		
+			Object.values (this.model.relations)
 			
-			let timer = new Timer ({conf, name, label, period, todo: 
-				[handler, {rq, pools, conf, user}]
-			})
-			
-			this._timers [name] = timer
-			
-			timer.on ()
-    	
-    	}
+				.filter (r => r.queue)
+				
+					.map (r => this.init_queue (r, o))
+
+		)
 
     }
 
