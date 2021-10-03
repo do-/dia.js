@@ -28,7 +28,15 @@ module.exports = class {
     	
     	if (!queue.name && !queue.type) queue.name = name
     	
-    	let q = new Queue ({conf, ...queue})
+    	let is_empty = async () => this.do_with_db ({
+    		label: `Checking if ${name} is empty`,
+    		f: async db => {
+    			let l = await db.list ({[name]: {LIMIT: 1}})
+    			return l.length == 0
+    		}
+    	})
+
+    	let q = new Queue ({conf, is_empty, ...queue})
     	
     	await q.init ()
     	
@@ -96,7 +104,7 @@ module.exports = class {
             	conf,
             	log_meta: {...log_meta, parent: this.log_event},
             })
-            await f.call (this, db)
+            return await f.call (this, db)
         }
         finally {
             this.release (db)

@@ -30,10 +30,54 @@ module.exports = class {
 			
 			user    = clone (conf.get_default_user (rq)), 
 			
-			todo    = [handler, {rq, pools, conf, user}]
+			todo    = async (log_meta) => {
+				
+				try {
+					await this.do_main_job (log_meta)
+				}
+				finally {
+				
+					try {
+
+						let is_empty = await this.is_empty ()
+
+						if (is_empty === false) // reset when definitly not empty, not undefined etc.
+		
+						this.timer.on ()
+
+					}
+					catch (x) {
+						darn (x)
+					}
+				
+				}
+				
+			}
 			
 		this.timer = new Timer ({conf, name, label, period, todo}) 
 		
+	}
+	
+	async do_main_job (log_meta) {
+	
+    	let	
+    	
+    		{o, conf, timer} = this, 
+    		
+    		{name, type, action, label, period} = o,
+
+			rq = {type, action},
+			
+			handler = conf.get_default_handler (rq), 
+			
+			pools   = conf.get_default_pools (rq), 
+			
+			user    = conf.get_default_user (rq) 
+			
+		return new Promise ((ok, fail) => {
+			(new handler ({rq, pools, conf, user, timer, log_meta}, ok, fail)).run ()
+		})
+	
 	}
 
 	set_ticker (v) {
@@ -52,6 +96,17 @@ module.exports = class {
 
 	}
 	
+	async is_empty () {
+
+		let {is_empty} = this.o;
+
+		switch (typeof is_empty) {
+			case 'function' : return is_empty ()
+			default         : return is_empty
+		}
+
+	}
+	
 	async init () {
 	
 		let {o, timer} = this, {cron} = o
@@ -63,8 +118,12 @@ module.exports = class {
 		}
 		else {
 		
-			this.timer.on ()
+			let is_empty = await this.is_empty ()
+
+			if (is_empty !== true) // skip autostart only when definitly empty, run it for undefined etc.
 		
+			this.timer.on ()
+				
 		}
 
 	}

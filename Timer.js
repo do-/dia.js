@@ -75,10 +75,10 @@ module.exports = class {
 	}
 	
 	from_to (from, to) {
-//		this.log (`from_to (${from}, ${to}) called`)
+		this.log (`from_to (${from}, ${to}) called`)
 		this.o.from = from
 		this.o.to   = to
-//		this.log ('o = ' + JSON.stringify (this.o))
+		this.log ('o = ' + JSON.stringify (this.o))
 	}
 	
 	clear () {
@@ -90,25 +90,25 @@ module.exports = class {
 	
 	in (ms) {
 	
-//		this.log (`in (${ms}) called`)
+		this.log (`in (${ms}) called`)
 
 		if (ms < 0) ms = 0
 
 		let when = ms + new Date ().getTime ()
 		
-//		this.log ('the desired time is', when)
+		this.log ('the desired time is', when)
 
 		if (this.next && when < this.next) {
 		
 			when = this.next
 			
-//			this.log ('adjusted to the next period', when)
+			this.log ('adjusted to the next period', when)
 		
 		}
 
 		if (this.o.from) {
 		
-//			this.log (`checking for ${this.o.from}..${this.o.to}`)
+			this.log (`checking for ${this.o.from}..${this.o.to}`)
 
 			let dt         = new Date (when)
 
@@ -123,7 +123,7 @@ module.exports = class {
 			
 			if (!is_in) {
 			
-//				this.log (`${dt} is out of ${this.o.from}..${this.o.to}, adjusting`)
+				this.log (`${dt} is out of ${this.o.from}..${this.o.to}, adjusting`)
 				
 				if (is_one_day && !le_to) dt.setDate (1 + dt.getDate ())
 				
@@ -135,7 +135,7 @@ module.exports = class {
 				
 				when = dt.getTime ()
 			
-//				this.log ('adjusted to time window', when)
+				this.log ('adjusted to time window', when)
 			
 			}
 						
@@ -143,9 +143,9 @@ module.exports = class {
 
 		if (this.t) {
 					
-//			if (this.when <= when) return this.log (`already scheduled at ${new Date (this.when)}, exiting`)
+			if (this.when <= when) return this.log (`already scheduled at ${new Date (this.when)}, exiting`)
 
-//			this.log ('cancelling previous schedule at', this.when)
+			this.log ('cancelling previous schedule at', this.when)
 
 			this.clear ()
 
@@ -153,15 +153,15 @@ module.exports = class {
 		
 		if (this.is_busy) {
 
-//			this.log ('busy...')
+			this.log ('busy...')
 
 			let is_reset_to = this.is_reset_to
 			
-//			if (is_reset_to >= when) return this.log ('nothing to do: was already reset to', is_reset_to)
+			if (is_reset_to >= when) return this.log ('nothing to do: was already reset to', is_reset_to)
 			
 			this.is_reset_to = when
 
-//			return this.log ('reset, now quitting')
+			return this.log ('reset, now quitting')
 
 		}		
 
@@ -195,17 +195,19 @@ module.exports = class {
 	
 		if (this.is_busy) {
 
-//			this.log ('run () called when busy, going to reset...')
+			this.log ('run () called when busy, going to reset...')
 			
 			this.on ()
 			
-//			return this.log ('...reset done, exiting run ()')
+			return this.log ('...reset done, exiting run ()')
 
 		}
 	
 		this.next = new Date ().getTime () + this.o.period
+		
+		let log_meta = clone (this.o.log_meta)
 	
-		this.log ('run () called, next time may be at', this.next)
+		log_meta.parent = this.log ('run () called, next time may be at', this.next)
 		
 		this.is_busy = 1
 		
@@ -217,7 +219,7 @@ module.exports = class {
 			
 				delete this.result
 
-				this.result = await this.o.todo ()
+				this.result = await this.o.todo (log_meta)
 
 			}
 			catch (x) {
@@ -246,7 +248,7 @@ module.exports = class {
 		
 		let when = this.is_reset_to; if (when) {
 
-//			this.log ('about to reset...')			
+			this.log ('about to reset...')			
 
 			delete this.is_reset_to
 
