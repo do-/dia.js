@@ -43,7 +43,7 @@ module.exports = class {
 
 						if (is_empty === false) // reset when definitly not empty, not undefined etc.
 		
-						this.timer.on ()
+						this.timer.in (0)
 
 					}
 					catch (x) {
