@@ -178,7 +178,7 @@ module.exports = class {
 
 					let sub_name = 'merge__' + k, sub = this [sub_name]; if (!sub) throw `Don't know how to merge ${k}`
 
-					r [k] = sub.call (this, r [k], v)
+					r [k] = sub.call (this, r [k], v, r)
 
     			}
     			catch (x) {
