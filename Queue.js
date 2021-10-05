@@ -18,7 +18,7 @@ module.exports = class {
 
 		conf.add_queue (this)
 
-    	let	{name, type, action, label, period} = o
+    	let	{name, type, action, label, period, delay} = o
     	    	
     	let
 
@@ -54,7 +54,7 @@ module.exports = class {
 				
 			}
 			
-		this.timer = new Timer ({conf, name, label, period, todo}) 
+		this.timer = new Timer ({conf, name, label, period, todo, delay}) 
 		
 	}
 	
@@ -64,7 +64,7 @@ module.exports = class {
     	
     		{o, conf, timer} = this, 
     		
-    		{name, type, action, label, period} = o,
+    		{type, action} = o,
 
 			rq = {type, action},
 			
@@ -122,7 +122,7 @@ module.exports = class {
 
 			if (is_empty !== true) // skip autostart only when definitly empty, run it for undefined etc.
 		
-			this.timer.on ()
+			this.timer.in (0)
 				
 		}
 

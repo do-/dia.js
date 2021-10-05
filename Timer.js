@@ -6,6 +6,18 @@ const Dia = require ('./Dia.js')
 
 module.exports = class {
 
+	zero_or_more (p) {
+
+		if (p == null) return 0
+		
+		if (typeof p !== 'number') p = parseInt (p)
+		
+		if (isNaN (p)) return 0
+		
+		return p < 0 ? 0 : p
+
+	}
+
 	constructor (o) {
 		
 		if (!(this.conf = o.conf)) throw new Error ('Sorry, conf is now mandatory here')
@@ -14,20 +26,10 @@ module.exports = class {
 		
 		this.conf.add_timer (this)
 		
+		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
+
 		if (!o.log_meta) o.log_meta = {}
 		if (!o.log_meta.category) o.log_meta.category = 'queue'
-
-		o.period = (p => {
-		
-			if (p == null) return 0
-			
-			if (typeof p !== 'number') p = parseInt (p)
-			
-			if (isNaN (p)) return 0
-			
-			return p < 0 ? 0 : p
-			
-		}) (o.period)
 
 		if (Array.isArray (o.todo)) {
 
@@ -173,7 +175,7 @@ module.exports = class {
 	
 	on () {
 
-		this.in (0)
+		this.in (this.o.delay)
 
 	}
 	
