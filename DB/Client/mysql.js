@@ -15,7 +15,14 @@ module.exports = class extends Dia.DB.Client {
     	return (this.log_prefix || '') + sql.replace (/^\s+/g, '').replace (/\s+/g, ' ') + ' ' + JSON.stringify (params)
     
     }
-    
+
+    to_limited_sql_params (original_sql, original_params, limit, offset) {
+        let params = original_params.slice ()
+        params.push (offset)
+        params.push (limit)
+        return [original_sql + ' LIMIT ?, ?', params]
+    }
+
     async do (sql, params = []) {
 
         let log_event = this.log_start (sql, params)
