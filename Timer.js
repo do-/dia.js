@@ -192,6 +192,20 @@ module.exports = class {
 		return new Date (this.when)
 	
 	}
+	
+	to_record () {
+
+    	let {next, when, is_busy, o} = this, {name, label, delay, period} = o
+
+    	const toJSON = t => !t ? null : new Date (t).toJSON ()
+
+    	return {name, label, delay, period,
+    		is_busy      : !!is_busy,
+    		ts_scheduled : toJSON (when),
+    		ts_closest   : toJSON (next),
+    	}
+
+	}
 
 	async run () {
 	

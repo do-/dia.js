@@ -58,6 +58,12 @@ module.exports = class {
 		
 	}
 	
+	to_record () {
+	
+		return this.timer.to_record ()
+	
+	}
+	
 	async do_main_job (log_meta) {
 	
     	let	
