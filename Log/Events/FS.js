@@ -5,8 +5,8 @@ module.exports = class extends Event {
 
     constructor (o) {
 
-		if (!o.file_id) throw new Exception ('File ID not provided')
-		if (!o.action) throw new Exception ('Action not provided')
+		if (!o.file_id) throw new Error ('File ID not provided')
+		if (!o.action) throw new Error ('Action not provided')
 		
 		super ({category: 'f_s', ...o})
 		

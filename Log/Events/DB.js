@@ -4,7 +4,7 @@ module.exports = class extends Event {
 
     constructor (o) {
 
-		if (!o.sql) throw new Exception ('SQL not provided')
+		if (!o.sql) throw new Error ('SQL not provided')
 
 		super ({category: 'db', ...o})
 
