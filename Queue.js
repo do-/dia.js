@@ -20,39 +20,29 @@ module.exports = class {
 
     	let	{name, type, action, label, period, delay} = o
     	    	
-    	let
-
-			rq = {type, action},
-			
-			handler = conf.get_default_handler (rq), 
-			
-			pools   = conf.get_default_pools (rq), 
-			
-			user    = clone (conf.get_default_user (rq)), 
-			
-			todo    = async (log_meta) => {
+    	let todo = async (log_meta) => {
 				
-				try {
-					await this.do_main_job (log_meta)
-				}
-				finally {
-				
-					try {
-
-						let is_empty = await this.is_empty ()
-
-						if (is_empty === false) // reset when definitly not empty, not undefined etc.
-		
-						this.timer.in (0)
-
-					}
-					catch (x) {
-						darn (x)
-					}
-				
-				}
-				
+			try {
+				await this.do_main_job (log_meta)
 			}
+			finally {
+			
+				try {
+
+					let is_empty = await this.is_empty ()
+
+					if (is_empty === false) // reset when definitly not empty, not undefined etc.
+		
+					this.timer.in (0)
+
+				}
+				catch (x) {
+					darn (x)
+				}
+			
+			}
+			
+		}
 			
 		this.timer = new Timer ({conf, name, label, period, todo, delay}) 
 		
@@ -81,7 +71,7 @@ module.exports = class {
 			user    = conf.get_default_user (rq) 
 			
 		return new Promise ((ok, fail) => {
-			(new handler ({rq, pools, conf, user, timer, log_meta}, ok, fail)).run ()
+			(new handler ({rq, pools, conf, user, timer, log_meta, queue: this}, ok, fail)).run ()
 		})
 	
 	}

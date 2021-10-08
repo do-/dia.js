@@ -302,13 +302,17 @@ module.exports = class {
     }
 
     async acquire_resource (pool, k) {
-
-        let {conf, rq} = this, db = await pool.acquire ({conf, rq,
+    
+        let {conf, rq, queue} = this, ao = {conf, rq,
         	log_meta: {
         		parent: this.log_event,
         		resource_name: k
         	}
-        })
+        }
+
+        if (this.queue) ao.queue = this.queue
+        
+        let db = await pool.acquire (ao)
 
         let {product} = pool; if (product) db.product = product
 
