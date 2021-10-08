@@ -129,6 +129,9 @@ module.exports = class extends require ('../Pool.js') {
 
         while (views.length && views [0]._no_recreate) views.shift ()
 
+        if (!views.length)
+            return []
+
         result.push ({sql: `DROP VIEW IF EXISTS ${views.map (i => i.name)} CASCADE`, params: []})
 
         for (let view of views) {

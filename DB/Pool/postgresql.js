@@ -292,14 +292,14 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     gen_sql_drop_views () {
-    
-    	let views = Object.values (this.model.views || {})
+
+        let views = Object.values (this.model.views || {})
+        let view_drops = Object.values (this.model.view_drops || {}).concat (views)
 
     	return [
+            `DROP VIEW IF EXISTS ${view_drops.map (i => i.qname)} CASCADE`,
 
-    		`DROP VIEW IF EXISTS ${views.map (i => i.qname)} CASCADE`,
-    	
-    		...views.map (({qname, columns}) => 
+            ...views.map (({qname, columns}) =>
     			
     			`CREATE OR REPLACE VIEW ${qname} AS SELECT ${
     			
