@@ -43,8 +43,12 @@ module.exports = class {
 			}
 			
 		}
+		
+		let oo = {conf, name, label, period, todo, delay}
+		
+		if ('tolerance' in o) oo.tolerance = o.tolerance
 			
-		this.timer = new Timer ({conf, name, label, period, todo, delay, tolerance}) 
+		this.timer = new Timer (oo) 
 		
 	}
 	
