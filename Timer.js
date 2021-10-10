@@ -84,7 +84,6 @@ module.exports = class {
 	}
 	
 	clear () {
-		if (!this.t) return
 		clearTimeout (this.t)
 		delete this.t
 		delete this.when
@@ -143,13 +142,24 @@ module.exports = class {
 						
 		}
 
-		if (this.t) {
+		if (this.when) {
 					
-			if (this.when <= when) return this.log (`already scheduled at ${new Date (this.when)}, exiting`)
+			this.log (`was scheduled at ${new Date (this.when)}...`)
 
-			this.log ('cancelling previous schedule at', this.when)
+			if (this.when <= when) {
+			
+				this.log ('...already going to happen, so nothing to do here')
 
-			this.clear ()
+				return 
+
+			}
+			else {
+
+				this.log ('...cancelling obsolete schedule')
+
+				this.clear ()
+
+			}
 
 		}
 		
@@ -157,20 +167,37 @@ module.exports = class {
 
 			this.log ('busy...')
 
-			let is_reset_to = this.is_reset_to
+			let {is_reset_to} = this; 
 			
-			if (is_reset_to >= when) return this.log ('nothing to do: was already reset to', is_reset_to)
+			if (is_reset_to >= when) {
 			
-			this.is_reset_to = when
+				this.log ('nothing to do: was already reset to', new Date (is_reset_to))
+				
+				return
 
-			return this.log ('reset, now quitting')
+			}
+			else {
 
-		}		
+				this.is_reset_to = when
 
-		this.t = setTimeout (() => this.run (), when - new Date ().getTime ())
+				return this.log ('reset, now quitting')
 
-		this.log ('scheduled at', this.when = when)
+			}
+
+		}
 		
+		if ('t' in this) throw new Error ('at this point, no way the timer could be set')
+		
+		this.when = when
+		
+		let cb = () => this.run (), delta = this.when - Date.now ()
+		
+		if (delta > 2147483647) throw new Error ('Sorry, delays as big as ' + delta + ' ms are not supported. The maximum is 2147483647 ms ~ 24.8 days')
+
+		this.t = delta <= 0 ? setImmediate (cb) : setTimeout (cb, delta)
+
+		this.log ('scheduled at', this.when)
+
 	}
 	
 	on () {
@@ -185,14 +212,8 @@ module.exports = class {
 		
 		this.in (when - new Date ().getTime ())
 
-	}	
-	
-	get () {
-	
-		return new Date (this.when)
-	
 	}
-	
+
 	to_record () {
 
     	let {next, when, is_busy, o} = this, {name, label, delay, period} = o
@@ -225,7 +246,7 @@ module.exports = class {
 	
 		log_meta.parent = this.log ('run () called, next time may be at', this.next)
 		
-		this.is_busy = 1
+		this.is_busy = true
 		
 		{
 
