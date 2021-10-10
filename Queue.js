@@ -18,7 +18,7 @@ module.exports = class {
 
 		conf.add_queue (this)
 
-    	let	{name, type, action, label, period, delay} = o
+    	let	{name, type, action, label, period, delay, tolerance} = o
     	    	
     	let todo = async (log_meta) => {
 				
@@ -44,7 +44,7 @@ module.exports = class {
 			
 		}
 			
-		this.timer = new Timer ({conf, name, label, period, todo, delay}) 
+		this.timer = new Timer ({conf, name, label, period, todo, delay, tolerance}) 
 		
 	}
 	

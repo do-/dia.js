@@ -29,10 +29,28 @@ module.exports = class {
 		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
 		
 		this._is_paused = !!o.is_paused
+		
+		this._cnt_fails = 0
 
 		if (!o.log_meta) o.log_meta = {}
 		if (!o.log_meta.category) o.log_meta.category = 'queue'
+		
+		{
+		
+			let K = 'tolerance'; if (K in o) {
+			
+				let v = o [K]
+				
+				if (typeof v == 'string') v = parseInt (v)
 
+				if (!(v >= 0)) throw new Error (`Illegal ${K} value: '${o[K]}'`)
+
+				this [K] = v
+
+			}			
+			
+		}
+		
 		if (Array.isArray (o.todo)) {
 
 			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
@@ -251,6 +269,38 @@ module.exports = class {
     	}
 
 	}
+	
+	report_result (result) {
+	
+		this.result = result
+	
+		this._cnt_fails = 0
+	
+	}
+
+	report_error (x) {
+		
+		this._cnt_fails ++
+
+		if ('tolerance' in this && this._cnt_fails >= this.tolerance) {
+
+			this.log (`After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`)
+	
+			this.pause ()
+
+		}
+
+		let {o, conf} = this, {log_meta} = o
+
+		if (x.parent) log_meta.parent = x.parent
+
+		conf.log_event (new WrappedError (x, {log_meta}))
+
+		if (this.o.stop_on_error) this.clear ()
+
+		this.error = x
+	
+	}
 
 	async run () {
 	
@@ -283,31 +333,19 @@ module.exports = class {
 		{
 
 			this.clear ()
+			
+			delete this.result
 
 			try {
+				
+				let result = await this.o.todo (log_meta)
 			
-				delete this.result
-
-				this.result = await this.o.todo (log_meta)
+				this.report_result (result)
 
 			}
 			catch (x) {
 
-				let {o, conf} = this, {log_meta} = o
-
-				if (x.parent) log_meta.parent = x.parent
-
-		    	conf.log_event (new WrappedError (x, {log_meta}))
-
-				if (this.o.stop_on_error) {
-
-					this.clear ()
-
-					delete this.when
-
-				}
-
-				this.error = x
+				this.report_error (x)
 
 			}
 			
