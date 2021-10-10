@@ -7,6 +7,8 @@ const Dia = require ('./Dia.js')
 module.exports = class {
 
 	zero_or_more (p) {
+	
+		if (Array.isArray (p)) return p.map (i => i === null ? null : this.zero_or_more (i))
 
 		if (p == null) return 0
 		
@@ -43,7 +45,7 @@ module.exports = class {
 				
 				if (typeof v == 'string') v = parseInt (v)
 
-				if (!(v >= 0)) throw new Error (`Illegal ${K} value: '${o[K]}'`)
+				if (!(v >= 0)) throw new Error (`Illegal ${K} value for ${o.name}: '${o[K]}'`)
 
 				this [K] = v
 
@@ -51,6 +53,31 @@ module.exports = class {
 			
 		}
 		
+		if (!Array.isArray (o.period)) o.period = [o.period]
+		
+		{
+		
+			let {period} = o, {length} = period; if (period [length - 1] == null) {
+			
+				period.pop (); for (let i of period) if (i == null) throw new Error ('Only last period value may be set as null')
+				
+				let tolerance = length
+				
+				if ('tolerance' in this) {
+
+					if (this.tolerance != tolerance) throw new Error (`Contradicting tolerance values: ${this.tolerance} vs. ${tolerance}`)
+
+				}
+				else {
+				
+					this.tolerance = tolerance
+					
+				}				
+			
+			}
+		
+		}
+				
 		if (Array.isArray (o.todo)) {
 
 			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
@@ -137,7 +164,7 @@ module.exports = class {
 
 		if (ms < 0) ms = 0
 
-		let when = ms + new Date ().getTime ()
+		let when = ms + Date.now ()
 		
 		this.log ('the desired time is', when)
 
@@ -252,7 +279,7 @@ module.exports = class {
 
 		if (when instanceof Date) when = when.getTime ()
 		
-		this.in (when - new Date ().getTime ())
+		this.in (when - Date.now ())
 
 	}
 
@@ -301,6 +328,16 @@ module.exports = class {
 		this.error = x
 	
 	}
+	
+	get_period () {
+	
+		let {period} = this.o, {length} = period
+		
+		let i = this._cnt_fails || 0; if (i >= length) i = length - 1
+	
+		return period [i]
+	
+	}
 
 	async run () {
 	
@@ -322,7 +359,7 @@ module.exports = class {
 
 		}
 	
-		this.next = new Date ().getTime () + this.o.period
+		this.next = Date.now () + this.get_period ()
 		
 		let log_meta = clone (this.o.log_meta)
 	
