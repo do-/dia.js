@@ -53,6 +53,24 @@ module.exports = class {
 		return this.timer.to_record ()
 	
 	}
+
+	is_paused () {
+	
+		return this.timer.is_paused ()
+	
+	}
+
+	pause () {
+	
+		return this.timer.pause ()
+	
+	}
+
+	resume () {
+	
+		return this.timer.resume ()
+	
+	}
 	
 	async do_main_job (log_meta) {
 	

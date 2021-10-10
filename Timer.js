@@ -27,6 +27,8 @@ module.exports = class {
 		this.conf.add_timer (this)
 		
 		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
+		
+		this._is_paused = !!o.is_paused
 
 		if (!o.log_meta) o.log_meta = {}
 		if (!o.log_meta.category) o.log_meta.category = 'queue'
@@ -58,6 +60,28 @@ module.exports = class {
 		
 		this.locks = {}
 		
+	}
+	
+	is_paused () {
+		return !!this._is_paused
+	}
+	
+	pause () {
+		this._is_paused = true
+	}
+
+	resume () {
+	
+		this._is_paused = false
+		
+		if (this.check_reset ()) return
+		
+		let {when} = this
+		
+		this.clear ()
+		
+		this.at (when)
+	
 	}
 
 	log (s, ms) {
@@ -230,6 +254,14 @@ module.exports = class {
 
 	async run () {
 	
+		if (this.is_paused ()) {
+		
+			this.log ('run () called when paused, bailing out')
+			
+			return
+		
+		}
+		
 		if (this.is_busy) {
 
 			this.log ('run () called when busy, going to reset...')
@@ -283,18 +315,26 @@ module.exports = class {
 
 		delete this.is_busy
 		
-		let when = this.is_reset_to; if (when) {
-
-			this.log ('about to reset...')			
-
-			delete this.is_reset_to
-
-			this.at (when)
-
-		}
+		this.check_reset ()
 		
-		if (!this.t && !this.when) this.finish ()
+		if (!this.when) this.finish ()
 
+	}
+	
+	check_reset () {
+	
+		const K = 'is_reset_to'
+		
+		let when = this [K]; if (!when) return null
+		
+		delete this [K]
+		
+		this.log ('about to reset...')			
+
+		this.at (when)
+		
+		return when
+	
 	}
 	
 	set_ticker (v) {
