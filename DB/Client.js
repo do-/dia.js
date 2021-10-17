@@ -145,6 +145,12 @@ module.exports = class {
     
     }
     
+    async select_hash (original_sql, original_params = []) {
+    	let [sql, params] = this.to_limited_sql_params (original_sql, original_params, 1, 0)
+        let [r] = await this.select_all (sql, params)
+        return r ? r : {}
+    }
+
     async select_scalar (sql, params = []) {
         let r = await this.select_hash (sql, params)
         for (let k in r) return r [k]
@@ -207,6 +213,12 @@ module.exports = class {
     		}
     	
     	}, [])
+    
+    }
+
+    async select_all (sql, params) {
+    
+    	return this.select_loop (sql, params, (r, l) => l.push (r), [])
     
     }
     
