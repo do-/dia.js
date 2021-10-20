@@ -90,7 +90,18 @@ module.exports = class {
 			
 			pools   = conf.get_default_pools (rq), 
 			
-			user    = conf.get_default_user (rq) 
+			user    = conf.get_default_user (rq),
+			
+			list    = await this.fetch ()
+			
+		if (list != null) {
+		
+			if (list.length == 0) return this.timer.log ('Nothing to do')			
+
+			rq.list = list
+			rq.data = list [0]
+		
+		}
 			
 		return new Promise ((ok, fail) => {
 			(new handler ({rq, pools, conf, user, timer, log_meta, queue: this}, ok, fail)).run ()
@@ -122,6 +133,16 @@ module.exports = class {
 			case 'function' : return is_empty ()
 			default         : return is_empty
 		}
+
+	}
+
+	async fetch () {
+
+		let {fetch} = this.o; if (!fetch) return null
+
+		let list = await fetch ()
+		
+		return list
 
 	}
 	

@@ -35,8 +35,30 @@ module.exports = class {
     			return l.length == 0
     		}
     	})
+    	
+    	let options = {conf, is_empty, ...queue}
+    	    	
+    	if ('ORDER' in queue || 'LIMIT' in queue) {
 
-    	let q = new Queue ({conf, is_empty, ...queue})
+    		let {ORDER, LIMIT} = queue; if (!ORDER) throw new Error ('Invalid ORDER value for queue' + queue.name + ': ' + ORDER)
+    		
+    		if (!('LIMIT' in queue)) LIMIT = 1
+    	
+    		queue.LIMIT = LIMIT = parseInt (LIMIT)
+    	
+    		if (!(LIMIT > 0)) throw new Error ('Invalid LIMIT value for queue' + queue.name + ': ' + LIMIT)
+    		
+			options.fetch = async () => this.do_with_db ({
+				label: `Fetching ${LIMIT} queued task${LIMIT > 1 ? 's' : ''} from ${name}`,
+				f: async db => {
+					let l = await db.list ({[name]: {ORDER, LIMIT}})
+					return l
+				}
+			})
+
+    	}
+    	
+    	let q = new Queue (options)
     	
     	await q.init ()
     	
