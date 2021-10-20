@@ -112,7 +112,11 @@ module.exports = class extends Dia.DB.Client {
 
         let log_event = this.log_start (sql, params)
 
-        const request = this.backend.request()
+        const request = this.backend.request();
+
+        [sql, params] = this.ph2np (sql, params);
+
+		params.forEach (p => request.input (p [0], p[1]));
 
         request.stream = true
 
