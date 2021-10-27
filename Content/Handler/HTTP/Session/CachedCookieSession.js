@@ -17,10 +17,8 @@ module.exports = class extends CookieSession {
     }
     
     async finish () {
-    	Promise.all ([
-    		super.finish (),
-    		this.o.sessions.to_del (this.id)
-    	])
+	await this.o.sessions.to_del (this.id)
+	await super.finish ()
     }
 
     async get_user () {
