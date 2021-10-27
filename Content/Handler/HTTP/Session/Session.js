@@ -13,7 +13,7 @@ module.exports = class {
 	}
 
 	async start () {
-		if (this.id) this.finish ()
+		if (this.id) await this.finish ()
 		this.id = this.new_id ()
 	}
 
