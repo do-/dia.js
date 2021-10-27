@@ -18,8 +18,8 @@ module.exports = class extends CookieSession {
     
     async finish () {
     	Promise.all ([
-    		super.finish (),
     		this.o.sessions.to_del (this.id)
+    		super.finish (),
     	])
     }
 
