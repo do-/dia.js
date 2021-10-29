@@ -645,25 +645,21 @@ module.exports = class extends require ('../Pool.js') {
 
         let {name} = col, after = table.on_after_add_column
 
-        if (typeof after === 'function') after = after (table)
-
         if (table.p_k.includes (name)) return
         
         if (name in existing_columns) {
         
-        	if (after && name in after) darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
-        
+            if (after && name in after) {
+                darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
+                delete after[name]
+            }
+
         	return
 
         }
 
         result.push (this.gen_sql_add_column (table, col))
                         
-        if (!table._is_just_added && after) {
-            let a = after [name]
-            if (a) for (let i of a) result.push (i)
-        }                
-
         existing_columns [name] = clone (col)
         
         delete existing_columns [name].REMARK
@@ -777,6 +773,38 @@ module.exports = class extends require ('../Pool.js') {
 
     }
     
+    gen_sql_after_add_columns () {
+
+        let result = [], {tables} = this.model
+
+        for (let name of Object.keys (tables).sort ())
+            this.add_sql_after_add_columns (tables [name], result)
+
+        return result
+
+    }
+
+    add_sql_after_add_columns (table, result) {
+
+        if (table._is_just_added || !table.on_after_add_column) return
+
+        let {existing, columns} = table
+
+        for (let name of Object.keys (columns).sort ()) {
+
+            let col = columns [name], after = table.on_after_add_column
+
+            if (table.p_k.includes (col.name) || !existing.columns [col.name]) continue
+
+            if (typeof after === 'function') after = after (table)
+
+            let a = after [col.name]
+            if (a) for (let i of a) result.push (i)
+
+        }
+
+    }
+
     gen_sql_drop_foreign_keys () {
 
         let result = []
@@ -1386,6 +1414,8 @@ module.exports = class extends require ('../Pool.js') {
             'recreate_triggers',
 
             'upsert_data',
+
+            'after_add_columns',
 
             'create_foreign_keys',
 
