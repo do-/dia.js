@@ -265,7 +265,7 @@ exports.Handler = class extends Handler {
 		for (let [k, n] of [
 			['size',     'Content-Length'],
 			['encoding', 'Content-Encoding'],
-		]) if (k in o) rp.setHeader (n, o [k])
+		]) if (o [k]) rp.setHeader (n, o [k])
 
 		rp.setHeader ('Content-Disposition', contentDisposition (o.filename || o.file_name))
 
