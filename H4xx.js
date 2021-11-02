@@ -1,45 +1,43 @@
-Date.prototype.toISOZString = Date.prototype.toISOString
-Date.prototype.toISOString = function () {
+{
 
-    let off = this.getTimezoneOffset ()
-    
-    let dt  = new Date (this.getTime ())
-    dt.setMinutes (dt.getMinutes () - off)
-    
-    let s = dt.toISOZString ().substr (0, 23)
-            
-    if (off < 0) {
-        s += '+'
-        off = -off
-    }
-    else {
-        s += '-'
-    }    
-    
-    let dd = (n) => {
-        if (n < 10) s += '0'
-        s += n
-    }
+	const off = (new Date ()).getTimezoneOffset (), lag = off * 60000
 
-    dd (Math.floor (off / 60))
-    s += ':'
-    dd (off % 60)    
-    
-    return s
+	const TZ_HH_MM =
+		(off > 0 ? '-' : '+') +
+		(new Date (2000, 1, 1, 0, -2 * off, 0))
+			.toJSON ()      // 2000-02-01T03:00:00.000Z in MSK
+			.slice (11, 16)	// 03:00
+
+	Date.prototype.toISOZString = Date.prototype.toISOString
+
+	Date.prototype.toISOString = function () {
+	
+		return (new Date (this.getTime () - lag)) // Greenwich date with time like local one
+
+			.toISOZString ().substr (0, 23)       // YYYY-MM-DDThh:mm:ss.iii
+
+			+ TZ_HH_MM                            // with our TZ suffix appended
+
+	}
 
 }
 
-var console_log = console.log
-console.log = function () {
+{
 
-    let a = [new Date ().toISOString ()]
+	const console_log = console.log
 
-    for (let i of arguments)
-        if (a.length == 1 && typeof i == 'string' && i.indexOf ('%s') > -1)
-            a [0] += ' ' + i; else a.push (i)
+	console.log = function () {
 
-    console_log.apply (console, a)
-    
+		let a = [new Date ().toISOString ()]
+
+		for (let i of arguments)
+			if (a.length == 1 && typeof i == 'string' && i.indexOf ('%s') > -1)
+				a [0] += ' ' + i; else a.push (i)
+
+		console_log.apply (console, a)
+
+	}
+
 }
 
 global.clone = (o) => {
