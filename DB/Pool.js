@@ -22,7 +22,7 @@ module.exports = class {
     
     async init_queue (relation, o) {
 
-    	let {model, _timers} = this, {conf} = model, {name, label, queue} = relation
+    	let {model, _timers} = this, {conf} = model, {name, label, queue, columns} = relation
 
     	for (let k of ['label']) if (!queue [k]) queue [k] = relation [k]
     	
@@ -42,6 +42,12 @@ module.exports = class {
 
     		let {ORDER, LIMIT} = queue; if (!ORDER) throw new Error ('Invalid ORDER value for queue' + queue.name + ': ' + ORDER)
     		
+    		let order_first_name = ORDER.trim ().split (/\s/) [0].toLowerCase ()
+    		
+			let order_first = columns [order_first_name]; if (!order_first) throw new Error ("Didn't found the definition of the queue ORDER column " + order_first_name)
+			
+			if (order_first.TYPE_NAME == 'TIMESTAMP') options.ts_scheduled_field = order_first_name
+
     		if (!('LIMIT' in queue)) LIMIT = 1
     	
     		queue.LIMIT = LIMIT = parseInt (LIMIT)

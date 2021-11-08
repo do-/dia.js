@@ -18,8 +18,10 @@ module.exports = class {
 
 		conf.add_queue (this)
 
-    	let	{name, type, action, label, period, delay, tolerance} = o
-    	    	
+    	let	{name, type, action, label, period, delay, tolerance, ts_scheduled_field} = o
+
+    	if (ts_scheduled_field) this.ts_scheduled_field = ts_scheduled_field
+
     	let todo = async (log_meta) => {
 				
 			try {
@@ -95,11 +97,22 @@ module.exports = class {
 			list    = await this.fetch ()
 			
 		if (list != null) {
-		
+				
 			if (list.length == 0) return this.timer.log ('Nothing to do')			
 
-			rq.list = list
 			rq.data = list [0]
+
+			let {ts_scheduled_field} = this; if (ts_scheduled_field) {
+
+				let ts_scheduled = rq.data [ts_scheduled_field]
+
+				let dt = new Date (ts_scheduled)
+
+				if (dt > new Date ()) return this.timer.at (dt)
+			
+			}
+
+			rq.list = list
 		
 		}
 			
