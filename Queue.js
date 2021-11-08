@@ -43,13 +43,13 @@ module.exports = class {
 			}
 			
 		}
-		
+
 		let oo = {conf, name, label, period, todo, delay}
-		
-		if ('tolerance' in o) oo.tolerance = o.tolerance
-			
-		this.timer = new Timer (oo) 
-		
+
+		for (let k of ['tolerance', 'on_change']) if (k in o) oo [k] = o [k]
+
+		this.timer = new Timer (oo)
+
 	}
 	
 	to_record () {

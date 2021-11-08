@@ -36,7 +36,7 @@ module.exports = class {
     		}
     	})
     	
-    	let options = {conf, is_empty, ...queue}
+    	let options = {conf, is_empty, ...o, ...queue}
     	    	
     	if ('ORDER' in queue || 'LIMIT' in queue) {
 

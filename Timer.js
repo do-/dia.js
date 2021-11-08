@@ -1,10 +1,13 @@
-const LogEvent = require ('./Log/Events/Text.js')
-const ErrorEvent = require ('./Log/Events/Error.js')
+const EventEmitter = require ('events')
+const LogEvent     = require ('./Log/Events/Text.js')
+const ErrorEvent   = require ('./Log/Events/Error.js')
 const WrappedError = require ('./Log/WrappedError.js')
 
 const Dia = require ('./Dia.js')
 
-module.exports = class {
+const CHANGE = 'change'
+
+module.exports = class extends EventEmitter {
 
 	zero_or_more (p) {
 	
@@ -19,10 +22,31 @@ module.exports = class {
 		return p < 0 ? 0 : p
 
 	}
+	
+	notify () {
+	
+		let state = JSON.stringify (this.to_record ())
+		
+		if (this._last_state == state) return
+		
+		this._last_state = state
+		
+		this.emit (CHANGE, state, this.o.name)
+	
+	}	
 
 	constructor (o) {
 		
+		super ()
+		
 		if (!(this.conf = o.conf)) throw new Error ('Sorry, conf is now mandatory here')
+		
+		{	
+			const K = 'on_' + CHANGE; if (o [K]) {
+				this.addListener (CHANGE, o [K])
+				delete o [K]
+			}
+		}
 
 		this.o = o
 		
@@ -105,19 +129,25 @@ module.exports = class {
 		
 		this.locks = {}
 		
+		this.notify ()
+		
 	}
 	
 	is_paused () {
 		return !!this._is_paused
 	}
 	
-	pause () {
+	pause (x) {
 		this._is_paused = true
+		this._ts_paused = Date.now ()
+		if (x) this._er_paused = x.message || x
 	}
 
 	resume () {
 	
 		this._is_paused = false
+		delete this._ts_paused
+		delete this._er_paused
 		
 		if (this.check_reset ()) return
 		
@@ -156,6 +186,7 @@ module.exports = class {
 		clearTimeout (this.t)
 		delete this.t
 		delete this.when
+		this.notify ()
 	}
 	
 	in (ms) {
@@ -266,6 +297,8 @@ module.exports = class {
 		this.t = delta <= 0 ? setImmediate (cb) : setTimeout (cb, delta)
 
 		this.log ('scheduled at', this.when)
+		
+		this.notify ()
 
 	}
 	
@@ -285,18 +318,21 @@ module.exports = class {
 
 	to_record () {
 
-    	let {next, when, is_busy, o} = this, {name, label, delay, period} = o
-
-    	const toJSON = t => !t ? null : new Date (t).toJSON ()
-
-    	return {name, label, delay, period,
-    		is_busy      : !!is_busy,
-    		ts_scheduled : toJSON (when),
-    		ts_closest   : toJSON (next),
+    	let {next, when, is_busy} = this, r = {}
+    	
+    	if (this.is_busy)    r.is_busy       = true
+    	if (this.when)       r.ts_scheduled  = new Date (this.when).toJSON ()
+    	if (this.next)       r.ts_closest    = new Date (this.next).toJSON ()
+    	if (this._is_paused) {
+    		r.is_paused = true
+    		if (this._ts_paused) r.ts_paused = new Date (this._ts_paused).toJSON ()
+    		if (this._er_paused) r.error     = this._er_paused
     	}
 
+		return r
+
 	}
-	
+
 	report_result (result) {
 	
 		this.result = result
@@ -313,7 +349,7 @@ module.exports = class {
 
 			this.log (`After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`)
 	
-			this.pause ()
+			this.pause (x)
 
 		}
 
@@ -366,7 +402,7 @@ module.exports = class {
 		log_meta.parent = this.log ('run () called, next time may be at', this.next)
 		
 		this.is_busy = true
-		
+
 		{
 
 			this.clear ()
@@ -390,7 +426,7 @@ module.exports = class {
 
 		delete this.is_busy
 		
-		this.check_reset ()
+		if (!this.check_reset ()) this.notify ()
 		
 		if (!this.when) this.finish ()
 
