@@ -1,3 +1,5 @@
+const MESSAGE = Symbol.for ('message')
+
 module.exports = class {
 
     constructor (o = {}) {
@@ -6,17 +8,37 @@ module.exports = class {
 
 	}
 	
-	transform (e, o = {}) {
+	after_category (e) {
+
+		const {level, path, resource_name, message} = e
+		
+		let s = level + ' '
+
+		{
+
+			const {length} = path; for (let i = 0; i < length; i ++) {
+
+				if (i > 0) s += '/'
+
+				s += path [i]
+
+			}
+
+		}
+
+		if (resource_name) s += ' ' + resource_name
+		
+		if ('get_sigil' in e) s += ' ' + e.get_sigil ()
+
+		s += ' ' + message
+		
+		return s
+
+	}
 	
-		e [Symbol.for ('message')] = [
-			o.no_ts ? '' : new Date ().toISOString (),
-			o.no_category ? '' : e.category,
-			e.level,
-			e.path.join ('/'),
-			e.resource_name,
-			e.get_sigil? e.get_sigil () : '',
-			e.message,
-		].filter (i => i != null && i != '').join (' ')
+	transform (e) {
+
+		e [MESSAGE] = new Date ().toISOString () + ' ' + this.after_category (e)
 
 		return e
 
@@ -24,9 +46,7 @@ module.exports = class {
 	
 	write (e) {
 
-		this.transform (e, {no_ts: true, no_category: true})
-
-		console.log (this.category + ' ' + e [Symbol.for ('message')])
+		console.log (this.category + ' ' + this.after_category (e))
 
 	}
 
