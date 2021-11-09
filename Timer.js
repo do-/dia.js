@@ -118,7 +118,7 @@ module.exports = class extends EventEmitter {
 				
         this.uuid = Dia.new_uuid ()
 
-		this.log_label = [this.uuid, o.name, 'timer: '].join (' ')
+		this.log_label = o.name
 				
 		this.clear ()
 		
@@ -152,12 +152,13 @@ module.exports = class extends EventEmitter {
 
 	log (s, ms) {
 
-		let m = this.log_label + s
+		let m = this.log_label + ' ' + s
 
 		if (ms) m += ' ' + new Date (ms).toJSON ()
 		
     	this.conf.log_event (new LogEvent ({
     		...this.o.log_meta,
+    		parent: this,
 			label: m
 		}))
 
