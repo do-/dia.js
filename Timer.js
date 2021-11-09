@@ -475,21 +475,14 @@ module.exports = class extends EventEmitter {
 	}
 
 	finish () {
-	
+
 		if (this.tick ()) return
 
-		let {o, result, error} = this, {done, fail} = o
+		let {o: {done, fail}, result, error} = this; if (!done) return
 
-		if (error) {
+		if (error) return fail (error)
 
-			if (fail) fail (error)
-
-		}
-		else {
-
-			if (done) done (result)
-
-		}
+		done (result)
 
 	}
 
