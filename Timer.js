@@ -156,13 +156,38 @@ module.exports = class extends EventEmitter {
 
 		if (ms) m += ' ' + new Date (ms).toJSON ()
 		
-    	this.conf.log_event (new LogEvent ({
+    	this.log_write (new LogEvent ({
     		...this.o.log_meta,
     		parent: this,
 			label: m
 		}))
 
 	}
+
+    log_write (e) {
+
+    	this.conf.log_event (e)
+
+    	return e
+    
+    }
+    
+	log_start (s) {
+		
+    	return this.log_write (new LogEvent ({
+    		...this.o.log_meta,
+    		parent: this,
+			phase: 'before',
+			label: this.log_label + ' ' + s
+		}))
+
+	}
+
+    log_finish (e) {
+        	
+    	return this.log_write (e.finish ())
+
+    }
 	
 	from_to (from, to) {
 		this.o.from = from
@@ -397,8 +422,10 @@ module.exports = class extends EventEmitter {
 		let log_meta = clone (this.o.log_meta)
 		
 		log_meta.category = 'app'
+		
+		const log_event = this.log_start ('run () called, next time may be at ' + new Date (this.next).toJSON ())
 	
-		log_meta.parent = this.log ('run () called, next time may be at', this.next)
+		log_meta.parent = log_event
 		
 		this.is_busy = true
 
@@ -426,6 +453,8 @@ module.exports = class extends EventEmitter {
 		if (!this.check_reset ()) this.notify ()
 		
 		if (!this.when) this.finish ()
+		
+		this.log_finish (log_event)
 
 	}
 	
