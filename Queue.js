@@ -18,7 +18,7 @@ module.exports = class {
 
 		conf.add_queue (this)
 
-    	let	{name, type, action, label, period, delay, tolerance, ts_scheduled_field} = o
+    	let	{name, type, action, label, period, delay, tolerance, ts_scheduled_field, from, to} = o
 
     	if (ts_scheduled_field) this.ts_scheduled_field = ts_scheduled_field
 
@@ -46,7 +46,7 @@ module.exports = class {
 			
 		}
 
-		let oo = {conf, name, label, period, todo, delay}
+		let oo = {conf, name, label, period, todo, delay, from, to}
 
 		for (let k of ['tolerance', 'on_change']) if (k in o) oo [k] = o [k]
 

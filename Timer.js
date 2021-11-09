@@ -179,6 +179,42 @@ module.exports = class extends EventEmitter {
 		this.notify ()
 	}
 	
+	apply_from_to (when) {
+	
+		const {from, to} = this.o; if (from == null) return when
+	
+		let dt         = new Date (when)
+
+		let hhmmss     = dt.toJSON ().slice (11, 19)
+
+		let ge_from    = from <= hhmmss
+		let le_to      =                hhmmss <= to
+		
+		let is_one_day = from <= to
+		
+		let is_in      = is_one_day ? ge_from && le_to : ge_from || le_to
+		
+		if (is_in) return when
+
+		this.log (`${dt.toJSON ()} is out of ${from}..${to}, adjusting`)
+
+		if (is_one_day && !le_to) dt.setDate (1 + dt.getDate ())
+
+		let [h, m, s] = from.split (':')
+
+		dt.setHours   (parseInt (h, 10))
+		dt.setMinutes (parseInt (m, 10))
+		dt.setSeconds (parseInt (s, 10))
+		dt.setMilliseconds (0)
+
+		when = dt.getTime ()
+
+		this.log ('adjusted to time window', when)
+
+		return when
+
+	}
+	
 	in (ms) {
 	
 		this.log (`in (${ms}) called`)
@@ -196,41 +232,8 @@ module.exports = class extends EventEmitter {
 			this.log ('adjusted to the next period', when)
 		
 		}
-
-		if (this.o.from) {
 		
-			this.log (`checking for ${this.o.from}..${this.o.to}`)
-
-			let dt         = new Date (when)
-
-			let hhmmss     = dt.toJSON ().slice (11, 19)
-
-			let ge_from    = this.o.from <= hhmmss
-			let le_to      =                hhmmss <= this.o.to
-			
-			let is_one_day = this.o.from <= this.o.to
-			
-			let is_in      = is_one_day ? ge_from && le_to : ge_from || le_to
-			
-			if (!is_in) {
-			
-				this.log (`${dt} is out of ${this.o.from}..${this.o.to}, adjusting`)
-				
-				if (is_one_day && !le_to) dt.setDate (1 + dt.getDate ())
-				
-				let [h, m, s] = this.o.from.split (':')
-				
-				dt.setHours   (h)
-				dt.setMinutes (m)
-				dt.setSeconds (s)				
-				
-				when = dt.getTime ()
-			
-				this.log ('adjusted to time window', when)
-			
-			}
-						
-		}
+		when = this.apply_from_to (when)
 
 		if (this.when) {
 					
