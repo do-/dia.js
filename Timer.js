@@ -5,8 +5,6 @@ const WrappedError = require ('./Log/WrappedError.js')
 
 const Dia = require ('./Dia.js')
 
-const CHANGE = 'change'
-
 module.exports = class extends EventEmitter {
 
 	zero_or_more (p) {
@@ -31,7 +29,7 @@ module.exports = class extends EventEmitter {
 		
 		this._last_state = state
 		
-		this.emit (CHANGE, state, this.o.name)
+		this.emit ('change', state, this.o.name)
 	
 	}	
 
@@ -41,13 +39,8 @@ module.exports = class extends EventEmitter {
 		
 		if (!(this.conf = o.conf)) throw new Error ('Sorry, conf is now mandatory here')
 		
-		{	
-			const K = 'on_' + CHANGE; if (o [K]) {
-				this.addListener (CHANGE, o [K])
-				delete o [K]
-			}
-		}
-
+		if (o.on_change) this.addListener ('change', o.on_change)
+		
 		this.o = o
 		
 		this.conf.add_timer (this)
@@ -127,7 +120,7 @@ module.exports = class extends EventEmitter {
 
 		this.log_label = [this.uuid, o.name, 'timer: '].join (' ')
 				
-		this.notify ()
+		this.clear ()
 		
 	}
 	
@@ -144,8 +137,8 @@ module.exports = class extends EventEmitter {
 	resume () {
 	
 		this._is_paused = false
-		delete this._ts_paused
-		delete this._er_paused
+		this._ts_paused = null
+		this._er_paused = null
 		
 		if (this.check_reset ()) return
 		
@@ -174,16 +167,15 @@ module.exports = class extends EventEmitter {
 	}
 	
 	from_to (from, to) {
-		this.log (`from_to (${from}, ${to}) called`)
 		this.o.from = from
 		this.o.to   = to
-		this.log ('o = ' + JSON.stringify (this.o))
 	}
 	
 	clear () {
 		clearTimeout (this.t)
-		delete this.t
-		delete this.when
+		this.t  = null
+		this.when = null
+		this.result = null
 		this.notify ()
 	}
 	
@@ -283,9 +275,9 @@ module.exports = class extends EventEmitter {
 			}
 
 		}
-		
-		if ('t' in this) throw new Error ('at this point, no way the timer could be set')
-		
+
+		if (this.t) throw new Error ('at this point, no way the timer could be set')
+
 		this.when = when
 		
 		let cb = () => this.run (), delta = this.when - Date.now ()
@@ -405,8 +397,6 @@ module.exports = class extends EventEmitter {
 
 			this.clear ()
 			
-			delete this.result
-
 			try {
 				
 				let result = await this.o.todo (log_meta)
@@ -422,7 +412,7 @@ module.exports = class extends EventEmitter {
 			
 		}
 
-		delete this.is_busy
+		this.is_busy = false
 		
 		if (!this.check_reset ()) this.notify ()
 		
@@ -431,18 +421,16 @@ module.exports = class extends EventEmitter {
 	}
 	
 	check_reset () {
-	
-		const K = 'is_reset_to'
+			
+		let {is_reset_to} = this; if (!is_reset_to) return null
 		
-		let when = this [K]; if (!when) return null
-		
-		delete this [K]
+		this.is_reset_to = null
 		
 		this.log ('about to reset...')			
 
-		this.at (when)
+		this.at (is_reset_to)
 		
-		return when
+		return is_reset_to
 	
 	}
 	
