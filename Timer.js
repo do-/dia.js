@@ -215,6 +215,19 @@ module.exports = class extends EventEmitter {
 
 	}
 	
+	apply_next (when) {
+	
+		const {next} = this
+		
+		if (next == null) return when
+		if (next >= when) return when
+	
+		this.log ('adjusted to the next period', next)
+
+		return next
+
+	}
+
 	in (ms) {
 	
 		this.log (`in (${ms}) called`)
@@ -225,14 +238,7 @@ module.exports = class extends EventEmitter {
 		
 		this.log ('the desired time is', when)
 
-		if (this.next && when < this.next) {
-		
-			when = this.next
-			
-			this.log ('adjusted to the next period', when)
-		
-		}
-		
+		when = this.apply_next    (when)
 		when = this.apply_from_to (when)
 
 		if (this.when) {
