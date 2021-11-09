@@ -154,10 +154,7 @@ module.exports = class extends EventEmitter {
 
 		let m = this.log_label + s
 
-		if (ms) {
-			m += ' '
-			m += new Date (ms).toJSON ()
-		}
+		if (ms) m += ' ' + new Date (ms).toJSON ()
 		
     	this.conf.log_event (new LogEvent ({
     		...this.o.log_meta,
@@ -397,6 +394,8 @@ module.exports = class extends EventEmitter {
 		this.next = Date.now () + this.get_period ()
 		
 		let log_meta = clone (this.o.log_meta)
+		
+		log_meta.category = 'app'
 	
 		log_meta.parent = this.log ('run () called, next time may be at', this.next)
 		
