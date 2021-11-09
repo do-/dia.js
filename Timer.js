@@ -5,33 +5,11 @@ const WrappedError = require ('./Log/WrappedError.js')
 
 const Dia = require ('./Dia.js')
 
+const MAX_INT = 2147483647
+
 module.exports = class extends EventEmitter {
 
-	zero_or_more (p) {
-	
-		if (Array.isArray (p)) return p.map (i => i === null ? null : this.zero_or_more (i))
-
-		if (p == null) return 0
-		
-		if (typeof p !== 'number') p = parseInt (p)
-		
-		if (isNaN (p)) return 0
-		
-		return p < 0 ? 0 : p
-
-	}
-	
-	notify () {
-	
-		let state = JSON.stringify (this.to_record ())
-		
-		if (this._last_state == state) return
-		
-		this._last_state = state
-		
-		this.emit ('change', state, this.o.name)
-	
-	}	
+	////////// Reading params
 
 	constructor (o) {
 		
@@ -119,38 +97,68 @@ module.exports = class extends EventEmitter {
         this.uuid = Dia.new_uuid ()
 
 		this.log_label = o.name
+		
+		this.lambda = () => this.run ()
+
+		this.is_to_reset = false
 				
 		this.clear ()
 		
 	}
 	
-	is_paused () {
-		return !!this._is_paused
-	}
+	zero_or_more (p) {
 	
-	pause (x) {
-		this._is_paused = true
-		this._ts_paused = Date.now ()
-		if (x) this._er_paused = x.message || x
+		if (Array.isArray (p)) return p.map (i => i === null ? null : this.zero_or_more (i))
+
+		if (p == null) return 0
+		
+		if (typeof p !== 'number') p = parseInt (p)
+		
+		if (isNaN (p)) return 0
+		
+		return p < 0 ? 0 : p
+
 	}
 
-	resume () {
+	from_to (from, to) {
+		this.o.from = from
+		this.o.to   = to
+	}
 	
-		this._is_paused = false
-		this._ts_paused = null
-		this._er_paused = null
-		
-		if (this.check_reset ()) return
-		
-		let {when} = this
-		
-		this.clear ()
-		
-		this.at (when)
-	
+	////////// Presentation
+
+	to_record () {
+
+    	let {next, when, is_busy} = this, r = {}
+    	
+    	if (this.is_busy)    r.is_busy       = true
+    	if (this.when)       r.ts_scheduled  = new Date (this.when).toJSON ()
+    	if (this.next)       r.ts_closest    = new Date (this.next).toJSON ()
+    	if (this._is_paused) {
+    		r.is_paused = true
+    		if (this._ts_paused) r.ts_paused = new Date (this._ts_paused).toJSON ()
+    		if (this._er_paused) r.error     = this._er_paused
+    	}
+
+		return r
+
 	}
 
-	log (s, ms) {
+	notify () {
+	
+		let state = JSON.stringify (this.to_record ())
+		
+		if (this._last_state == state) return
+		
+		this._last_state = state
+		
+		this.emit ('change', state, this.o.name)
+	
+	}	
+
+	////////// Logging
+
+	log (s, ms, log_event) {
 
 		let m = this.log_label + ' ' + s
 
@@ -158,7 +166,7 @@ module.exports = class extends EventEmitter {
 		
     	this.log_write (new LogEvent ({
     		...this.o.log_meta,
-    		parent: this,
+    		parent: log_event || this,
 			label: m
 		}))
 
@@ -188,21 +196,10 @@ module.exports = class extends EventEmitter {
     	return this.log_write (e.finish ())
 
     }
+			
+	////////// Calculating moment
 	
-	from_to (from, to) {
-		this.o.from = from
-		this.o.to   = to
-	}
-	
-	clear () {
-		clearTimeout (this.t)
-		this.t  = null
-		this.when = null
-		this.result = null
-		this.notify ()
-	}
-	
-	apply_from_to (when) {
+	apply_from_to (when, log_event) {
 	
 		const {from, to} = this.o; if (from == null) return when
 	
@@ -219,8 +216,6 @@ module.exports = class extends EventEmitter {
 		
 		if (is_in) return when
 
-		this.log (`${dt.toJSON ()} is out of ${from}..${to}, adjusting`)
-
 		if (is_one_day && !le_to) dt.setDate (1 + dt.getDate ())
 
 		let [h, m, s] = from.split (':')
@@ -232,95 +227,86 @@ module.exports = class extends EventEmitter {
 
 		when = dt.getTime ()
 
-		this.log ('adjusted to time window', when)
+		this.log (`adjusted to time window ${from}..${to}`, when, log_event)
 
 		return when
 
 	}
 	
-	apply_next (when) {
+	apply_prev (when, log_event) { // If it was scheduled earlier, use old value
+	
+		let prev = this.clear ()
+			
+		if (prev == null) return when
+		if (prev >= when) return when
+
+		this.log ('rolled back to', prev, log_event)
+
+		return prev
+	
+	}
+	
+	apply_next (when, log_event) { // If the next good moment is later, use it instead
 	
 		const {next} = this
 		
 		if (next == null) return when
-		if (next >= when) return when
+		if (next <= when) return when
 	
-		this.log ('adjusted to the next period', next)
+		this.log ('adjusted to the next period', next, log_event)
 
 		return next
 
 	}
 
-	in (ms) {
+	get_nearest_moment (ms, log_event) {
+
+		let when = Date.now ()
+		
+		if (ms > 0) when += ms
+
+		this.log ('planning to', when, log_event)
+
+		when = this.apply_prev    (when, log_event)
+		when = this.apply_next    (when, log_event)
+		when = this.apply_from_to (when, log_event)
+		
+		return when
+
+	}
+
+	////////// Setting up
+
+	clear () {
 	
-		this.log (`in (${ms}) called`)
-
-		if (ms < 0) ms = 0
-
-		let when = ms + Date.now ()
+		let {when} = this
 		
-		this.log ('the desired time is', when)
-
-		when = this.apply_next    (when)
-		when = this.apply_from_to (when)
-
-		if (this.when) {
-					
-			this.log (`was scheduled at ${new Date (this.when)}...`)
-
-			if (this.when <= when) {
-			
-				this.log ('...already going to happen, so nothing to do here')
-
-				return 
-
-			}
-			else {
-
-				this.log ('...cancelling obsolete schedule')
-
-				this.clear ()
-
-			}
-
-		}
+		clearTimeout (this.t)
 		
-		if (this.is_busy) {
+		this.t    = null
+		this.when = null
 
-			this.log ('busy...')
+		return when
+	
+	}
+	
+	in (ms) {
 
-			let {is_reset_to} = this; 
-			
-			if (is_reset_to >= when) {
-			
-				this.log ('nothing to do: was already reset to', new Date (is_reset_to))
-				
-				return
+		const log_event = this.log_start (`in (${ms}) called`)
 
-			}
-			else {
-
-				this.is_reset_to = when
-
-				return this.log ('reset, now quitting')
-
-			}
-
-		}
-
-		if (this.t) throw new Error ('at this point, no way the timer could be set')
+		const when = this.get_nearest_moment (ms, log_event)
+		
+		const delta = when - Date.now (); if (delta > MAX_INT) throw new Error ('Sorry, delays as big as ' + delta + ' ms are not supported. The maximum is ' + MAX_INT + ' ms ~ 24.8 days')
 
 		this.when = when
-		
-		let cb = () => this.run (), delta = this.when - Date.now ()
-		
-		if (delta > 2147483647) throw new Error ('Sorry, delays as big as ' + delta + ' ms are not supported. The maximum is 2147483647 ms ~ 24.8 days')
 
-		this.t = delta <= 0 ? setImmediate (cb) : setTimeout (cb, delta)
+		this.t = delta <= 0 ?
+			setImmediate (this.lambda) : 			
+			setTimeout   (this.lambda, delta)
 
-		this.log ('scheduled at', this.when)
-		
 		this.notify ()
+
+		this.log_finish (log_event)
 
 	}
 	
@@ -336,22 +322,93 @@ module.exports = class extends EventEmitter {
 		
 		this.in (when - Date.now ())
 
+	}	
+
+	////////// Running
+	
+	get_period () {
+	
+		let {period} = this.o, {length} = period
+		
+		let i = this._cnt_fails || 0; if (i >= length) i = length - 1
+	
+		return period [i]
+	
 	}
 
-	to_record () {
+	async run () {
 
-    	let {next, when, is_busy} = this, r = {}
-    	
-    	if (this.is_busy)    r.is_busy       = true
-    	if (this.when)       r.ts_scheduled  = new Date (this.when).toJSON ()
-    	if (this.next)       r.ts_closest    = new Date (this.next).toJSON ()
-    	if (this._is_paused) {
-    		r.is_paused = true
-    		if (this._ts_paused) r.ts_paused = new Date (this._ts_paused).toJSON ()
-    		if (this._er_paused) r.error     = this._er_paused
-    	}
+		const was_busy = this.is_busy
 
-		return r
+		this.is_busy   = true
+
+		this.t         = null
+
+		this.when      = null
+	
+		if (this.is_paused ()) {
+		
+			this.is_busy = was_busy
+
+			return this.log ('run () called when paused, bailing out')
+			
+		}
+					
+		if (was_busy) {
+		
+			this.is_to_reset = true
+
+			return this.log ('run () called when busy, noted')
+			
+		}
+
+		this.next = Date.now () + this.get_period ()
+
+		this.notify ()
+		
+		let log_meta = clone (this.o.log_meta)
+		
+		log_meta.category = 'app'
+		
+		const log_event = this.log_start ('run () called, next time may be at ' + new Date (this.next).toJSON ())
+	
+		log_meta.parent = log_event
+
+		{
+			
+			try {
+			
+				this.result = null
+	
+				let result = await this.o.todo (log_meta)
+			
+				this.report_result (result)
+
+			}
+			catch (x) {
+
+				this.report_error (x)
+
+			}
+			
+		}
+
+		this.is_busy = false
+		
+		this.notify ()
+
+		if (this.is_to_reset) {
+		
+			this.in (0)		
+		
+		}
+		else if (!this.when) {
+		
+			this.finish ()
+		
+		}
+		
+		this.log_finish (log_event)
 
 	}
 
@@ -386,120 +443,7 @@ module.exports = class extends EventEmitter {
 		this.error = x
 	
 	}
-	
-	get_period () {
-	
-		let {period} = this.o, {length} = period
 		
-		let i = this._cnt_fails || 0; if (i >= length) i = length - 1
-	
-		return period [i]
-	
-	}
-
-	async run () {
-	
-		if (this.is_paused ()) {
-		
-			this.log ('run () called when paused, bailing out')
-			
-			return
-		
-		}
-		
-		if (this.is_busy) {
-
-			this.log ('run () called when busy, going to reset...')
-			
-			this.on ()
-			
-			return this.log ('...reset done, exiting run ()')
-
-		}
-	
-		this.next = Date.now () + this.get_period ()
-		
-		let log_meta = clone (this.o.log_meta)
-		
-		log_meta.category = 'app'
-		
-		const log_event = this.log_start ('run () called, next time may be at ' + new Date (this.next).toJSON ())
-	
-		log_meta.parent = log_event
-		
-		this.is_busy = true
-
-		{
-
-			this.clear ()
-			
-			try {
-				
-				let result = await this.o.todo (log_meta)
-			
-				this.report_result (result)
-
-			}
-			catch (x) {
-
-				this.report_error (x)
-
-			}
-			
-		}
-
-		this.is_busy = false
-		
-		if (!this.check_reset ()) this.notify ()
-		
-		if (!this.when) this.finish ()
-		
-		this.log_finish (log_event)
-
-	}
-	
-	check_reset () {
-			
-		let {is_reset_to} = this; if (!is_reset_to) return null
-		
-		this.is_reset_to = null
-		
-		this.log ('about to reset...')			
-
-		this.at (is_reset_to)
-		
-		return is_reset_to
-	
-	}
-	
-	set_ticker (v) {
-	
-		this.o.ticker = v
-		
-		this.tick ()
-	
-	}
-	
-	get_next_tick () {
-	
-		let {ticker} = this.o; if (!ticker) return null
-		
-		return ticker ()
-	
-	}
-	
-	tick () {
-	
-		let when = this.get_next_tick (); if (!when) return null
-		
-		this.clear ()
-		
-		this.at (when)
-		
-		return when
-	
-	}
-
 	finish () {
 
 		if (this.tick ()) return
@@ -527,6 +471,73 @@ module.exports = class extends EventEmitter {
 
 		})
 
+	}
+
+	////////// Pause
+
+	is_paused () {
+	
+		return !!this._is_paused
+	
+	}
+	
+	pause (x) {
+	
+		this._is_paused = true
+
+		this._ts_paused = Date.now ()
+
+		this._wh_paused = this.when
+
+		if (x) this._er_paused = x.message || x
+		
+		this.clear ()
+
+	}
+
+	resume () {
+	
+		let {_wh_paused} = this
+
+		this._is_paused = false
+		this._ts_paused = null
+		this._er_paused = null
+		this._wh_paused = null
+		
+		this.clear ()
+		
+		if (_wh_paused) this.at (_wh_paused)
+	
+	}
+	
+	////////// Ticker
+
+	set_ticker (v) {
+	
+		this.o.ticker = v
+		
+		this.tick ()
+	
+	}
+	
+	get_next_tick () {
+	
+		let {ticker} = this.o; if (!ticker) return null
+		
+		return ticker ()
+	
+	}
+	
+	tick () {
+	
+		let when = this.get_next_tick (); if (!when) return null
+		
+		this.clear ()
+		
+		this.at (when)
+		
+		return when
+	
 	}
 
 }
