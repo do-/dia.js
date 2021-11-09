@@ -126,9 +126,7 @@ module.exports = class extends EventEmitter {
         this.uuid = Dia.new_uuid ()
 
 		this.log_label = [this.uuid, o.name, 'timer: '].join (' ')
-		
-		this.locks = {}
-		
+				
 		this.notify ()
 		
 	}
@@ -509,32 +507,6 @@ module.exports = class extends EventEmitter {
 			this.on ()
 
 		})
-
-	}
-	
-	lock (keys) {
-
-		let l = []
-		
-		let max = this.o.max_locks
-
-		for (let k of keys) {
-
-			if (max > 0 && Object.keys (this.locks).length >= max) break
-
-			if (k in this.locks) continue
-			
-			let v = {
-				key: k,
-				acquire: () => v,
-				release: () => {delete this.locks [k]}
-			}
-			
-			l.push (this.locks [k] = v)
-
-		}
-
-		return l
 
 	}
 
