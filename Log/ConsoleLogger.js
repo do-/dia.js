@@ -38,7 +38,7 @@ module.exports = class {
 	
 	transform (e) {
 
-		e [MESSAGE] = new Date ().toISOString () + ' ' + this.after_category (e)
+		e [MESSAGE] = new Date ().toISOString () + ' ' + e.category + ' ' + this.after_category (e)
 
 		return e
 
