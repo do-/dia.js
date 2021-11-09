@@ -8,13 +8,15 @@ module.exports = class {
         this.options = o
 
 		this._timers = {}
+		
+		this.log_category = o.log_category || 'db'
 
     }
     
     log_info (label) {
 
     	let log_event = this.log_write (new LogEvent ({
-			category: 'db',
+			category: this.log_category,
 			label
 		}))
 
@@ -99,10 +101,18 @@ module.exports = class {
     }
     
     inject (c, o) {
-    	c.log_meta = o.log_meta
+    
+    	c.log_meta = {
+    		...(o.log_meta || {}),
+    		category: this.log_category,
+    	},
+
         c.model = this.model
+
         c.pool = this
+
         return c
+
     }
     
     log_write (e) {
@@ -121,7 +131,7 @@ module.exports = class {
     
 		this.log_event = this.log_write (new LogEvent ({
     		...log_meta,
-			category: 'db',
+			category: this.log_category,
 			label,
 			phase: 'before',
     	}))
@@ -204,7 +214,7 @@ module.exports = class {
             f     : async db => {
                 this.version = await this.select_version (db)
                 this.log_write (new LogEvent ({
-                    category: 'db',
+                    category: this.log_category,
                     label: `${this.product} version is ${JSON.stringify (this.version)}`,
                     parent: this.log_event,
                 }))
