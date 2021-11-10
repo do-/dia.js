@@ -1,5 +1,5 @@
 const EventEmitter = require ('events')
-const LogEvent     = require ('./Log/Events/Text.js')
+const LogEvent     = require ('./Log/Events/Timer.js')
 const ErrorEvent   = require ('./Log/Events/Error.js')
 const WrappedError = require ('./Log/WrappedError.js')
 
@@ -28,9 +28,11 @@ module.exports = class extends EventEmitter {
 		this._is_paused = !!o.is_paused
 		
 		this._cnt_fails = 0
-
-		if (!o.log_meta) o.log_meta = {}
-		if (!o.log_meta.category) o.log_meta.category = 'queue'
+		
+		this.log_meta = {
+			...(this.log_meta || {}),
+			timer: this
+		}
 		
 		{
 		
@@ -95,8 +97,6 @@ module.exports = class extends EventEmitter {
 		if (typeof o.todo != 'function') throw new Error ("No valid `todo` set. Got options: " + JSON.stringify (o))
 				
         this.uuid = Dia.new_uuid ()
-
-		this.log_label = o.name
 		
 		this.lambda = () => this.run ()
 
@@ -160,14 +160,12 @@ module.exports = class extends EventEmitter {
 
 	log (s, ms, log_event) {
 
-		let m = this.log_label
-
-		if (ms) m += ': ' + new Date (ms).toJSON ()
+		let m = !ms ? '' : ': ' + new Date (ms).toJSON ()
 
 		m += ' ' + s
 		
     	this.log_write (new LogEvent ({
-    		...this.o.log_meta,
+    		...this.log_meta,
     		parent: log_event || this,
 			label: m
 		}))
@@ -182,13 +180,12 @@ module.exports = class extends EventEmitter {
     
     }
     
-	log_start (s) {
+	log_start (label) {
 		
     	return this.log_write (new LogEvent ({
-    		...this.o.log_meta,
-    		parent: this,
+    		...this.log_meta,
 			phase: 'before',
-			label: this.log_label + ' ' + s
+			label
 		}))
 
 	}
@@ -378,7 +375,7 @@ module.exports = class extends EventEmitter {
 		const log_event = this.log_start ('run () called, next time may be at ' + new Date (this.next).toJSON ())
 	
 		let log_meta = {
-			...this.o.log_meta,
+			...this.log_meta,
 			category: 'app',
 			parent: log_event,
 		}
@@ -443,7 +440,7 @@ module.exports = class extends EventEmitter {
 
 		}
 
-		let {o, conf} = this, {log_meta} = o
+		let {log_meta, conf} = this
 
 		log_meta.parent = x.parent || log_event
 
