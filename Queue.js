@@ -35,7 +35,7 @@ module.exports = class {
 
 					if (is_empty === false) {// reset when definitly not empty, not undefined etc.
 					
-						const {timer} = this; if (!timer.when) timer.in (0)
+						const {timer} = this; if (!timer.when) timer.in (0, 'The queue: is_empty === false')
 					
 					}
 

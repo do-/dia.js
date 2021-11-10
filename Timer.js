@@ -300,8 +300,22 @@ module.exports = class extends EventEmitter {
 	}
 	
 	at (ts, comment) {
+	
+		if (comment == null) {
+		
+			comment = `at (${ts}) called`
+			
+			let s = (new Error ('?')).stack.split (/[\n\r]+/).slice (1).find (s => !/Timer.js:/.test (s))
+			
+			if (s) {
+			
+				let a = s.split (/[\(\)]/); if (a.length === 3) comment += ' from ' + a [1]
 
-		const log_event = this.log_start (comment || `at (${ts}) called`)
+			}
+
+		}
+
+		const log_event = this.log_start (comment)
 
 		const when = this.apply_constraints (ts instanceof Date ? ts.getTime () : ts, log_event) 
 

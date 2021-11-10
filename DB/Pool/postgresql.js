@@ -117,7 +117,7 @@ module.exports = class extends require ('../Pool.js') {
 					
 					let timer = timers [payload]; if (!timer)  throw new Error (`Timer '${payload}' not found`)
 
-					timer.on ()
+					timer.on ('DB notification received')
 
 				}
 				else {
