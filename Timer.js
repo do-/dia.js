@@ -366,13 +366,13 @@ module.exports = class extends EventEmitter {
 
 		this.notify ()
 		
-		let log_meta = clone (this.o.log_meta)
-		
-		log_meta.category = 'app'
-		
 		const log_event = this.log_start ('run () called, next time may be at ' + new Date (this.next).toJSON ())
 	
-		log_meta.parent = log_event
+		let log_meta = {
+			...this.o.log_meta,
+			category: 'app',
+			parent: log_event,
+		}
 
 		{
 			
@@ -387,7 +387,7 @@ module.exports = class extends EventEmitter {
 			}
 			catch (x) {
 
-				this.report_error (x)
+				this.report_error (x, log_event)
 
 			}
 			
@@ -420,13 +420,13 @@ module.exports = class extends EventEmitter {
 	
 	}
 
-	report_error (x) {
+	report_error (x, log_event) {
 		
 		this._cnt_fails ++
 
 		if ('tolerance' in this && this._cnt_fails >= this.tolerance) {
 
-			this.log (`After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`)
+			this.log (`After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`, null, log_event)
 	
 			this.pause (x)
 
@@ -434,7 +434,7 @@ module.exports = class extends EventEmitter {
 
 		let {o, conf} = this, {log_meta} = o
 
-		if (x.parent) log_meta.parent = x.parent
+		log_meta.parent = x.parent || log_event
 
 		conf.log_event (new WrappedError (x, {log_meta}))
 
