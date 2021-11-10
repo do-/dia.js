@@ -39,14 +39,6 @@ module.exports = class {
 	}
 		
 	///// Logging
-
-	log_time_shift (label) {
-	
-		this.log_info (
-			this.date.toJSON () + ' '  + label
-		)
-	
-	}
 	
 	log_info (label) {
 
@@ -143,7 +135,9 @@ module.exports = class {
 
 		this.set_status (ST_SCHEDULED)
 		
-		this.log_info ('scheduled at ' + this.date.toJSON ())
+		this.log_info ('scheduled at ' + this.date.toJSON () + ' (' + this.schedule_comments.join (', ') + ')')
+		
+		this.schedule_comments = []
 	
 	}
 
@@ -237,8 +231,8 @@ module.exports = class {
 	///// Time adjustment		
 
 	adjust () {
-
-		this.log_time_shift ('is requested')
+	
+		this.schedule_comments = ['as requested']
 
 		this.adjust_to_nearest_available ()
 
@@ -254,9 +248,9 @@ module.exports = class {
 		if (next <= date.getTime ()) return
 	
 		this.date = new Date (next)
-
-		this.log_time_shift ('is the nearest available')
-	
+		
+		this.schedule_comments = ['delayed after last run']
+			
 	}
 		
 	adjust_to_time_frame () {
@@ -282,8 +276,8 @@ module.exports = class {
 		date.setMinutes (parseInt (m, 10))
 		date.setSeconds (parseInt (s, 10))
 		date.setMilliseconds (0)
-		
-		this.log_time_shift (`is adjusted to time window ${from}..${to}`)
+
+		this.schedule_comments.push (`is adjusted to time window ${from}..${to}`)
 
 	}
 		
