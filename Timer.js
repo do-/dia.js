@@ -240,7 +240,7 @@ module.exports = class extends EventEmitter {
 		if (prev == null) return when
 		if (prev >= when) return when
 
-		this.log ('rolled back to', prev, log_event)
+		this.log ('                rolled back to', prev, log_event)
 
 		return prev
 	
@@ -253,19 +253,15 @@ module.exports = class extends EventEmitter {
 		if (next == null) return when
 		if (next <= when) return when
 	
-		this.log ('adjusted to the next period', next, log_event)
+		this.log ('   adjusted to the next period', next, log_event)
 
 		return next
 
 	}
 
-	get_nearest_moment (ms, log_event) {
+	apply_constraints (when, log_event) {
 
-		let when = Date.now ()
-		
-		if (ms > 0) when += ms
-
-		this.log ('planning to', when, log_event)
+		this.log ('                   planning to', when, log_event)
 
 		when = this.apply_prev    (when, log_event)
 		when = this.apply_next    (when, log_event)
@@ -278,24 +274,35 @@ module.exports = class extends EventEmitter {
 	////////// Setting up
 
 	clear () {
-	
-		let {when} = this
-		
-		clearTimeout (this.t)
-		
-		this.t    = null
-		this.when = null
 
+		if (this.t != null) {
+			clearTimeout (this.t)
+			this.t = null
+		}
+
+		let {when} = this; this.when = null
 		return when
 	
 	}
 	
 	in (ms) {
 
-		const log_event = this.log_start (`in (${ms}) called`)
+		this.at (Date.now () + ms)
 
-		const when = this.get_nearest_moment (ms, log_event)
-		
+	}
+	
+	on () {
+
+		this.in (this.o.delay)
+
+	}
+	
+	at (ts) {
+
+		const log_event = this.log_start (`at (${ts}) called`)
+
+		const when = this.apply_constraints (ts instanceof Date ? ts.getTime () : ts, log_event) 
+
 		const delta = when - Date.now (); if (delta > MAX_INT) throw new Error ('Sorry, delays as big as ' + delta + ' ms are not supported. The maximum is ' + MAX_INT + ' ms ~ 24.8 days')
 
 		this.when = when
@@ -307,20 +314,6 @@ module.exports = class extends EventEmitter {
 		this.notify ()
 
 		this.log_finish (log_event)
-
-	}
-	
-	on () {
-
-		this.in (this.o.delay)
-
-	}
-	
-	at (when) {
-
-		if (when instanceof Date) when = when.getTime ()
-		
-		this.in (when - Date.now ())
 
 	}	
 
