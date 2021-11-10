@@ -35,7 +35,7 @@ module.exports = class {
 
 					let is_empty = await this.is_empty ()
 
-					if (is_empty === false) timer.in (0, 'The queue: is_empty === false')
+					if (is_empty === false) timer.in (0, 'invoked because the queue is not empty')
 
 				}
 				catch (x) {
@@ -98,7 +98,7 @@ module.exports = class {
 			
 		if (list != null) {
 				
-			if (list.length == 0) return this.timer.log ('The queue is empty.')
+			if (list.length == 0) return this.timer.log ('the queue is empty')
 
 			rq.data = list [0]
 
@@ -108,7 +108,7 @@ module.exports = class {
 
 				let dt = new Date (ts_scheduled)
 				
-				let comment = 'The queue contains ' 
+				let comment = 'the queue contains ' 
 				
 				try {
 
@@ -197,7 +197,7 @@ module.exports = class {
 
 			if (is_empty !== true) // skip autostart only when definitly empty, run it for undefined etc.
 		
-			this.timer.in (0, 'Queue startup')
+			this.timer.in (0, 'invoked at queue startup')
 				
 		}
 

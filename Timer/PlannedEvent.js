@@ -143,7 +143,7 @@ module.exports = class {
 
 		this.set_status (ST_SCHEDULED)
 		
-		this.log_info ('Scheduled at' + this.date.toJSON ())
+		this.log_info ('scheduled at ' + this.date.toJSON ())
 	
 	}
 
@@ -217,7 +217,7 @@ module.exports = class {
 		}
 		catch (x) {
 			
-			timer.report_error (x, this.log_event)
+			timer.report_error (x, log_event)
 
 		}
 		finally {

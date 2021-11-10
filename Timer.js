@@ -274,8 +274,10 @@ module.exports = class extends EventEmitter {
 		this._cnt_fails ++
 
 		if ('tolerance' in this && this._cnt_fails >= this.tolerance) {
-
-			this.log (`After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`, null, log_event)
+		
+			this.log_write (log_event.set ({
+				label: `After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`,
+			}))
 	
 			this.pause (x)
 
@@ -283,7 +285,7 @@ module.exports = class extends EventEmitter {
 
 		let {log_meta, conf} = this
 
-		log_meta.parent = x.parent || log_event
+		log_meta.parent = x.parent || log_event.parent
 
 		conf.log_event (new WrappedError (x, {log_meta}))
 
@@ -316,7 +318,7 @@ module.exports = class extends EventEmitter {
 			o.done = done
 			o.fail = fail
 
-			this.on (comment || 'Starting as Promise')
+			this.on (comment || 'starting as Promise')
 
 		})
 
@@ -353,7 +355,7 @@ module.exports = class extends EventEmitter {
 		this._er_paused = null
 		this._wh_paused = null
 		
-		if (_wh_paused) this.at (_wh_paused, 'Was paused, resuming')
+		if (_wh_paused) this.at (_wh_paused, 'was paused, now resuming')
 	
 	}
 	
@@ -363,7 +365,7 @@ module.exports = class extends EventEmitter {
 	
 		this.o.ticker = v
 		
-		this.tick ()
+		this.tick ('ticker setup')
 	
 	}
 	
@@ -375,11 +377,11 @@ module.exports = class extends EventEmitter {
 	
 	}
 	
-	tick () {
+	tick (comment) {
 	
 		let when = this.get_next_tick (); if (!when) return null
 				
-		this.at (when, 'Tick occured')
+		this.at (when, comment || 'tick occured')
 		
 		return when
 	
