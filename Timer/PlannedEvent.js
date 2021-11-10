@@ -110,12 +110,14 @@ module.exports = class {
 		
 		let {timer} = this, {scheduled_event} = timer; if (scheduled_event) {
 		
-			let {date} = scheduled_event; if (date.getTime () < this.date.getTime ()) {
+			let {date} = scheduled_event; if (date.getTime () <= this.date.getTime ()) {
 
 				return this.finish ('Was already scheluled at ' + date.toJSON () + ', bailing out.')
 
 			}
 			else {
+
+				this.log_info (`Conflicting event ${scheduled_event.log_event.uuid} detected: it was scheduled at ${date.toJSON ()}, current target is ${this.date.toJSON ()}, cancel it`)
 
 				scheduled_event.cancel ()
 
@@ -131,15 +133,17 @@ module.exports = class {
 	
 	
 
-	cancel () {
+	cancel (note) {
 
 		switch (this.status) {
 			case ST_CANCELLING : return
 			case ST_SCHEDULED  : break
 			default            : throw new Exception ('Wrong status:' + this.status)
 		}
-		
-		this.log_info ('cancel requested')
+
+		let message = 'cancel requested'; if (note) message += ': ' + note
+
+		this.log_info (message)
 		this.set_status (ST_CANCELLING)
 		
 		clearTimeout (this.timeout)

@@ -8,10 +8,6 @@ module.exports = class extends Event {
 
 		o.timer_name = timer.name
 
-		const {uuid} = timer; if (!o.parent) o.parent = {uuid}
-
-		delete o.timer
-
 		if (!o.category) o.category = 'queue'
 
 		super (o)

@@ -20,6 +20,8 @@ module.exports = class extends EventEmitter {
 		
 		if (o.on_change) this.addListener ('change', o.on_change)
 		
+		this.name = o.name; if (!this.name) throw new Error ('Timer name not set')
+		
 		this.o = o
 		
 		this.conf.add_timer (this)
@@ -31,7 +33,7 @@ module.exports = class extends EventEmitter {
 		this._cnt_fails = 0
 		
 		this.log_meta = {
-			...(this.log_meta || {}),
+			...(o.log_meta || {}),
 			timer: this
 		}
 		
@@ -43,7 +45,7 @@ module.exports = class extends EventEmitter {
 				
 				if (typeof v == 'string') v = parseInt (v)
 
-				if (!(v >= 0)) throw new Error (`Illegal ${K} value for ${o.name}: '${o[K]}'`)
+				if (!(v >= 0)) throw new Error (`Illegal ${K} value for ${this.name}: '${o[K]}'`)
 
 				this [K] = v
 
@@ -131,17 +133,17 @@ module.exports = class extends EventEmitter {
 
 	to_record () {
 
-    	let {next, when, is_busy} = this, r = {}
-/*    	
-    	if (this.is_busy)    r.is_busy       = true
-    	if (this.when)       r.ts_scheduled  = new Date (this.when).toJSON ()
-    	if (this.next)       r.ts_closest    = new Date (this.next).toJSON ()
+    	let r = {}
+
+    	if (this.running_event)   r.is_busy       = true
+    	if (this.scheduled_event) r.ts_scheduled  = this.scheduled_event.toJSON ()
+    	if (this.next)            r.ts_closest    = new Date (this.next).toJSON ()
     	if (this._is_paused) {
     		r.is_paused = true
     		if (this._ts_paused) r.ts_paused = new Date (this._ts_paused).toJSON ()
     		if (this._er_paused) r.error     = this._er_paused
     	}
-*/
+
 		return r
 
 	}
@@ -154,7 +156,7 @@ module.exports = class extends EventEmitter {
 		
 		this._last_state = state
 		
-		this.emit ('change', state, this.o.name)
+		this.emit ('change', state, this.name)
 	
 	}	
 
@@ -168,7 +170,7 @@ module.exports = class extends EventEmitter {
 		
     	this.log_write (new LogEvent ({
     		...this.log_meta,
-    		parent: log_event || this,
+    		parent: log_event,
 			label: m
 		}))
 

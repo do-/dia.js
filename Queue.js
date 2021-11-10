@@ -25,19 +25,17 @@ module.exports = class {
     	let todo = async (log_meta) => {
 				
 			try {
+
 				await this.do_main_job (log_meta)
+
 			}
 			finally {
 			
-				try {
+				const {timer} = this; if (!timer.scheduled_event) try {
 
 					let is_empty = await this.is_empty ()
 
-					if (is_empty === false) {// reset when definitly not empty, not undefined etc.
-					
-						const {timer} = this; if (!timer.when) timer.in (0, 'The queue: is_empty === false')
-					
-					}
+					if (is_empty === false) timer.in (0, 'The queue: is_empty === false')
 
 				}
 				catch (x) {
