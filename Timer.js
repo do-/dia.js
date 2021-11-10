@@ -136,7 +136,7 @@ module.exports = class extends EventEmitter {
     	let r = {}
 
     	if (this.running_event)   r.is_busy       = true
-    	if (this.scheduled_event) r.ts_scheduled  = this.scheduled_event.toJSON ()
+    	if (this.scheduled_event) r.ts_scheduled  = this.scheduled_event.date.toJSON ()
     	if (this.next)            r.ts_closest    = new Date (this.next).toJSON ()
     	if (this._is_paused) {
     		r.is_paused = true
@@ -188,6 +188,7 @@ module.exports = class extends EventEmitter {
 		
     	return this.log_write (new LogEvent ({
     		...this.log_meta,
+    		parent: null,
 			phase: 'before',
 			label
 		}))
@@ -202,11 +203,11 @@ module.exports = class extends EventEmitter {
 			
 	////////// Setting up
 
-	clear () {
+	clear (comment) {
 
 		let {scheduled_event} = this
 		
-		if (scheduled_event) scheduled_event.cancel ()	
+		if (scheduled_event) scheduled_event.cancel (comment)	
 	
 	}
 	
@@ -286,7 +287,7 @@ module.exports = class extends EventEmitter {
 
 		conf.log_event (new WrappedError (x, {log_meta}))
 
-		if (this.o.stop_on_error) this.clear ()
+		if (this.o.stop_on_error) this.clear ('Stop on error')
 
 		this.error = x
 	
@@ -339,7 +340,7 @@ module.exports = class extends EventEmitter {
 
 		if (x) this._er_paused = x.message || x
 		
-		this.clear ()
+		this.clear ('Pause')
 
 	}
 
@@ -351,8 +352,6 @@ module.exports = class extends EventEmitter {
 		this._ts_paused = null
 		this._er_paused = null
 		this._wh_paused = null
-		
-		this.clear ()
 		
 		if (_wh_paused) this.at (_wh_paused, 'Was paused, resuming')
 	
@@ -379,9 +378,7 @@ module.exports = class extends EventEmitter {
 	tick () {
 	
 		let when = this.get_next_tick (); if (!when) return null
-		
-		this.clear ()
-		
+				
 		this.at (when, 'Tick occured')
 		
 		return when

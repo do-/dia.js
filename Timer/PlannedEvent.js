@@ -8,6 +8,14 @@ const ST_CANCELLING = 2
 const ST_RUNNING    = 3
 const ST_FINISHED   = 4
 
+const STATUS_LABEL = [
+	'ST_NEW',
+	'ST_SCHEDULED',
+	'ST_CANCELLING',
+	'ST_RUNNING',
+	'ST_FINISHED',
+]
+
 module.exports = class {
 
 	constructor (timer, date, label) {
@@ -52,6 +60,10 @@ module.exports = class {
 	///// Workflow
 
 	set_status (s) {
+	
+		if (!Number.isInteger (s)) throw new Error ('Invalid status: ' + s)
+
+		let status_label = STATUS_LABEL [s]; if (status_label == null) throw new Error ('Invalid status: ' + s)
 
 		this.status = s
 		
@@ -73,6 +85,8 @@ module.exports = class {
 			timer.running_event = null
 			this.is_to_reset = false		
 		}
+		
+//		this.log_info ('Switched to ' + status_label)
 
 		timer.notify ()
 
@@ -128,10 +142,10 @@ module.exports = class {
 		this.timeout = delta <= 0 ? setImmediate (lambda) : setTimeout (lambda, delta)
 
 		this.set_status (ST_SCHEDULED)
+		
+		this.log_info ('Scheduled at' + this.date.toJSON ())
 	
 	}
-	
-	
 
 	cancel (note) {
 
@@ -203,7 +217,7 @@ module.exports = class {
 		}
 		catch (x) {
 			
-			timer.report_error (x, log_event)
+			timer.report_error (x, this.log_event)
 
 		}
 		finally {
@@ -224,7 +238,7 @@ module.exports = class {
 
 	adjust () {
 
-		this.log_time_shift ('initial')
+		this.log_time_shift ('is requested')
 
 		this.adjust_to_nearest_available ()
 
@@ -241,7 +255,7 @@ module.exports = class {
 	
 		this.date = new Date (next)
 
-		this.log_time_shift ('adjusted to nearest available')
+		this.log_time_shift ('is the nearest available')
 	
 	}
 		
@@ -269,7 +283,7 @@ module.exports = class {
 		date.setSeconds (parseInt (s, 10))
 		date.setMilliseconds (0)
 		
-		this.log_time_shift (`adjusted to time window ${from}..${to}`)
+		this.log_time_shift (`is adjusted to time window ${from}..${to}`)
 
 	}
 		
