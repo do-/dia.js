@@ -160,9 +160,11 @@ module.exports = class extends EventEmitter {
 
 	log (s, ms, log_event) {
 
-		let m = this.log_label + ' ' + s
+		let m = this.log_label
 
-		if (ms) m += ' ' + new Date (ms).toJSON ()
+		if (ms) m += ': ' + new Date (ms).toJSON ()
+
+		m += ' ' + s
 		
     	this.log_write (new LogEvent ({
     		...this.o.log_meta,
@@ -240,7 +242,7 @@ module.exports = class extends EventEmitter {
 		if (prev == null) return when
 		if (prev >= when) return when
 
-		this.log ('                rolled back to', prev, log_event)
+		this.log ('was already scheduled', prev, log_event)
 
 		return prev
 	
@@ -253,7 +255,7 @@ module.exports = class extends EventEmitter {
 		if (next == null) return when
 		if (next <= when) return when
 	
-		this.log ('   adjusted to the next period', next, log_event)
+		this.log ('is the nearest available', next, log_event)
 
 		return next
 
@@ -261,7 +263,7 @@ module.exports = class extends EventEmitter {
 
 	apply_constraints (when, log_event) {
 
-		this.log ('                   planning to', when, log_event)
+		this.log ('is required', when, log_event)
 
 		when = this.apply_prev    (when, log_event)
 		when = this.apply_next    (when, log_event)
@@ -285,21 +287,21 @@ module.exports = class extends EventEmitter {
 	
 	}
 	
-	in (ms) {
+	in (ms, comment) {
 
-		this.at (Date.now () + ms)
-
-	}
-	
-	on () {
-
-		this.in (this.o.delay)
+		this.at (Date.now () + ms, comment)
 
 	}
 	
-	at (ts) {
+	on (comment) {
 
-		const log_event = this.log_start (`at (${ts}) called`)
+		this.in (this.o.delay, comment)
+
+	}
+	
+	at (ts, comment) {
+
+		const log_event = this.log_start (comment || `at (${ts}) called`)
 
 		const when = this.apply_constraints (ts instanceof Date ? ts.getTime () : ts, log_event) 
 
@@ -391,8 +393,10 @@ module.exports = class extends EventEmitter {
 		this.notify ()
 
 		if (this.is_to_reset) {
+
+			this.is_to_reset = false
 		
-			this.in (0)		
+			this.in (0, 'Reset, because invoked during `run ()`')
 		
 		}
 		else if (!this.when) {
@@ -449,7 +453,7 @@ module.exports = class extends EventEmitter {
 
 	}
 
-	promise () {
+	promise (comment) {
 
 		return new Promise ((done, fail) => {
 
@@ -460,7 +464,7 @@ module.exports = class extends EventEmitter {
 			o.done = done
 			o.fail = fail
 
-			this.on ()
+			this.on (comment || 'Starting as Promise')
 
 		})
 
@@ -499,7 +503,7 @@ module.exports = class extends EventEmitter {
 		
 		this.clear ()
 		
-		if (_wh_paused) this.at (_wh_paused)
+		if (_wh_paused) this.at (_wh_paused, 'Was paused, resuming')
 	
 	}
 	
@@ -527,7 +531,7 @@ module.exports = class extends EventEmitter {
 		
 		this.clear ()
 		
-		this.at (when)
+		this.at (when, 'Tick occured')
 		
 		return when
 	

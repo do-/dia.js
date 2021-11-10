@@ -100,7 +100,7 @@ module.exports = class {
 			
 		if (list != null) {
 				
-			if (list.length == 0) return this.timer.log ('Nothing to do')			
+			if (list.length == 0) return this.timer.log ('The queue is empty.')
 
 			rq.data = list [0]
 
@@ -109,9 +109,32 @@ module.exports = class {
 				let ts_scheduled = rq.data [ts_scheduled_field]
 
 				let dt = new Date (ts_scheduled)
+				
+				let comment = 'The queue contains ' 
+				
+				try {
 
-				if (dt > new Date ()) return this.timer.at (dt)
-			
+					comment += JSON.stringify (rq.data)
+
+				}
+				catch (x) {
+
+					comment += `{${ts_scheduled_field}: '${ts_scheduled}', ...}`
+
+				}
+				
+				{
+
+					let extra = list.length - 1; 
+
+					if (extra > 0) comment += ' and ' + extra + ' more record' 
+
+					if (extra > 1) comment += 's' 
+
+				}
+
+				if (dt > new Date ()) return this.timer.at (dt, comment)
+
 			}
 
 			rq.list = list
@@ -176,7 +199,7 @@ module.exports = class {
 
 			if (is_empty !== true) // skip autostart only when definitly empty, run it for undefined etc.
 		
-			this.timer.in (0)
+			this.timer.in (0, 'Queue startup')
 				
 		}
 
