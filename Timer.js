@@ -37,7 +37,7 @@ module.exports = class extends EventEmitter {
 		
 		this.conf.add_timer (this)
 		
-		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
+		for (let k of ['period']) o [k] = this.zero_or_more (o [k])
 						
 		this.log_meta = {
 			...(o.log_meta || {}),
@@ -208,7 +208,7 @@ module.exports = class extends EventEmitter {
 	
 	on (comment) {
 
-		this.in (this.o.delay, comment)
+		this.in (0, comment)
 
 	}
 	
