@@ -39,7 +39,16 @@ module.exports = class extends Event {
 				f = true
 		}
 		
-		return message + ' ' + JSON.stringify (o)
+		try {
+
+			return message + ' ' + JSON.stringify (o)
+
+		}
+		catch (x) {
+
+			return message
+
+		}
 
 	}
 
