@@ -142,6 +142,8 @@ module.exports = class {
 	}
 
 	cancel (note) {
+	
+		let {date} = this
 
 		switch (this.status) {
 			case ST_CANCELLING : return
@@ -157,6 +159,8 @@ module.exports = class {
 		clearTimeout (this.timeout)
 		
 		this.finish ()
+		
+		return date
 
 	}
 

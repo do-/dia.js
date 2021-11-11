@@ -4,6 +4,7 @@ const ErrorEvent   = require ('./Log/Events/Error.js')
 const WrappedError = require ('./Log/WrappedError.js')
 const PlannedEvent = require ('./Timer/PlannedEvent.js')
 const TimeSlot     = require ('./Timer/TimeSlot.js')
+const Pause        = require ('./Timer/Pause.js')
 
 const Dia = require ('./Dia.js')
 
@@ -36,9 +37,7 @@ module.exports = class extends EventEmitter {
 		this.conf.add_timer (this)
 		
 		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
-		
-		this._is_paused = !!o.is_paused
-		
+				
 		this._cnt_fails = 0
 		
 		this.log_meta = {
@@ -115,7 +114,11 @@ module.exports = class extends EventEmitter {
 		this.is_to_reset = false
 
 		this.scheduled_event = null				
-		this.running_event = null				
+		this.running_event   = null
+		
+		this.current_pause   = null
+		
+		if (o.is_paused) this.pause ()
 
 	}
 	
@@ -147,16 +150,12 @@ module.exports = class extends EventEmitter {
 
 	to_record () {
 
-    	let r = {}
+    	let r = {}, {scheduled_event, running_event, current_pause, next} = this
 
-    	if (this.running_event)   r.is_busy       = true
-    	if (this.scheduled_event) r.ts_scheduled  = this.scheduled_event.date.toJSON ()
-    	if (this.next)            r.ts_closest    = new Date (this.next).toJSON ()
-    	if (this._is_paused) {
-    		r.is_paused = true
-    		if (this._ts_paused) r.ts_paused = new Date (this._ts_paused).toJSON ()
-    		if (this._er_paused) r.error     = this._er_paused
-    	}
+    	if (scheduled_event != null) r.ts_scheduled = scheduled_event.date.toJSON ()    
+    	if (running_event   != null) r.is_busy      = true    	
+    	if (next            != null) r.ts_closest   = new Date (next).toJSON ()
+		if (current_pause   != null) current_pause.append_info (r)
 
 		return r
 
@@ -219,9 +218,9 @@ module.exports = class extends EventEmitter {
 
 	clear (comment) {
 
-		let {scheduled_event} = this
+		let {scheduled_event} = this; if (scheduled_event == null) return null 
 		
-		if (scheduled_event) scheduled_event.cancel (comment)	
+		return scheduled_event.cancel (comment)
 	
 	}
 	
@@ -342,35 +341,20 @@ module.exports = class extends EventEmitter {
 
 	is_paused () {
 	
-		return !!this._is_paused
+		return this.current_pause != null
 	
 	}
 	
-	pause (x) {
-	
-		this._is_paused = true
+	pause (error) {
 
-		this._ts_paused = Date.now ()
-
-		this._wh_paused = this.when
-
-		if (x) this._er_paused = x.message || x
-		
-		this.clear ('Pause')
+		if (!this.is_paused ()) new Pause (this, {error})
 
 	}
 
-	resume () {
-	
-		let {_wh_paused} = this
+	resume (comment) {
 
-		this._is_paused = false
-		this._ts_paused = null
-		this._er_paused = null
-		this._wh_paused = null
-		
-		if (_wh_paused) this.at (_wh_paused, 'was paused, now resuming')
-	
+		const {current_pause} = this; if (current_pause != null) current_pause.cancel ()
+
 	}
 	
 	////////// Ticker
