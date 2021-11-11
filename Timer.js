@@ -5,6 +5,7 @@ const WrappedError = require ('./Log/WrappedError.js')
 const PlannedEvent = require ('./Timer/PlannedEvent.js')
 const TimeSlot     = require ('./Timer/TimeSlot.js')
 const Pause        = require ('./Timer/Pause.js')
+const Executor     = require ('./Timer/Executor.js')
 
 const Dia = require ('./Dia.js')
 
@@ -38,7 +39,7 @@ module.exports = class extends EventEmitter {
 		
 		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
 				
-		this._cnt_fails = 0
+//		this._cnt_fails = 0
 		
 		this.log_meta = {
 			...(o.log_meta || {}),
@@ -85,7 +86,7 @@ module.exports = class extends EventEmitter {
 			}
 		
 		}
-				
+/*				
 		if (Array.isArray (o.todo)) {
 
 			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
@@ -106,17 +107,15 @@ module.exports = class extends EventEmitter {
 		}
 		
 		if (typeof o.todo != 'function') throw new Error ("No valid `todo` set. Got options: " + JSON.stringify (o))
-				
+*/				
         this.uuid = Dia.new_uuid ()
-		
-		this.lambda = () => this.run ()
-
-		this.is_to_reset = false
 
 		this.scheduled_event = null				
 		this.running_event   = null
 		
 		this.current_pause   = null
+		
+		new Executor (this, {todo: o.todo})
 		
 		if (o.is_paused) this.pause ()
 
@@ -255,7 +254,7 @@ module.exports = class extends EventEmitter {
 		new PlannedEvent (this, ts instanceof Date ? ts : new Date (ts), comment)
 
 	}	
-
+/*
 	try_reset () {
 
 		let {running_event} = this; if (running_event == null) return false
@@ -263,17 +262,17 @@ module.exports = class extends EventEmitter {
 		return running_event.try_reset ()
 
 	}
-
+*/
 	get_period () {
 	
 		let {period} = this.o, {length} = period
 		
-		let i = this._cnt_fails || 0; if (i >= length) i = length - 1
+		let i = this.executor.cnt_fails || 0; if (i >= length) i = length - 1
 	
 		return period [i]
 	
 	}
-
+/*
 	report_result (result) {
 	
 		this.result = result
@@ -307,8 +306,11 @@ module.exports = class extends EventEmitter {
 		this.error = x
 	
 	}
+*/
 		
 	finish () {
+
+		if (this.scheduled_event != null || this.running_event != null) return
 
 		if (this.tick ()) return
 
