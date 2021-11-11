@@ -232,52 +232,38 @@ module.exports = class {
 
 	adjust () {
 	
-		this.schedule_comments = ['as requested']
+		this.schedule_comments = []
 
 		this.adjust_to_nearest_available ()
 
-		this.adjust_to_time_frame ()
+		this.adjust_to_time_slot ()
+
+		let {schedule_comments} = this
+		
+		if (schedule_comments.length === 0) schedule_comments.push ('as requested')
 
 	}
 
 	adjust_to_nearest_available () { // If the next good moment is later, use it instead
-	
+
 		const {date, timer: {next}} = this
-		
+
 		if (next == null) return
 		if (next <= date.getTime ()) return
-	
+
 		this.date = new Date (next)
-		
+
 		this.schedule_comments = ['delayed after last run']
-			
+
 	}
-		
-	adjust_to_time_frame () {
-	
-		const {from, to} = this.timer.o; if (from == null) return
-	
-		let {date} = this, hhmmss = date.toJSON ().slice (11, 19)
 
-		let ge_from    = from <= hhmmss
-		let le_to      =                hhmmss <= to
-		
-		let is_one_day = from <= to
-		
-		let is_in      = is_one_day ? ge_from && le_to : ge_from || le_to
-		
-		if (is_in) return
+	adjust_to_time_slot () {
 
-		if (is_one_day && !le_to) date.setDate (1 + date.getDate ())
+		const {time_slot} = this.timer;               if (time_slot == null) return
 
-		let [h, m, s] = from.split (':')
+		const message = time_slot.adjust (this.date); if (message   == null) return
 
-		date.setHours   (parseInt (h, 10))
-		date.setMinutes (parseInt (m, 10))
-		date.setSeconds (parseInt (s, 10))
-		date.setMilliseconds (0)
-
-		this.schedule_comments.push (`is adjusted to time window ${from}..${to}`)
+		this.schedule_comments.push (message)
 
 	}
 		

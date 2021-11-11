@@ -3,6 +3,7 @@ const LogEvent     = require ('./Log/Events/Timer.js')
 const ErrorEvent   = require ('./Log/Events/Error.js')
 const WrappedError = require ('./Log/WrappedError.js')
 const PlannedEvent = require ('./Timer/PlannedEvent.js')
+const TimeSlot     = require ('./Timer/TimeSlot.js')
 
 const Dia = require ('./Dia.js')
 
@@ -21,6 +22,14 @@ module.exports = class extends EventEmitter {
 		if (o.on_change) this.addListener ('change', o.on_change)
 		
 		this.name = o.name; if (!this.name) throw new Error ('Timer name not set')
+		
+		{
+			
+			const {from, to} = o
+		
+			if (from || to) this.from_to (from, to)
+
+		}
 		
 		this.o = o
 		
@@ -125,8 +134,13 @@ module.exports = class extends EventEmitter {
 	}
 
 	from_to (from, to) {
-		this.o.from = from
-		this.o.to   = to
+
+		this.time_slot =
+
+			from == null && to == null ? null :
+
+			new TimeSlot ({from, to})
+
 	}
 	
 	////////// Presentation
