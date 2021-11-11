@@ -39,19 +39,20 @@ module.exports = class {
 		timer.current_pause = this
 
 	}
-	
+
 	cancel (comment) {
 
 		const {timer, scheduled} = this
 
 		assert (timer.current_pause === this, 'timer.pause differs from this')
-				
-		timer.current_pause = null
-		
+
+		timer.executor.cnt_fails = 0
+		timer.current_pause      = null
+
 		if (this.is_to_reset) {
-		
+
 			timer.on (comment)
-		
+
 		}
 		else if (scheduled) {
 		

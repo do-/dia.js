@@ -55,7 +55,15 @@ module.exports = class {
 		}
 		catch (x) {
 					
-			this.report_error (x)			
+			this.error = x
+			this.cnt_fails ++
+
+			timer.log_write (new WrappedError (x, {log_meta: {
+				...timer.log_meta,
+				parent: this.log_event
+			}}))
+
+			this.pause_if_needed ()
 	
 		}
 		finally {
@@ -99,22 +107,6 @@ module.exports = class {
 		timer.log_write (this.log_event.set ({label}))
 	
 		timer.pause (this.error)
-
-	}
-	
-	report_error (x) {
-	
-		this.error = x
-		this.cnt_fails ++
-		
-		const {timer} = this, {log_meta} = timer, {log_event} = this, {category} = log_event
-		
-		timer.log_write (new WrappedError (x, {log_meta: {
-			...timer.log_meta,
-			parent: this.log_event
-		}}))
-
-		this.pause_if_needed ()
 
 	}
 	

@@ -64,7 +64,6 @@ module.exports = class {
 		}
 		else if (timer.scheduled_event === this) {		
 			timer.scheduled_event = null
-			this.timeout     = null
 			this.date        = null		
 		}
 
@@ -154,6 +153,7 @@ module.exports = class {
 		this.set_status (ST_CANCELLING)
 		
 		clearTimeout (this.timeout)
+		this.timeout = null
 		
 		this.finish ()
 		
@@ -163,9 +163,13 @@ module.exports = class {
 
 	async run () {
 
-		if (this.status !== ST_SCHEDULED) throw new Exception ('Wrong status:' + this.status)
-		
 		const {timer} = this
+
+		if (this.status !== ST_SCHEDULED) return timer.log_write (this.log_event.set ({
+			label: 'Attempt to run () in status ' + STATUS_LABEL [this.status],
+			level: 'warn',
+			phase: 'progress',
+		}))
 
 		this.set_status (ST_RUNNING)
 
