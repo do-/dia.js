@@ -1,3 +1,4 @@
+const assert       = require ('assert')
 const EventEmitter = require ('events')
 const LogEvent     = require ('./Log/Events/Timer.js')
 const ErrorEvent   = require ('./Log/Events/Error.js')
@@ -19,100 +20,70 @@ module.exports = class extends EventEmitter {
 	constructor (o) {
 		
 		super ()
-		
-		if (!(this.conf = o.conf)) throw new Error ('Sorry, conf is now mandatory here')
-		
-		if (o.on_change) this.addListener ('change', o.on_change)
-		
-		this.name = o.name; if (!this.name) throw new Error ('Timer name not set')
-		
-		{
-			
-			const {from, to} = o
-		
-			if (from || to) this.from_to (from, to)
-
-		}
-		
-		this.o = o
-		
-		this.conf.add_timer (this)
-		
-		for (let k of ['period']) o [k] = this.zero_or_more (o [k])
-						
-		this.log_meta = {
-			...(o.log_meta || {}),
-			timer: this
-		}
-		
-		{
-		
-			let K = 'tolerance'; if (K in o) {
-			
-				let v = o [K]
-				
-				if (typeof v == 'string') v = parseInt (v)
-
-				if (!(v >= 0)) throw new Error (`Illegal ${K} value for ${this.name}: '${o[K]}'`)
-
-				this [K] = v
-
-			}			
-			
-		}
-		
-		if (!Array.isArray (o.period)) o.period = [o.period]
-		
-		{
-		
-			let {period} = o, {length} = period; if (period [length - 1] == null) {
-			
-				period.pop (); for (let i of period) if (i == null) throw new Error ('Only last period value may be set as null')
-				
-				let tolerance = length
-				
-				if ('tolerance' in this) {
-
-					if (this.tolerance != tolerance) throw new Error (`Contradicting tolerance values: ${this.tolerance} vs. ${tolerance}`)
-
-				}
-				else {
-				
-					this.tolerance = tolerance
-					
-				}				
-			
-			}
-		
-		}
 
         this.uuid = Dia.new_uuid ()
+		
+		assert (this.conf = o.conf, 'conf not set')
+		assert (this.name = o.name, 'name not set')
+		
+		this.conf.add_timer (this)
+				
+		if (o.on_change)    this.addListener ('change', o.on_change)
+		
+		if (o.from || o.to)	this.from_to (o.from, o.to)
+		
+		if (o.tolerance != null) {
+
+			assert (Number.isInteger (o.tolerance), 'Invalid tolerance value: ' + o.tolerance)
+
+			assert (o.tolerance >= 0, 'Invalid tolerance value: ' + o.tolerance)
+
+			this.tolerance = o.tolerance
+
+			if (this.tolerance === 0) this.tolerance = 1
+
+		}
+		
+		let {period} = o; if (period != null) {
+
+			if (!Array.isArray (period)) period = [period]
+
+			const {length} = period; if (period [length - 1] === null) {
+
+				period.pop ()
+
+				assert (this.tolerance == null || this.tolerance === length, 'tolerance vs period conflict')
+
+				this.tolerance = length
+
+			}
+
+			for (let p of period) {
+
+				assert (Number.isInteger (p), 'Invalid period value: ' + p)
+
+				assert (p >= 0, 'Invalid period value: ' + p)
+
+			}
+			
+			this.period = period
+
+		} 
+						
+		this.log_meta = {...(o.log_meta || {}), timer: this}
 
 		this.scheduled_event = null				
-		this.running_event   = null
-		
-		this.current_pause   = null
+		this.running_event   = null		
 		
 		new Executor (this, {todo: o.todo})
 		
-		if (o.is_paused) this.pause ()
+		this.current_pause   = null
+		if (o.is_paused) this.pause ()		
+
+		if (o.ticker)    this.set_ticker (o.ticker)
 
 	}
 	
-	zero_or_more (p) {
-	
-		if (Array.isArray (p)) return p.map (i => i === null ? null : this.zero_or_more (i))
-
-		if (p == null) return 0
-		
-		if (typeof p !== 'number') p = parseInt (p)
-		
-		if (isNaN (p)) return 0
-		
-		return p < 0 ? 0 : p
-
-	}
-
 	from_to (from, to) {
 
 		this.time_slot =
@@ -235,7 +206,9 @@ module.exports = class extends EventEmitter {
 
 	get_period () {
 	
-		let {period} = this.o, {length} = period
+		let {period} = this; if (period == null) return 0
+		
+		let {length} = period
 		
 		let i = this.executor.cnt_fails || 0; if (i >= length) i = length - 1
 	
@@ -257,7 +230,7 @@ module.exports = class extends EventEmitter {
 		
 	finish () {
 
-		if (!is_idle ()) return
+		if (!this.is_idle ()) return
 
 		if (this.tick ()) return
 		
@@ -295,7 +268,7 @@ module.exports = class extends EventEmitter {
 
 	set_ticker (v) {
 	
-		this.o.ticker = v
+		this.ticker = v
 		
 		this.tick ('ticker setup')
 	
@@ -303,7 +276,7 @@ module.exports = class extends EventEmitter {
 	
 	get_next_tick () {
 	
-		let {ticker} = this.o; if (!ticker) return null
+		let {ticker} = this; if (!ticker) return null
 		
 		return ticker ()
 	

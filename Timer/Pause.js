@@ -58,6 +58,11 @@ module.exports = class {
 			timer.at (scheduled, comment)
 		
 		}
+		else {
+
+			timer.tick (comment)
+
+		}
 
 		timer.notify ()
 

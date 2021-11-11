@@ -60,7 +60,7 @@ module.exports = class {
 	
 	add_timer (timer) {
 
-		let {name} = timer.o; if (name == null) throw new Error ('Timer name not set')
+		let {name} = timer; if (name == null) throw new Error ('Timer name not set')
 
 		let {_timers} = this; if (name in _timers) throw new Error (`Timer named "${name}" was already registered`)
 		
