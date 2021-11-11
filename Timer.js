@@ -6,6 +6,7 @@ const PlannedEvent = require ('./Timer/PlannedEvent.js')
 const TimeSlot     = require ('./Timer/TimeSlot.js')
 const Pause        = require ('./Timer/Pause.js')
 const Executor     = require ('./Timer/Executor.js')
+const TimerPromise = require ('./Timer/Promise.js')
 
 const Dia = require ('./Dia.js')
 
@@ -241,35 +242,32 @@ module.exports = class extends EventEmitter {
 		return period [i]
 	
 	}
+	
+	is_idle () {
+
+		if (this.scheduled_event != null) return false
+		
+		if (this.running_event != null) return false
+		
+		if (this.executor.is_to_reset) return false
+		
+		return true
+
+	}
 		
 	finish () {
 
-		if (this.scheduled_event != null || this.running_event != null) return
+		if (!is_idle ()) return
 
 		if (this.tick ()) return
-
-		let {o: {done, fail}, result, error} = this; if (!done) return
-
-		if (error) return fail (error)
-
-		done (result)
+		
+		this.emit ('stop')
 
 	}
 
 	promise (comment) {
 
-		return new Promise ((done, fail) => {
-
-			let {o} = this
-
-			o.stop_on_error = true
-
-			o.done = done
-			o.fail = fail
-
-			this.on (comment || 'starting as Promise')
-
-		})
+		return new TimerPromise (comment)
 
 	}
 

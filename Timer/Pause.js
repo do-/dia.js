@@ -31,6 +31,11 @@ module.exports = class {
 
 		this.scheduled = timer.clear (this.message)
 		
+		const {executor} = timer
+		
+		this.is_to_reset = executor.is_to_reset
+		executor.is_to_reset = false
+		
 		timer.current_pause = this
 
 	}
@@ -42,8 +47,17 @@ module.exports = class {
 		assert (timer.current_pause === this, 'timer.pause differs from this')
 				
 		timer.current_pause = null
-
-		if (scheduled) timer.at (scheduled, comment)
+		
+		if (this.is_to_reset) {
+		
+			timer.on (comment)
+		
+		}
+		else if (scheduled) {
+		
+			timer.at (scheduled, comment)
+		
+		}
 
 		timer.notify ()
 

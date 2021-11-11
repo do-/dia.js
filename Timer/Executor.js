@@ -56,7 +56,7 @@ module.exports = class {
 		catch (x) {
 					
 			this.report_error (x)			
-		
+	
 		}
 		finally {
 
@@ -86,8 +86,6 @@ module.exports = class {
 
 		const {timer} = this, {tolerance} = timer, {cnt_fails} = this
 		
-		if (timer.o.stop_on_error) timer.clear ('Stop on error')
-
 		if (tolerance == null) return
 
 		if (tolerance > cnt_fails) return
