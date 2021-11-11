@@ -147,9 +147,7 @@ module.exports = class {
 			let h = new clazz (params, ok, fail)
 			
 			h.timer = this.timer
-	
-//			this.timer.log ('launching request ' + h.uuid)
-	
+		
 			h.run ()
 	
 		})

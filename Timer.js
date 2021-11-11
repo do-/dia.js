@@ -38,9 +38,7 @@ module.exports = class extends EventEmitter {
 		this.conf.add_timer (this)
 		
 		for (let k of ['period', 'delay']) o [k] = this.zero_or_more (o [k])
-				
-//		this._cnt_fails = 0
-		
+						
 		this.log_meta = {
 			...(o.log_meta || {}),
 			timer: this
@@ -86,28 +84,7 @@ module.exports = class extends EventEmitter {
 			}
 		
 		}
-/*				
-		if (Array.isArray (o.todo)) {
 
-			let [clazz, params] = o.todo; o.todo = () => new Promise ((ok, fail) => {
-			
-				if (!params.conf) params.conf = this.conf
-				if (!params.pools) params.pools = params.conf.pools
-
-				let h = new clazz (params, ok, fail)
-				
-				h.timer = this
-
-				this.log ('launching request ' + h.uuid)
-
-				h.run ()
-
-			})
-
-		}
-		
-		if (typeof o.todo != 'function') throw new Error ("No valid `todo` set. Got options: " + JSON.stringify (o))
-*/				
         this.uuid = Dia.new_uuid ()
 
 		this.scheduled_event = null				
@@ -254,15 +231,7 @@ module.exports = class extends EventEmitter {
 		new PlannedEvent (this, ts instanceof Date ? ts : new Date (ts), comment)
 
 	}	
-/*
-	try_reset () {
 
-		let {running_event} = this; if (running_event == null) return false
-
-		return running_event.try_reset ()
-
-	}
-*/
 	get_period () {
 	
 		let {period} = this.o, {length} = period
@@ -272,41 +241,6 @@ module.exports = class extends EventEmitter {
 		return period [i]
 	
 	}
-/*
-	report_result (result) {
-	
-		this.result = result
-	
-		this._cnt_fails = 0
-	
-	}
-
-	report_error (x, log_event) {
-		
-		this._cnt_fails ++
-
-		if ('tolerance' in this && this._cnt_fails >= this.tolerance) {
-		
-			this.log_write (log_event.set ({
-				label: `After ${this._cnt_fails} fail(s), the tolerance is exhausted. The timer will be paused.`,
-			}))
-	
-			this.pause (x)
-
-		}
-
-		let {log_meta, conf} = this
-
-		log_meta.parent = x.parent || log_event.parent
-
-		conf.log_event (new WrappedError (x, {log_meta}))
-
-		if (this.o.stop_on_error) this.clear ('Stop on error')
-
-		this.error = x
-	
-	}
-*/
 		
 	finish () {
 

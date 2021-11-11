@@ -29,8 +29,6 @@ module.exports = class {
 		this.timer       = timer
 		this.date        = date
 		this.label       = label
-
-//		this.is_to_reset = false
 		
 		this.log_event   = this.timer.log_start (label)
 		
@@ -75,7 +73,6 @@ module.exports = class {
 		}
 		else if (timer.running_event === this) {		
 			timer.running_event = null
-//			this.is_to_reset = false		
 		}
 		
 //		this.log_info ('Switched to ' + status_label)
@@ -163,64 +160,21 @@ module.exports = class {
 		return date
 
 	}
-/*
-	try_reset () {
-	
-		switch (this.status) {
 
-			case ST_RUNNING: 
-				this.log_info ('run () called when already running, reset planned')
-				this.is_to_reset = true
-				return true
-
-			default:
-				return false
-
-		}
-
-	}
-*/
 	async run () {
 
 		if (this.status !== ST_SCHEDULED) throw new Exception ('Wrong status:' + this.status)
 		
 		const {timer} = this
 
-//		if (timer.try_reset ()) return this.finish ('try_reset () returned true, bailing out') 
-
 		this.set_status (ST_RUNNING)
 
-//		if (timer.is_paused ()) return this.finish ('run () called when paused, bailing out') 
-
-//		timer.next = Date.now () + timer.get_period ()
-/*
-		let log_event = timer.log_write (new LogEvent ({
-		    ...timer.log_meta,
-		    parent: this.log_event,
-			label: 'run () called, next time may be at ' + new Date (timer.next).toJSON ()
-		}))
-*/
 		try {
 
 			await timer.executor.run (this.log_event)
 
-/*			
-			timer.result = null
-	
-			let result = await timer.o.todo ({log_meta: {
-				...timer.log_meta,
-				category: 'app',
-				parent: log_event,
-			}})
-			
-			timer.report_result (result)
-*/
 		}
 		finally {
-
-//			timer.log_finish (log_event)
-			
-//			if (this.is_to_reset) timer.in (0, 'Reset, because invoked during `run ()`')
 
 			this.finish ()
 			
