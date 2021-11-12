@@ -8,21 +8,21 @@ module.exports = class extends Promise {
 
 		timer.tolerance = 1
 
-        super ((ok, fail) => {
+		super ((ok, fail) => {
 
-        	timer.addListener ('stop', () => {
+		timer.addListener ('stop', () => {
 
-        		const {result, error} = timer.executor
+				const {result, error} = timer.executor
 
-        		if (error) return fail (error)
+				if (error) return fail (error)
 
-        		return ok (result)
+				return ok (result)
 
-        	})
-        
-			timer.on (comment)
+			})
 
-        })
+		})
+
+		timer.on (comment)
 
 	}
 

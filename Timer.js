@@ -8,6 +8,7 @@ const TimeSlot     = require ('./Timer/TimeSlot.js')
 const Pause        = require ('./Timer/Pause.js')
 const Executor     = require ('./Timer/Executor.js')
 const TimerPromise = require ('./Timer/Promise.js')
+const Throttle     = require ('./Timer/Throttle.js')
 
 const Dia = require ('./Dia.js')
 
@@ -27,64 +28,31 @@ module.exports = class extends EventEmitter {
 		assert (this.name = o.name, 'name not set')
 		
 		this.conf.add_timer (this)
-				
-		if (o.on_change)    this.addListener ('change', o.on_change)
-		
-		if (o.from || o.to)	this.from_to (o.from, o.to)
-		
-		if (o.tolerance != null) {
 
-			assert (Number.isInteger (o.tolerance), 'Invalid tolerance value: ' + o.tolerance)
+		if (o.on_change) this.addListener ('change', o.on_change)
 
-			assert (o.tolerance >= 0, 'Invalid tolerance value: ' + o.tolerance)
-
-			this.tolerance = o.tolerance
-
-			if (this.tolerance === 0) this.tolerance = 1
-
-		}
-		
-		let {period} = o; if (period != null) {
-
-			if (!Array.isArray (period)) period = [period]
-
-			const {length} = period; if (period [length - 1] === null) {
-
-				period.pop ()
-
-				assert (this.tolerance == null || this.tolerance === length, 'tolerance vs period conflict')
-
-				this.tolerance = length
-
-			}
-
-			for (let p of period) {
-
-				assert (Number.isInteger (p), 'Invalid period value: ' + p)
-
-				assert (p >= 0, 'Invalid period value: ' + p)
-
-			}
-			
-			this.period = period
-
-		} 
-						
+		this.from_to (o.from, o.to)
+					
 		this.log_meta = {...(o.log_meta || {}), timer: this}
 
 		this.scheduled_event = null				
 		this.running_event   = null		
 		
-		new Executor (this, {todo: o.todo})
+		new Executor (this, o)		
+		this.executor.on ('finish', () => this.finish ())
+
+		new Throttle (this, o)
 		
 		this.current_pause   = null
-		if (o.is_paused) this.pause ()		
+		if (o.is_paused) this.pause ()
 
 		if (o.ticker)    this.set_ticker (o.ticker)
 
 	}
 	
 	from_to (from, to) {
+
+		if (from == null && to == null) return this.time_slot = null
 
 		this.time_slot =
 
@@ -98,11 +66,10 @@ module.exports = class extends EventEmitter {
 
 	to_record () {
 
-    	let r = {}, {scheduled_event, running_event, current_pause, next} = this
+    	let r = {}, {scheduled_event, running_event, current_pause} = this
 
     	if (scheduled_event != null) r.ts_scheduled = scheduled_event.date.toJSON ()    
     	if (running_event   != null) r.is_busy      = true    	
-    	if (next            != null) r.ts_closest   = new Date (next).toJSON ()
 		if (current_pause   != null) current_pause.append_info (r)
 
 		return r
@@ -203,18 +170,6 @@ module.exports = class extends EventEmitter {
 		new PlannedEvent (this, ts instanceof Date ? ts : new Date (ts), comment)
 
 	}	
-
-	get_period () {
-	
-		let {period} = this; if (period == null) return 0
-		
-		let {length} = period
-		
-		let i = this.executor.cnt_fails || 0; if (i >= length) i = length - 1
-	
-		return period [i]
-	
-	}
 	
 	is_idle () {
 

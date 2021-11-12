@@ -1,12 +1,15 @@
 const assert       = require ('assert')
+const EventEmitter = require ('events')
 const LogEvent     = require ('../Log/Events/Timer.js')
 const WrappedError = require ('../Log/WrappedError.js')
 
-module.exports = class {
+module.exports = class extends EventEmitter {
 
 	constructor (timer, options) {
 
 		assert (timer, 'timer not set')
+		
+		super ()
 		
 		this.todo             = this.get_todo (options)
 		assert.strictEqual (typeof this.todo, 'function')
@@ -19,7 +22,9 @@ module.exports = class {
 
 		this.result           = null
 		this.error            = null
-		this.cnt_fails        = 0
+		
+		this.on ('error',  error => this.log_error (error))
+		this.on ('finish',    () => this.reset_if_needed ())
 
 	}		
 	
@@ -31,39 +36,22 @@ module.exports = class {
 		this.result  = null
 		this.error   = null
 
-		const {timer} = this 
-
-		timer.next = Date.now () + timer.get_period ()
+		const {timer} = this, lm = {...timer.log_meta, parent: parent_log_event}
 		
-		this.log_event = timer.log_write (new LogEvent ({
-		    ...timer.log_meta,
-		    parent: parent_log_event,
-			phase: 'before',
-			label: 'run () called, next time may be at ' + new Date (timer.next).toJSON ()
-		}))
+		this.log_event = timer.log_write (new LogEvent ({...lm, phase: 'before', label: 'run () called'}))
+
+		this.emit ('start')
 
 		try {
 
-			this.result = await this.todo ({log_meta: {
-				...timer.log_meta,
-				category: 'app',
-				parent: parent_log_event,
-			}})
+			const data = await this.todo ({log_meta: {...lm, category: 'app'}})
 			
-			this.cnt_fails = 0
-		
+			this.emit ('data', this.result = data)
+					
 		}
 		catch (x) {
-					
-			this.error = x
-			this.cnt_fails ++
 
-			timer.log_write (new WrappedError (x, {log_meta: {
-				...timer.log_meta,
-				parent: this.log_event
-			}}))
-
-			this.pause_if_needed ()
+			this.emit ('error', this.error = x)
 	
 		}
 		finally {
@@ -71,12 +59,21 @@ module.exports = class {
 			this.is_busy = false
 
 			timer.log_finish (this.log_event)
-			
-			this.log_event = null
 
-			this.reset_if_needed ()
+			this.emit ('finish')
 
 		}
+
+	}
+	
+	log_error (error) {
+	
+		const {timer} = this
+	
+		timer.log_write (new WrappedError (error, {log_meta: {
+			...timer.log_meta,
+			parent: this.log_event
+		}}))
 
 	}
 	
@@ -86,30 +83,10 @@ module.exports = class {
 		
 		this.is_to_reset = false
 		
-		this.timer.in (0, 'Reset, because invoked during `run ()`')
+		this.timer.on ('Reset, because was invoked during `run ()`')
 	
 	}
-	
-	pause_if_needed () {
 
-		const {timer} = this, {tolerance} = timer, {cnt_fails} = this
-		
-		if (tolerance == null) return
-
-		if (tolerance > cnt_fails) return
-		
-		let label = 'After ' + cnt_fails + ' fail' 
-		
-		if (cnt_fails > 1) label += 's'
-		
-		label += ', the tolerance is exhausted. The timer will be paused.'
-
-		timer.log_write (this.log_event.set ({label}))
-	
-		timer.pause (this.error)
-
-	}
-	
 	get_todo (options) {
 
 		const {todo} = options
@@ -158,14 +135,14 @@ module.exports = class {
 		
 		if (this.is_to_reset) {
 
-			log_info (log_event, 'run () was called when running and ready to reset')
+			this.log_info (log_event, 'run () was called when running and ready to reset')
 
 		}
 		else {
 
 			this.is_to_reset = true
 
-			log_info (log_event, 'run () was called when running, reset planned')
+			this.log_info (log_event, 'run () was called when running, reset planned')
 
 		}
 		
@@ -177,7 +154,7 @@ module.exports = class {
 	
 		if (!this.timer.is_paused ()) return true
 		
-		log_info (log_event, 'run () was called when paused, bailing out')
+		this.log_info (log_event, 'run () was called when paused, bailing out')
 
 		return false
 

@@ -204,17 +204,14 @@ module.exports = class {
 
 	}
 
-	adjust_to_nearest_available () { // If the next good moment is later, use it instead
+	adjust_to_nearest_available () {
 
-		const {date, timer: {next}} = this
+		const {date, timer: {throttle}} = this
+		
+		const message = throttle.adjust (this.date); if (message == null) return
 
-		if (next == null) return
-		if (next <= date.getTime ()) return
-
-		this.date = new Date (next)
-
-		this.schedule_comments = ['delayed after last run']
-
+		this.schedule_comments.push (message)
+		
 	}
 
 	adjust_to_time_slot () {

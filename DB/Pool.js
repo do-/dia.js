@@ -70,7 +70,7 @@ module.exports = class {
     	
     	await q.init ()
     	
-    	let {timer} = q; _timers [timer.o.name] = timer
+    	let {timer} = q; _timers [timer.name] = timer
 		
 		return q
 		
