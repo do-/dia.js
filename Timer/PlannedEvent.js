@@ -94,7 +94,7 @@ module.exports = class {
 	
 		if (this.status !== ST_NEW) throw new Exception ('Wrong status:' + this.status)
 	
-		this.adjust ()
+		const schedule_comments = this.adjust ()
 
 		const delta = this.date.getTime () - Date.now ()
 
@@ -130,11 +130,9 @@ module.exports = class {
 		this.timeout = delta <= 0 ? setImmediate (lambda) : setTimeout (lambda, delta)
 
 		this.set_status (ST_SCHEDULED)
-		
-		this.log_info ('scheduled at ' + this.date.toJSON () + ' (' + this.schedule_comments.join (', ') + ')')
-		
-		this.schedule_comments = []
-	
+
+		this.log_info ('scheduled at ' + this.date.toJSON () + ' (' + schedule_comments + ')')
+			
 	}
 
 	cancel (note) {
@@ -188,40 +186,22 @@ module.exports = class {
 
 	}
 
-	///// Time adjustment		
-
 	adjust () {
 	
-		this.schedule_comments = []
+		let notes = []; for (let i of this.timer.adjusters ()) {
 
-		this.adjust_to_nearest_available ()
+			const note = i.adjust (this.date)
+			
+			if (note != null) notes.push (note)
 
-		this.adjust_to_time_slot ()
-
-		let {schedule_comments} = this
+		}
 		
-		if (schedule_comments.length === 0) schedule_comments.push ('as requested')
-
-	}
-
-	adjust_to_nearest_available () {
-
-		const {date, timer: {throttle}} = this
-		
-		const message = throttle.adjust (this.date); if (message == null) return
-
-		this.schedule_comments.push (message)
+		switch (notes.length) {
+			case  0: return 'as requested'
+			case  1: return notes [0]
+			default: return notes.join (', ')
+		}
 		
 	}
 
-	adjust_to_time_slot () {
-
-		const {time_slot} = this.timer;               if (time_slot == null) return
-
-		const message = time_slot.adjust (this.date); if (message   == null) return
-
-		this.schedule_comments.push (message)
-
-	}
-		
 }

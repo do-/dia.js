@@ -110,7 +110,7 @@ module.exports = class {
 
 		this [S_NEXT_DATE] = Date.now () + delay
 
-		this [S_MESSAGE] = `delayed until ${delay} ms after last run`
+		this [S_MESSAGE] = `delayed until ${delay} ms since the last run`
 
 	}
 
@@ -128,7 +128,7 @@ module.exports = class {
 		
 		if (cnt_fails > 1) label += 's'
 		
-		label += ', will be paused.'
+		label += ', going to be paused.'
 
 		timer.log_write (executor.log_event.set ({label}))
 	

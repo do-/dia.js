@@ -50,6 +50,14 @@ module.exports = class extends EventEmitter {
 
 	}
 	
+	* adjusters () {
+	
+		yield this.throttle
+		
+		const {time_slot} = this; if (time_slot) yield time_slot
+
+	}
+	
 	from_to (from, to) {
 
 		if (from == null && to == null) return this.time_slot = null
