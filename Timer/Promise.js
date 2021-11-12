@@ -6,7 +6,7 @@ module.exports = class extends Promise {
 
 		assert (timer, 'timer not set')
 
-		timer.tolerance = 1
+		timer.throttle.tolerance = 1
 
 		super ((ok, fail) => {
 
