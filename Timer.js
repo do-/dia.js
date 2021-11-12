@@ -239,6 +239,8 @@ module.exports = class extends EventEmitter {
 	
 	get_next_tick () {
 	
+		if (this.is_paused ()) return null
+	
 		let {ticker} = this; if (!ticker) return null
 		
 		return ticker ()
