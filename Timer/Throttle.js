@@ -33,6 +33,7 @@ module.exports = class {
 		this.reset ()	
 		
 		executor.on ('start',    () => this.register_start ())
+		executor.on ('data',     () => this.reset ())
 		executor.on ('error', error => this.register_error (error))
 
 	}
