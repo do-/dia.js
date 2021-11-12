@@ -154,6 +154,8 @@ module.exports = class extends EventEmitter {
 	
 		if (!this.timer.is_paused ()) return true
 		
+		this.timer.current_pause.is_to_reset = true
+		
 		this.log_info (log_event, 'run () was called when paused, bailing out')
 
 		return false
