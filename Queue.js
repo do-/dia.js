@@ -11,6 +11,7 @@ module.exports = class {
     	if (!o.type && o.name) o.type = o.name
     	
 		if (!(this.name = o.name)) throw new Error ('no name nor type is set: ' + JSON.stringify (o))
+		this.label = o.label
 
 		if (!o.action) o.action = 'check'
 
