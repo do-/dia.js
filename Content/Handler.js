@@ -102,6 +102,8 @@ module.exports = class {
     
     to_error (x) {
     
+    	if (x instanceof Error) return x
+
     	const try_validation_error = s => {
 
 	    	let fm = /^#([^#]+)#:\s*(.*)$/.exec (s); if (!fm) return null
