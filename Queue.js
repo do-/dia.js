@@ -23,7 +23,7 @@ module.exports = class {
 
     	if (ts_scheduled_field) this.ts_scheduled_field = ts_scheduled_field
 
-    	let todo = async (log_meta) => {
+    	let todo = async ({log_meta}) => {
 				
 			try {
 
