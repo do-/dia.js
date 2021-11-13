@@ -1,4 +1,11 @@
+const path = require ('path')
 const Event = require ('../Event.js')
+
+const PATH_SEP = '/'
+
+const normalize_path_sep = path.sep === PATH_SEP ? s => s : s => s.split (path.sep).join (PATH_SEP)
+
+const ROOT = normalize_path_sep (path.resolve ('../..'))
 
 module.exports = class extends Event {
 
@@ -6,18 +13,23 @@ module.exports = class extends Event {
 
 		if (!(error instanceof Error)) throw new Error ('Invalid argument: must be an Error')
 
-		let o = {error}
+		let o = {error} 
 		
-		let {log_meta} = error; delete error.log_meta; if (log_meta) {
-		
-			let {parent} = log_meta; delete log_meta.parent; if (parent) {
+		const {log_meta} = error; if (log_meta) {
 
-				for (let k of ['uuid', 'category', 'parent']) o [k] = parent [k]
+			let parent = null; for (let [k, v] of Object.entries (log_meta)) switch (k) {
+
+				case 'parent':
+					parent = v
+					break			
+
+				default:
+					o [k] = v
 
 			}
 
-			for (let k in log_meta) if (!(k in o)) o [k] = log_meta [k]
-		
+			if (parent) for (let k of ['uuid', 'category', 'parent']) o [k] = parent [k]
+
 		}
 
 		o.level = 'error'
@@ -30,25 +42,25 @@ module.exports = class extends Event {
 			
 		let {error} = this, {message, stack} = error, o = {stack}
 		
-		let f = false; for (let k in error) switch (k) {
-			case 'message':
-			case 'path':
-				break
-			default: 
-				o [k] = error [k]
-				f = true
-		}
-		
-		try {
+		let lines = []; for (let i of stack.split ('\n')) {
 
-			return message + ' ' + JSON.stringify (o)
+			i = normalize_path_sep (i.trim ()).replace (ROOT, '')
+
+			lines.push (i)
 
 		}
-		catch (x) {
 
-			return message
+		let our = -1; for (let i = lines.length - 1; i > 0 ; i --) {
+
+			if (!lines [i].includes ('/Dia/') && !lines [i].includes ('/Content/')) continue
+
+			our = i; break
 
 		}
+
+		if (our > -1) lines = lines.slice (0, our + 1)
+
+		return lines.join (' ')
 
 	}
 
