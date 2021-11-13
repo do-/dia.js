@@ -2,6 +2,7 @@ const assert       = require ('assert')
 const EventEmitter = require ('events')
 const LogEvent     = require ('../Log/Events/Timer.js')
 const WrappedError = require ('../Log/WrappedError.js')
+const ErrorEvent   = require ('../Log/Events/Error.js')
 
 module.exports = class extends EventEmitter {
 
@@ -70,10 +71,12 @@ module.exports = class extends EventEmitter {
 	
 		const {timer} = this
 	
-		timer.log_write (new WrappedError (error, {log_meta: {
-			...timer.log_meta,
-			parent: this.log_event
-		}}))
+		timer.log_write (new ErrorEvent (
+			new WrappedError (error, {log_meta: {
+				...timer.log_meta,
+				parent: this.log_event
+			}}))
+		)
 
 	}
 	
