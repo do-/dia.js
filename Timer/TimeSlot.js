@@ -2,12 +2,16 @@ const assert = require ('assert')
 
 const get_hhmmss = (options, key) => {
 
-	const RE_HHMMSS = /^[0-9]{2}:[0-9]{2}:[0-9]{2}$/
+	const RE_HHMMSS = /^[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$/
 
-	let v = options [key]
-	
-	assert (RE_HHMMSS.test (v), 'Invalid `' + key + '` value: ' + v + ' (must be HH:MM:SS)')
-	
+	let v = options [key], carp = () => 'Invalid `' + key + '` value: ' + v + '. Must be HH:MM:SS with HH between 00 and 23'
+
+	assert.strictEqual (typeof v, 'string')
+
+	assert (v <= '23', carp ())
+
+	assert (RE_HHMMSS.test (v), carp ())
+
 	return v
 
 }
@@ -18,8 +22,10 @@ module.exports = class {
 	
 		this.from = get_hhmmss (options, 'from')
 		this.to   = get_hhmmss (options, 'to')
+		
+		assert.notStrictEqual (this.from, this.to)
 
-		this.indexOf = this.from <= this.to ? this.indexOf_from_to : this.indexOf_to_from
+		this.indexOf = this.from < this.to ? this.indexOf_from_to : this.indexOf_to_from
 
 		this.message = `adjusted to time window ${this.from}..${this.to}`;
 
