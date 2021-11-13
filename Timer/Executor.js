@@ -24,8 +24,9 @@ module.exports = class extends EventEmitter {
 		this.result           = null
 		this.error            = null
 		
-		this.on ('error',  error => this.log_error (error))
-		this.on ('finish',    () => this.reset_if_needed ())
+		this.on ('data' ,     ( ) => this.log_info ('finished OK'))
+		this.on ('error',      e  => this.log_info ('finished with ERROR ' + (e.message || e)))
+		this.on ('finish',    ( ) => this.reset_if_needed ())
 
 	}		
 	
@@ -45,7 +46,7 @@ module.exports = class extends EventEmitter {
 
 		try {
 
-			const data = await this.todo ({log_meta: {...lm, category: 'app'}})
+			const data = await this.todo ({log_meta: {...lm, parent: this.log_event, category: 'app'}})
 			
 			this.emit ('data', this.result = data)
 					
@@ -64,19 +65,6 @@ module.exports = class extends EventEmitter {
 			this.emit ('finish')
 
 		}
-
-	}
-	
-	log_error (error) {
-	
-		const {timer} = this
-	
-		timer.log_write (new ErrorEvent (
-			new WrappedError (error, {log_meta: {
-				...timer.log_meta,
-				parent: this.log_event
-			}}))
-		)
 
 	}
 	
@@ -138,14 +126,14 @@ module.exports = class extends EventEmitter {
 		
 		if (this.is_to_reset) {
 
-			this.log_info (log_event, 'run () was called when running and ready to reset')
+			this.log_info ('run () was called when running and ready to reset', log_event)
 
 		}
 		else {
 
 			this.is_to_reset = true
 
-			this.log_info (log_event, 'run () was called when running, reset planned')
+			this.log_info ('run () was called when running, reset planned', log_event)
 
 		}
 		
@@ -159,14 +147,14 @@ module.exports = class extends EventEmitter {
 		
 		this.timer.current_pause.is_to_reset = true
 		
-		this.log_info (log_event, 'run () was called when paused, bailing out')
+		this.log_info ('run () was called when paused, bailing out', log_event)
 
 		return false
 
 	}	
 
-	log_info (log_event, label) {
-
+	log_info (label, log_event = this.log_event) {
+		
 		this.timer.log_write (log_event.set ({
 			label, 
 			phase: 'progress'
