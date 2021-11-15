@@ -3,10 +3,14 @@ const assert = require ('assert')
 module.exports = class extends Promise {
 
 	constructor (timer, comment = 'starting as Promise') {
+	
+		if (typeof timer === 'function') return super (timer)
 
 		assert (timer, 'timer not set')
 
-		timer.throttle.tolerance = 1
+		const {throttle} = timer
+
+		throttle.tolerance = 1
 
 		super ((ok, fail) => {
 

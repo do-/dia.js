@@ -202,7 +202,7 @@ module.exports = class extends EventEmitter {
 
 	promise (comment) {
 
-		return new TimerPromise (comment)
+		return new TimerPromise (this, comment)
 
 	}
 
