@@ -101,9 +101,12 @@ module.exports = class extends Dia.DB.Client {
 
         let log_event = this.log_start (sql, params)
         
-        await this.backend.execute (sql, params)
-
-		this.log_finish (log_event)
+        try {
+	        await this.backend.execute (sql, params)
+        }
+        finally {
+			this.log_finish (log_event)
+        }
 
     }
 

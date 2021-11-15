@@ -33,4 +33,16 @@ module.exports = class extends require ('../Pool.js') {
         await client.release ()
     }
 
+    gen_sql_recreate_views () {
+    
+    	return Object.values (this.model.views)
+    	
+    		.map (({name, sql}) => 
+    		
+    			({sql: `CREATE OR REPLACE VIEW ${name} AS ${sql}`})    		
+    		
+    		)
+
+    }    
+
 }
