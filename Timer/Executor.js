@@ -12,11 +12,12 @@ module.exports = class extends EventEmitter {
 		
 		super ()
 		
+		this.timer            = timer
+
 		this.todo             = this.get_todo (options)
 		assert.strictEqual (typeof this.todo, 'function')
-		
-		this.timer            = timer
-		this.timer.executor   = this
+
+		this.timer.executor   = this		
 		
 		this.is_busy          = false
 		this.is_to_reset      = false
@@ -82,7 +83,7 @@ module.exports = class extends EventEmitter {
 
 		const {todo} = options
 
-		if (Array.isArray (todo) && v.length === 2) {
+		if (Array.isArray (todo) && todo.length === 2) {
 
 			const [clazz, params] = todo
 
