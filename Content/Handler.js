@@ -102,7 +102,7 @@ module.exports = class {
     
     to_error (x) {
     
-    	if (x instanceof Error) return x
+    	if (x instanceof Error && !x.message.match (/^#.*#:.*$/)) return x
 
     	const try_validation_error = s => {
 
