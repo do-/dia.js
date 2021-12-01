@@ -187,7 +187,10 @@ module.exports = class extends Dia.DB.Client {
 		let body = new PassThrough ()
 				
 		data.on ('end',  () => body.end ())
-		data.on ('error', x => body.destroy (x))
+		data.on ('error', x => {
+			body.end ()
+			body.destroy (x)
+		})
 		
 		return await new Promise ((ok, fail) => {
 
