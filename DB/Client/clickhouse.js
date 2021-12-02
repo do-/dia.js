@@ -103,7 +103,7 @@ module.exports = class extends Dia.DB.Client {
         
     	let sql = `INSERT INTO ${table} (${fields})`
    
-		let log_event = this.log_start (sql), log_finish = () => this.log_finish (log_event)
+		let log_event = this.log_start (sql)
 		
 		return new Promise (async (ok, fail) => {
 
@@ -113,7 +113,9 @@ module.exports = class extends Dia.DB.Client {
 
 				callback (null, chunk)			
 
-			}})        	
+			}})     
+			
+			body.on ('close', () => this.log_finish (log_event))
 
 			is.on ('error', x => {
 			
@@ -131,7 +133,6 @@ module.exports = class extends Dia.DB.Client {
 			this.backend.response ({}, body)
 				.then (ok)
 				.catch (fail)
-				.finally (log_finish)
 
 			is.pipe (body)
 
@@ -187,10 +188,7 @@ module.exports = class extends Dia.DB.Client {
 		let body = new PassThrough ()
 				
 		data.on ('end',  () => body.end ())
-		data.on ('error', x => {
-			body.end ()
-			body.destroy (x)
-		})
+		data.on ('error', x => body.destroy (x))
 		
 		return await new Promise ((ok, fail) => {
 
