@@ -1,8 +1,13 @@
+const EventEmitter = require ('events')
 const Timer = require ('./Timer.js')
 
-module.exports = class {
+module.exports = class extends EventEmitter {
 
 	constructor (o) {
+		
+		super ()
+		
+		const {on_empty} = o; if (on_empty) this.on ('empty', on_empty)
 	
 		let {conf} = o; if (!(this.conf = conf)) throw new Error ('conf not set')
 		delete o.conf
@@ -37,6 +42,8 @@ module.exports = class {
 					let is_empty = await this.is_empty ()
 
 					if (is_empty === false) timer.in (0, 'invoked because the queue is not empty')
+					
+					if (is_empty === true) this.emit ('empty')
 
 				}
 				catch (x) {
@@ -99,7 +106,13 @@ module.exports = class {
 			
 		if (list != null) {
 				
-			if (list.length == 0) return this.timer.log ('the queue is empty')
+			if (list.length == 0) {
+			
+				this.emit ('empty')
+			
+				return this.timer.log ('the queue is empty')
+				
+			}
 
 			rq.data = list [0]
 
