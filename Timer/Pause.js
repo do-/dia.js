@@ -37,6 +37,8 @@ module.exports = class {
 		executor.is_to_reset = false
 		
 		timer.current_pause = this
+		
+		this.timer = timer
 
 	}
 
