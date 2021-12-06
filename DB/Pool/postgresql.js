@@ -1212,9 +1212,13 @@ module.exports = class extends require ('../Pool.js') {
 
         if (table.p_k.includes (col.name)) col.NULLABLE = false
 
-        if (col.TYPE_NAME == 'SERIAL' && this.version.major >= 10) {
-			col.TYPE_NAME = 'INT'
-			if (!col.ref) col.COLUMN_DEF = 'AUTO_INCREMENT'
+        if (col.TYPE_NAME == 'SERIAL') {
+            if (col.ref) {
+                col.TYPE_NAME = 'INT'
+            } else if (this.version.major >= 10) {
+                col.TYPE_NAME = 'INT'
+                if (!col.ref) col.COLUMN_DEF = 'AUTO_INCREMENT'
+            }
         }
 
         function get_int_type_name (prefix) {switch (prefix) {
