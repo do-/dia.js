@@ -318,7 +318,17 @@ module.exports = class extends require ('../Pool.js') {
     	].map (sql => ({sql}))
     		
     }
-    
+
+    gen_sql_drop_tables () {
+
+        let table_drops = Object.values (this.model.table_drops || {})
+
+        return [
+            `DROP TABLE IF EXISTS ${table_drops.map (i => i.qname)} CASCADE`,
+        ].map (sql => ({sql}))
+
+    }
+
     gen_sql_create_views () {
 
     	return Object.values (this.model.views || [])
@@ -1400,6 +1410,7 @@ module.exports = class extends require ('../Pool.js') {
             'create_foreign_tables',
 
             'drop_views',
+            'drop_tables',
             'drop_proc',
             
             'recreate_tables',

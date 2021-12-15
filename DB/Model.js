@@ -31,7 +31,7 @@ module.exports = class {
         }
 
         this.todo           = []        
-        this.relation_types = ['tables', 'views', 'view_drops', 'foreign_tables', 'partitioned_tables']
+        this.relation_types = ['tables', 'table_drops', 'views', 'view_drops', 'foreign_tables', 'partitioned_tables']
         this.all_types      = [...this.relation_types, 'procedures', 'functions']
 
         this.reload ()
@@ -203,7 +203,17 @@ module.exports = class {
         
         if (!m.type && (m.data || m.init_data)) m.type = 'table'
 
-        if (m.columns) {
+		if (m.columns === -Infinity) {
+			m.type = 'table_drop'
+			return m
+		}
+
+		if (m.sql === -Infinity) {
+			m.type = 'view_drop'
+			return m
+		}
+
+		if (m.columns) {
 
 			this.on_before_parse_table_columns (m)
 
@@ -228,10 +238,7 @@ module.exports = class {
 
 			}
 
-        }
-		else if (m.sql === -Infinity) {
-			m.type = 'view_drop'
-		} else if (!m.type) {
+        } else if (!m.type) {
 
             m.type = m.returns ? 'function' : 'procedure'
             
