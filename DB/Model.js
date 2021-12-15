@@ -31,8 +31,9 @@ module.exports = class {
         }
 
         this.todo           = []        
-        this.relation_types = ['tables', 'table_drops', 'views', 'view_drops', 'foreign_tables', 'partitioned_tables']
-        this.all_types      = [...this.relation_types, 'procedures', 'functions']
+        this.relation_types = ['tables', 'views', 'foreign_tables', 'partitioned_tables']
+        this.drop_types     = ['table_drops', 'view_drops']
+        this.all_types      = [...this.relation_types, ...this.drop_types, 'procedures', 'functions']
 
         this.reload ()
 

@@ -278,6 +278,9 @@ module.exports = class {
 
         for (let r of Object.values (model.relations)) this.normalize_model_table (r)
 
+        for (let d of Object.values (model.table_drops)) this.normalize_model_table_name (d)
+
+
     }
 
 	normalize_model_table_name (table) {

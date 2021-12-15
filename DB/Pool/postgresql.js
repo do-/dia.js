@@ -321,7 +321,7 @@ module.exports = class extends require ('../Pool.js') {
 
     gen_sql_drop_tables () {
 
-        let table_drops = Object.values (this.model.table_drops || {})
+        let table_drops = Object.values (this.model.table_drops)
 
         return [
             `DROP TABLE IF EXISTS ${table_drops.map (i => i.qname)} CASCADE`,
