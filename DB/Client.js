@@ -229,7 +229,14 @@ module.exports = class {
     	return new Promise ((ok, fail) => {rs
 	    	.on ('error', x  => fail (x))
 	    	.on ('end',   () => ok (data))
-	    	.on ('data',  r  => cb (r, data))
+	    	.on ('data',  r  => {	    	
+	    		try {
+			    	cb (r, data)
+	    		}
+	    		catch (x) {
+	    			rs.destroy (x)
+	    		}
+	    	})
     	})
     
     }
