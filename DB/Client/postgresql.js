@@ -442,7 +442,7 @@ module.exports = class extends Dia.DB.Client {
 
             SELECT
 				CONCAT_WS ('.',
-					CASE WHEN pg_namespace.nspname = 'public' THEN NULL ELSE pg_namespace.nspname END,
+					CASE WHEN pg_namespace.nspname = current_schema () THEN NULL ELSE pg_namespace.nspname END,
 					pg_class.relname
 				) AS name
                 , pg_description.description AS label
@@ -487,11 +487,11 @@ module.exports = class extends Dia.DB.Client {
 
 				SELECT
 					CONCAT_WS ('.', 
-					CASE WHEN ptn.nspname = 'public' THEN NULL ELSE ptn.nspname END,
+					CASE WHEN ptn.nspname = current_schema () THEN NULL ELSE ptn.nspname END,
 					ptc.relname
 				  ) table_name
 					, CONCAT_WS ('.', 
-					CASE WHEN pn.nspname = 'public' THEN NULL ELSE pn.nspname END,
+					CASE WHEN pn.nspname = current_schema () THEN NULL ELSE pn.nspname END,
 					pc.relname
 				  ) AS name
 				  , pg_get_expr (pc.relpartbound, pc.oid, true) AS filter
@@ -528,7 +528,7 @@ module.exports = class extends Dia.DB.Client {
         	SELECT
 			  CONCAT_WS ('.', 
 				  CASE 
-					WHEN c.table_schema = 'public' THEN NULL
+					WHEN c.table_schema = current_schema () THEN NULL
 					ELSE c.table_schema
 				  END
 				  , c.table_name
@@ -572,7 +572,7 @@ module.exports = class extends Dia.DB.Client {
             SELECT
                 CONCAT_WS ('.', 
                 	CASE 
-                    	WHEN pg_namespace.nspname = 'public' THEN NULL
+                        WHEN pg_namespace.nspname = current_schema () THEN NULL
                         ELSE pg_namespace.nspname
                     END
                     , pg_class.relname
@@ -606,7 +606,7 @@ module.exports = class extends Dia.DB.Client {
             SELECT 
                 CONCAT_WS ('.', 
                 	CASE 
-                    	WHEN schemaname = 'public' THEN NULL
+                        WHEN schemaname = current_schema () THEN NULL
                         ELSE schemaname
                     END
                     , tablename
@@ -645,7 +645,7 @@ module.exports = class extends Dia.DB.Client {
 
         let rs = await this.select_all (`
             SELECT
-                CONCAT_WS ('.', CASE WHEN x.table_schema = 'public' THEN NULL ELSE x.table_schema END, x.table_name) AS table_name
+                CONCAT_WS ('.', CASE WHEN x.table_schema = current_schema () THEN NULL ELSE x.table_schema END, x.table_name) AS table_name
                 , c.constraint_name AS ref_name
                 , x.column_name
                 , y.table_name AS ref
