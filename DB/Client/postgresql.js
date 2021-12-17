@@ -645,14 +645,19 @@ module.exports = class extends Dia.DB.Client {
 
         let rs = await this.select_all (`
             SELECT
-                CONCAT_WS ('.', CASE WHEN x.table_schema = current_schema () THEN NULL ELSE x.table_schema END, x.table_name) AS table_name
-                , c.constraint_name AS ref_name
-                , x.column_name
-                , y.table_name AS ref
+                table_from.relname AS table_name
+                , c.conname AS ref_name
+                , columns.attname AS column_name
+                , table_to.relname AS ref
             FROM
-                information_schema.referential_constraints c
-                JOIN information_schema.key_column_usage x ON x.constraint_name = c.constraint_name
-                JOIN information_schema.key_column_usage y ON y.ordinal_position = x.position_in_unique_constraint AND y.constraint_name = c.unique_constraint_name
+                pg_catalog.pg_constraint c
+                LEFT JOIN pg_namespace ON pg_namespace.oid = c.connamespace
+                INNER JOIN pg_class AS table_from ON table_from.oid = c.conrelid
+                INNER JOIN pg_class AS table_to ON table_to.oid = c.confrelid
+                INNER JOIN pg_attribute AS columns ON columns.attrelid = table_from.oid AND c.conkey[1] = columns.attnum
+            WHERE
+                c.contype = 'f'
+                AND pg_namespace.nspname = current_schema
         `, [])          
 
         let tables = this.model.tables
