@@ -1319,11 +1319,19 @@ module.exports = class extends require ('../Pool.js') {
 
 					switch (language) {
 
-						case 'plpgsql': return 'BEGIN NULL; END;'
+						case 'plpgsql': switch (type) {
+						
+							case 'function'  : return 'BEGIN RETURN NULL; END;'
+							
+							case 'procedure' : return 'BEGIN NULL; END;'
+						
+							default: throw new Error ('Unsupported procedure type: ' + type)
+
+						}
 
 						case 'sql': return 'SELECT NULL::' + returns
 
-						default: throw 'Unsupported language: ' + language
+						default: throw new Error ('Unsupported language: ' + language)
 
 					}
 				
