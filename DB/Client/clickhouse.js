@@ -152,11 +152,11 @@ module.exports = class extends Dia.DB.Client {
 
 		}
 
-        const esc = {
-			'\\': '\\\\',
-			'\n': '\\n',
-			'\t': '\\t',
-        }
+        const ESC = new Map ([
+			['\\', '\\\\'],
+			['\n', '\\n'],
+			['\t', '\\t'],
+        ])
         
         function safe (v) {
 
@@ -174,7 +174,7 @@ module.exports = class extends Dia.DB.Client {
 					v = JSON.stringify (v)
 			}
 
-			return v.replace (/[\\\n\t]/g, (m, p1) => esc [p1])
+			return v.replace (/[\\\n\t]/g, m => ESC.get (m))
 			
         }
         
