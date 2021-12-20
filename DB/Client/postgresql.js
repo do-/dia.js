@@ -1,6 +1,7 @@
 const Dia = require ('../../Dia.js')
 const {Readable, Transform, PassThrough} = require ('stream')
 const WrappedError = require ('../../Log/WrappedError.js')
+const esc_tsv      = require ('./util/esc_tsv.js')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {}
 
@@ -324,13 +325,6 @@ module.exports = class extends Dia.DB.Client {
 
 				function safe (v) {
 
-					const esc = {
-						'\\': '\\\\',
-						'\r': '\\r',
-						'\n': '\\n',
-						'\t': '\\t',
-					}
-
 					if (v == null || v === '') return ''
 
 					if (v instanceof Buffer) return '\\\\x' + v.toString ('hex')
@@ -347,7 +341,7 @@ module.exports = class extends Dia.DB.Client {
 							v = JSON.stringify (v)
 					}
 
-					return v.replace (/[\\\n\r\t]/g, m => esc [m])
+					return esc_tsv (v)
 
 				}
 				
