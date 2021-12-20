@@ -1,7 +1,7 @@
 const Dia = require ('../../Dia.js')
-const {Readable, Transform, PassThrough} = require ('stream')
+const {Readable, PassThrough} = require ('stream')
 const WrappedError = require ('../../Log/WrappedError.js')
-const esc_tsv      = require ('./util/esc_tsv.js')
+const to_tsv       = require ('./postgresql/to_tsv.js')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {}
 
@@ -315,48 +315,7 @@ module.exports = class extends Dia.DB.Client {
 
     async load (is, table, cols, o = {NULL: ''}) {
 
-    	if (is._readableState.objectMode) is = is.pipe (new Transform ({
-			
-			readableObjectMode: false,
-			
-			writableObjectMode: true, 		
-			
-			transform (r, encoding, callback) {
-
-				function safe (v) {
-
-					if (v == null || v === '') return ''
-
-					if (v instanceof Buffer) return '\\\\x' + v.toString ('hex')
-
-					if (v instanceof Date) return v.toJSON ().slice (0, 19)
-
-					switch (typeof v) {
-						case 'boolean': 
-							return v ? '1' : '0'
-						case 'number': 
-						case 'bigint': 
-							return '' + v
-						case 'object': 
-							v = JSON.stringify (v)
-					}
-
-					return esc_tsv (v)
-
-				}
-				
-				const lenm1 = cols.length - 1
-
-				for (let i = 0; i <= lenm1; i ++) {
-					this.push (safe (r [cols [i]]))
-					this.push (i < lenm1 ? '\t' : '\n')
-				}
-
-				callback ()
-			
-			}
-			
-    	}))
+    	if (is._readableState.objectMode) is = is.pipe (new to_tsv (cols))
 
 		return new Promise ((ok, fail) => {
 
