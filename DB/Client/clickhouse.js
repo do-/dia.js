@@ -12,6 +12,7 @@ isStream.readable = stream =>
 	typeof stream._readableState === 'object';    
 
 const  Dia          = require ('../../Dia.js')
+const  esc_tsv      = require ('./util/esc_tsv.js')
 const  readline     = require ('readline')
 const {
 	Transform,
@@ -151,12 +152,6 @@ module.exports = class extends Dia.DB.Client {
 	        let _data = data; i = 0; data = new Readable ({objectMode: true, read () {this.push (_data [i ++] || null)}})
 
 		}
-
-        const ESC = new Map ([
-			['\\', '\\\\'],
-			['\n', '\\n'],
-			['\t', '\\t'],
-        ])
         
         function safe (v) {
 
@@ -174,7 +169,7 @@ module.exports = class extends Dia.DB.Client {
 					v = JSON.stringify (v)
 			}
 
-			return v.replace (/[\\\n\t]/g, m => ESC.get (m))
+			return esc_tsv (v)
 			
         }
         
