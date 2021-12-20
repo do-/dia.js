@@ -12,7 +12,7 @@ isStream.readable = stream =>
 	typeof stream._readableState === 'object';    
 
 const  Dia          = require ('../../Dia.js')
-const  esc_tsv      = require ('./util/esc_tsv.js')
+const  LineWriter   = require ('./clickhouse/LineWriter.js')
 const  readline     = require ('readline')
 const {
 	Transform,
@@ -141,135 +141,43 @@ module.exports = class extends Dia.DB.Client {
     
     }    
     
-    async insert (table, data) {
+	async insert (table_name, data) {
     
-        let def = this.model.relations [table]; if (!def) throw 'Table not found: ' + table
+		let table = this.model.relations [table_name]; if (!table) throw 'Table not found: ' + table_name
 
 		if (!isStream.readable (data)) {
 		
-	        if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
+			if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
 	        
-	        let _data = data; i = 0; data = new Readable ({objectMode: true, read () {this.push (_data [i ++] || null)}})
+			let _data = data; i = 0; data = new Readable ({objectMode: true, read () {this.push (_data [i ++] || null)}})
 
 		}
-        
-        function safe (v) {
-
-			if (v == null || v === Infinity || v === -Infinity) return '\\N'
-
-			if (v instanceof Date) return v.toJSON ().slice (0, 19)
-			
-			switch (typeof v) {
-				case 'boolean': 
-					return v ? '1' : '0'
-				case 'number': 
-				case 'bigint': 
-					return '' + v
-				case 'object': 
-					v = JSON.stringify (v)
-			}
-
-			return esc_tsv (v)
-			
-        }
-        
-		const lens = {					
-			"DATE":      10,
-			"DATETIME":  19,
-			"Date":      10,
-			"DateTime":  19,
-		}        
 		
-		let body = new PassThrough ()
-				
-		data.on ('end',  () => body.end ())
-		data.on ('error', x => body.destroy (x))
+		const writer = new LineWriter ({table})
 		
-		return await new Promise ((ok, fail) => {
+		return new Promise ((ok, fail) => {
 
-			let fields = null, {columns} = def
+			data.once   ('error',  fail)
+			writer.once ('error',  fail)
+			
+			data.on ('end', ok)
+			
+			writer.on ('fields', fields => {
 
-			data.on ('close', () => {if (!fields) ok ()})
+				data.off ('end', ok)
 
-			function line (r) {
-
-				let l = ''
-
-				for (let k of fields) {
-
-					let v = r [k], def = columns [k]
-					
-					if (!def.NULLABLE && v == null) {
-					
-						let message = `Null value not allowed for ${table}.${k}`
-						
-						try {
-						
-							message += ' Record: ' + JSON.stringify (r)
-						
-						}
-						catch (xxx) {
-
-							for (let f of fields) message += `, ${f} = ${r [f]}`
-						
-						}
-
-						throw new Error (message)
-					
-					}
-
-					if (l) l += '\t'
-
-					let s = safe (v)
-
-					let len = lens [def.TYPE_NAME]; if (len && s.length > len) s = s.slice (0, len)
-
-					l += s
-
-				}
-
-				return l += '\n'
-
-			}
-
-			data.on ('data', r => {
-
-				if (!fields) {
-									
-					try {
-					
-						fields = Object.keys (r).filter (k => columns [k])
-						
-						if (!fields.length) fail (new Error (`No known fields (${Object.keys (columns)}) found in 1st record: ` + JSON.stringify (r)))
-											
-						ok (this.load (body, table, fields))
-					
-					}
-					catch (x) {
-					
-						return fail (x)
-					
-					}
-
-				}
-				
-				try {
-				
-					body.write (line (r))
-				
-				}
-				catch (x) {
-darn (x)				
-					data.destroy (x)
-				
-				}
+				this.load (writer, table_name, fields)
+					.then (ok)
+					.catch (fail)
 
 			})
+			
+			data.pipe (writer)
 
 		})
 
     }
-
+    
     is_auto_commit () {
     	return true
     }
