@@ -9,30 +9,23 @@ const esc_tsv = s => {
 
 	const {length} = s; if (length === 0) return s
 
-	let result = '', from = 0, to = 0
-
-	while (to < length) {
+	let result = '', from = 0, to = 0; while (to < length) {
 	
-		const c = s.charCodeAt (to)
-
-		if (ESC.has (c)) {
-
-			result += s.slice (from, to)
+		const c = s.charCodeAt (to); if (!ESC.has (c)) {
 			
-			result += ESC.get (c)
-
 			to ++
 
-			from = to
-		
+			continue
+			
 		}
-		else {
 
-			to ++
+		result += s.slice (from, to) + ESC.get (c)
 
-		}
+		from = ++ to
 
 	}
+
+	if (from === 0) return s
 
 	return result + s.slice (from)
 
