@@ -13,6 +13,7 @@ isStream.readable = stream =>
 
 const  Dia          = require ('../../Dia.js')
 const  LineWriter   = require ('./clickhouse/LineWriter.js')
+const  SqlPrepender = require ('./clickhouse/SqlPrepender.js')
 const  readline     = require ('readline')
 const {
 	Transform,
@@ -102,45 +103,46 @@ module.exports = class extends Dia.DB.Client {
     
     async load (is, table, fields) {
         
-    	let sql = `INSERT INTO ${table} (${fields})`
+    	const sql = `INSERT INTO ${table} (${fields})`, body = new SqlPrepender (sql)
    
-		let log_event = this.log_start (sql)
-		
-		return new Promise (async (ok, fail) => {
+		const log_event = this.log_start (sql)
 
-			let body = new Transform ({transform (chunk, encoding, callback) {
+		try {
 
-				if (sql) {this.push (sql + ' FORMAT TSV\n'); sql = null}
-
-				callback (null, chunk)			
-
-			}})     
+			await new Promise (async (ok, fail) => {
 			
-			body.on ('close', () => this.log_finish (log_event))
+				let error = null
 
-			is.on ('error', x => {
-			
-				fail (x)
+				is.on ('error', x => {
+				
+					error = x
 
-				try {
-					body.end ()
-				}
-				catch (e) {
-					darn (e)
-				}
-			
+					try {
+						body.end ()
+					}
+					catch (e) {
+						darn (e)
+					}
+
+				})
+
+				this.backend.response ({}, body)
+					.then (() => error ? fail (error) : ok ())
+					.catch (x => fail (error || x))
+
+				is.pipe (body)
+
 			})
 
-			this.backend.response ({}, body)
-				.then (ok)
-				.catch (fail)
+		}
+		finally {
+		
+			this.log_finish (log_event)
 
-			is.pipe (body)
+		}
 
-		}) 
-    
-    }    
-    
+    }
+
 	async insert (table_name, data) {
     
 		let table = this.model.relations [table_name]; if (!table) throw 'Table not found: ' + table_name
@@ -155,7 +157,7 @@ module.exports = class extends Dia.DB.Client {
 		
 		const writer = new LineWriter ({table})
 		
-		return new Promise ((ok, fail) => {
+		await new Promise ((ok, fail) => {
 
 			data.once   ('error',  fail)
 			writer.once ('error',  fail)
