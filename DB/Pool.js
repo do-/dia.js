@@ -327,7 +327,7 @@ module.exports = class {
 				let a = table.on_after_add_table
 
 				if (a) {
-					if (typeof a === 'function') a = a (table)
+					if (typeof a === 'function') a = a.call (table, table)
 					if (a == null) a = []
 					if (!Array.isArray (a)) a = [a]
 					for (let i of a) result.push (i)
