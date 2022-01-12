@@ -17,7 +17,31 @@ module.exports = class {
         default: throw 'Unknown op: ' + src
     }}
 
-    adjust_term (s) {
+    get_params (term) {
+        if (typeof term != 'object') {
+            return term;
+        }
+        if (term.field === undefined && Array.isArray(term.value)) {
+            return term.value.map(sub => this.get_params(sub)).reduce((acc, val) => acc.concat(val), []);
+        }
+
+        return term.value;
+    }
+
+    adjust_term (s, nested = false) {
+        // Nested terms
+        if (s.field === undefined) {
+            if (!['and', 'or', 'not'].includes(s.operator)) {
+                throw 'Unsupported operator: ' + s.operator;
+            }
+            
+            if (!Array.isArray(s.value)) s.value = [s.value];
+            for (let sub of s.value) this.adjust_term(sub, true);
+            s.expr = (s.operator == 'not') ? `(NOT ${s.value[0].expr})` :
+                `(${s.value.map(sub => sub.expr).join(` ${s.operator.toUpperCase()} `)})`;
+            s.value = this.get_params(s);
+            return;
+        }
     
         if (s.operator == 'between') {
         
@@ -85,6 +109,12 @@ module.exports = class {
 				if (s.operator == 'less') s.value += 'T23:59:59.999'        	
             }
         
+        }
+
+        if (nested && s.field) {
+            if (['in', 'not in'].includes(s.operator)) {
+                s.expr += `(${s.value.map(() => '?').join(',')})`;
+            }
         }
     
     }
