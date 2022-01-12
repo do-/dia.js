@@ -1,3 +1,6 @@
+const LOGICAL_OPERATORS = new Set(['and', 'or', 'not']);
+const IN_SET_OPERATORS = new Set(['in', 'not in']);
+
 module.exports = class {
 
     op (src) {switch (src) {
@@ -31,7 +34,7 @@ module.exports = class {
     adjust_term (s, nested = false) {
         // Nested terms
         if (s.field === undefined) {
-            if (!['and', 'or', 'not'].includes(s.operator)) {
+            if (!LOGICAL_OPERATORS.has(s.operator)) {
                 throw 'Unsupported operator: ' + s.operator;
             }
             
@@ -112,7 +115,7 @@ module.exports = class {
         }
 
         if (nested && s.field) {
-            if (['in', 'not in'].includes(s.operator)) {
+            if (IN_SET_OPERATORS.has(s.operator)) {
                 s.expr += `(${s.value.map(() => '?').join(',')})`;
             }
         }
