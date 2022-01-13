@@ -663,7 +663,7 @@ module.exports = class extends Dia.DB.Client {
 				ids, 
 				idx,
 				pk,
-				key: p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")}`
+				key: p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")})`
 			})
 			
 		}
