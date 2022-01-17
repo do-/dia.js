@@ -521,6 +521,10 @@ module.exports = class extends require ('../Pool.js') {
 
 						if (col.ref != table.name) continue
 
+						if (!ref_table.existing.columns[col.name]) continue
+
+						if (ref_table.existing.columns[col.name].TYPE_NAME != table.existing.columns[table.existing.pk].TYPE_NAME) continue
+
 						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} DISABLE TRIGGER USER`, params: []})
 						result.push (this.gen_sql_add_column (ref_table, tmp_col))
