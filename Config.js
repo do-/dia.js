@@ -92,11 +92,17 @@ module.exports = class {
 		
 			let root = '../../slices'
 		
-			for (let name of fs.readdirSync (root)) 
+			for (let name of fs.readdirSync (root)) {
 			
+				const stat = fs.statSync (Path.join (root, name))
+				
+				if (!stat.isDirectory ()) continue
+
 				if (this.is_slice_to_load (name))
 
 					slices [name] = this.load_slice (`${root}/${name}/back/lib`)
+					
+			}		
 
 		}
 		catch (x) {
