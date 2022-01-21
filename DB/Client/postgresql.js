@@ -315,8 +315,6 @@ module.exports = class extends Dia.DB.Client {
 
     async load (is, table, cols, o = {NULL: ''}) {
 
-    	if (is._readableState.objectMode) is = is.pipe (new to_tsv (cols))
-
 		return new Promise ((ok, fail) => {
 
 			let sql = ''; for (let k in o) {
@@ -359,6 +357,8 @@ module.exports = class extends Dia.DB.Client {
 
 			os.on ('error', croak)
 			is.on ('error', croak)
+			
+    		if (is._readableState.objectMode) is = is.pipe (new to_tsv (cols))
 
 			is.pipe (os)
 
