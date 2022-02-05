@@ -96,7 +96,13 @@ module.exports = class extends require ('../Pool.js') {
         else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER') {
             col.TYPE_NAME = 'Decimal'
         }
-        else if (/TIME/.test (col.TYPE_NAME)) {
+        else if (col.TYPE_NAME == 'DATE') {
+            col.TYPE_NAME = 'Date'
+        }
+        else if (col.TYPE_NAME == 'TIME') {
+            col.TYPE_NAME = 'String'
+        }
+        else if (col.TYPE_NAME == 'DATETIME' || col.TYPE_NAME == 'TIMESTAMP') {
             col.TYPE_NAME = 'DateTime'
         }
         else if (col.TYPE_NAME == 'CHECKBOX') {
@@ -246,6 +252,42 @@ module.exports = class extends require ('../Pool.js') {
     
     gen_sql_upsert_data () {
         return [] 
+    }
+    
+    gen_sql_alter_columns () {
+
+        let result = []
+
+        for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [type])) {
+
+            let existing_columns = table.existing.columns
+
+            for (let col of Object.values (table.columns)) {
+            
+            	const ex = existing_columns [col.name]; if (!ex) continue
+            	
+            	if (
+
+            		 col.TYPE_NAME  === ex.TYPE_NAME  && 
+            		 col.NULLABLE   === ex.NULLABLE   && 
+            		 col.COLUMN_DEF  == ex.COLUMN_DEF && 
+            		(col.COLUMN_SIZE == ex.COLUMN_SIZE || parseInt (col.COLUMN_SIZE) < parseInt (ex.COLUMN_SIZE))
+
+            	) continue
+
+		        const on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
+		            	
+				result.push ({
+					sql: `ALTER TABLE ${table.name}${on_cluster} MODIFY COLUMN ${col.name} ` + this.gen_sql_column_definition (col),
+					params: []
+				})
+
+            }
+
+        }
+
+        return result
+
     }
     
     gen_sql_comment_columns () {

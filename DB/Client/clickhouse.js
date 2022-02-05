@@ -21,6 +21,10 @@ const {
 	Readable,
 }   				= require ('stream')
 
+const RE_NULLABLE = /^Nullable\((.*?)\)$/
+const RE_CAST     = /^CAST\('?(.*?)'?,.*\)$/i
+const RE_DIM      = /^(.*?)\((\d+)\)$/
+
 module.exports = class extends Dia.DB.Client {
     
     async release (success) {   
@@ -274,20 +278,41 @@ module.exports = class extends Dia.DB.Client {
 
         let {tables, partitioned_tables} = this.model
         
-        for (let r of rs) {
+        for (const {table, name, type, comment, default_kind, default_expression} of rs) {
 
-            let t = tables [r.table] || partitioned_tables [r.table]
-            if (!t) continue
+            const t = tables [table] || partitioned_tables [table]; if (!t) continue
             
-            let {name} = r
-            
-			let col = {
-				name,
-				TYPE_NAME: r.type,
-				REMARK: r.comment,
-			}
+			let col = {name, REMARK: comment}
 			
-			if (r.default_kind == 'DEFAULT') col.COLUMN_DEF = r.default_expression
+			{
+			
+				const m = RE_NULLABLE.exec (type)
+				
+				col.TYPE_NAME = (col.NULLABLE = !!m) ? m [1] : type
+			
+			}
+
+			{
+			
+				const m = RE_DIM.exec (col.TYPE_NAME)
+				
+				if (m) {
+
+					col.TYPE_NAME = m [1]
+
+					col.COLUMN_SIZE = m [2]
+
+				}
+			
+			}
+
+			if (default_kind === 'DEFAULT') {
+
+				const m = RE_CAST.exec (default_expression)
+
+				col.COLUMN_DEF = m ? m [1] : default_expression
+
+			}
 
 			t.existing.columns [name] = col
             
