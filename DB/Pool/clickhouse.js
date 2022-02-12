@@ -271,7 +271,8 @@ module.exports = class extends require ('../Pool.js') {
             		 col.TYPE_NAME  === ex.TYPE_NAME  && 
             		 col.NULLABLE   === ex.NULLABLE   && 
             		 col.COLUMN_DEF  == ex.COLUMN_DEF && 
-            		(col.COLUMN_SIZE == ex.COLUMN_SIZE || parseInt (col.COLUMN_SIZE) < parseInt (ex.COLUMN_SIZE))
+            		(col.COLUMN_SIZE == ex.COLUMN_SIZE || parseInt (col.COLUMN_SIZE) < parseInt (ex.COLUMN_SIZE)) &&
+            		(col.DECIMAL_DIGITS == ex.DECIMAL_DIGITS || parseInt (col.DECIMAL_DIGITS) < parseInt (ex.DECIMAL_DIGITS))
 
             	) continue
 

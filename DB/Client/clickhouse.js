@@ -23,7 +23,7 @@ const {
 
 const RE_NULLABLE = /^Nullable\((.*?)\)$/
 const RE_CAST     = /^CAST\('?(.*?)'?,.*\)$/i
-const RE_DIM      = /^(.*?)\((\d+)\)$/
+const RE_DIM      = /^(.*?)\((.+)\)$/
 
 module.exports = class extends Dia.DB.Client {
     
@@ -299,8 +299,18 @@ module.exports = class extends Dia.DB.Client {
 				if (m) {
 
 					col.TYPE_NAME = m [1]
+					
+					const p = m [2].indexOf (','); if (p < 0) {
 
-					col.COLUMN_SIZE = m [2]
+						col.COLUMN_SIZE = m [2]
+
+					}
+					else {
+
+						col.COLUMN_SIZE    = m [2].slice (0, p)
+						col.DECIMAL_DIGITS = m [2].slice (p + 1).trim ()
+
+					}
 
 				}
 			
