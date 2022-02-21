@@ -1,6 +1,6 @@
 const LOGICAL_OPERATORS = new Set(['and', 'or', 'not']);
 const IN_SET_OPERATORS = new Set(['in', 'not in']);
-
+const PRODUCT = Symbol ('__product__')
 module.exports = class {
 
     op (src) {switch (src) {
@@ -63,7 +63,7 @@ module.exports = class {
         	}
         	        
         }
-        
+
         switch (s.operator) {
         
         	case 'null':
@@ -76,6 +76,12 @@ module.exports = class {
 				s.expr = s.field + ' <>'
         		break
         		
+        	case 'contains':
+        		if (this [PRODUCT] === 'clickhouse') {
+        			s.expr = `(positionCaseInsensitiveUTF8(${s.field}, ?) > 0)`
+        			break
+        		}
+
         	default:
 				s.expr = s.field + this.op (s.operator)
 				if (s.value == null) s.value = undefined
@@ -95,7 +101,8 @@ module.exports = class {
         }
         else if (s.value != null) {
         
-            s.value = String (s.value).trim ()            
+            s.value = String (s.value).trim ()
+            
             if (s.expr.indexOf ('LIKE') > -1) {
 
             	s.value = s.value
@@ -166,6 +173,7 @@ module.exports = class {
     }
 
     constructor (q, db) {  
+        this [PRODUCT] = db ? db.product : 'postgresql'
         this.set_sort (q.sort)
         this.set_search (q.search, q.searchLogic)
         if (q.limit > 0) this.LIMIT = [q.limit, q.offset]
