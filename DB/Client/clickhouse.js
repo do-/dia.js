@@ -47,7 +47,7 @@ module.exports = class extends Dia.DB.Client {
        	       	
        	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
 
-		input.on ('end', () => this.log_finish (log_event))
+		input.on ('close', () => this.log_finish (log_event))
 
 		let reader = readline.createInterface ({input})
 
