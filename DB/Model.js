@@ -406,6 +406,22 @@ module.exports = class {
     	return `Проверьте, пожалуйста, правильность заполнения поля "${col.REMARK.replace(/%/g, '%%')}"`
     
     }
+
+	cleanup () {
+
+		const {tables, views} = this
 	
+		if (tables) for (let i of Object.values (tables)) delete i.triggers
+
+		if (views) for (let i of Object.values (views)) delete i.sql
+
+		try {
+			if (global.gc) global.gc ()
+		}
+		catch (x) {
+			darn (x)
+		}
+
+	}
 
 }
