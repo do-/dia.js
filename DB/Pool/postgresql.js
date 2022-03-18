@@ -962,6 +962,8 @@ module.exports = class extends require ('../Pool.js') {
         let glob = `ix_${table.name}_${k}`
 
         let src = table.keys [k]
+        
+        if (src === -Infinity) src = null
 
         if (src != null) {        
         	if (typeof src == 'object') {
