@@ -543,7 +543,8 @@ module.exports = class extends require ('../Pool.js') {
 
             result.push ({sql: `DROP TABLE ${table.qname} CASCADE`, params: []})
             result.push ({sql: `ALTER TABLE ${tmp_table.qname} RENAME TO ${table.qname}`, params: []})
-            
+            result.push ({sql: `ALTER INDEX IF EXISTS ${tmp_table.name}_pkey RENAME TO ${table.name}_pkey`, params: []})
+
             table.existing.pk  = table.pk
             table.existing.p_k = table.p_k
             for (let name of table.p_k) table.existing.columns [name] = table.columns [name]
