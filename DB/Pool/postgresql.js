@@ -925,39 +925,40 @@ module.exports = class extends require ('../Pool.js') {
                 
                 let glob = `on_${name}_${table.name}`
                 
-                result.push ({sql: `DROP TRIGGER IF EXISTS ${glob} ON ${table.qname}`})
+                result.push ({sql: `DROP TRIGGER IF EXISTS "${glob}" ON ${table.qname}`})
                 
                 if (!src) continue
+                
+                const QUOT = '$_TTT_$'
 
                 result.push ({sql: `
-
-                    CREATE OR REPLACE FUNCTION ${glob}() RETURNS trigger AS \$${glob}\$
-
-                        ${src}
-
-                    \$${glob}\$ LANGUAGE plpgsql;
-
-                `})
+                	CREATE OR REPLACE FUNCTION 
+                		"${glob}" () 
+                	RETURNS 
+                		trigger 
+                	AS 
+                		${QUOT}${src}${QUOT} 
+                	LANGUAGE 
+	                	plpgsql;`
+                })
 
                 result.push ({sql: `
-
                     CREATE TRIGGER 
-                        ${glob}
+                        "${glob}"
                     ${phase} ${events.join (' OR ')} ON 
                         ${table.name}
                     FOR EACH ROW EXECUTE PROCEDURE 
-                        ${glob} ();
-
-                `})
+                        "${glob}" ();`
+				})
 
             }
-        
+
         }
-        
+
         return result
 
     }
-    
+
     normalize_model_table_key (table, k) {
 
         let glob = `ix_${table.name}_${k}`
