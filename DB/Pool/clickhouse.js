@@ -93,7 +93,7 @@ module.exports = class extends require ('../Pool.js') {
         else if (/(BINARY|BLOB|CHAR|JSON|STRING|TEXT|XML)$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'String'
         }
-        else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER') {
+        else if (col.TYPE_NAME == 'DECIMAL' || col.TYPE_NAME == 'MONEY' || col.TYPE_NAME == 'NUMBER' || col.TYPE_NAME == 'NUMERIC') {
             col.TYPE_NAME = 'Decimal'
         }
         else if (col.TYPE_NAME == 'DATE') {
