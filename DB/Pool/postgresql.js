@@ -1350,7 +1350,16 @@ module.exports = class extends require ('../Pool.js') {
 				body = '$$' + body + '$$'
 				
 				result.push ({sql: [
-					'CREATE OR REPLACE',
+					'DROP',
+					type.toUpperCase (),
+					'IF EXISTS',
+					name,
+					'(' + vars (arg) + ')',
+					'CASCADE',
+				].filter (i => i).join (' ')})
+				
+				result.push ({sql: [
+					'CREATE',
 					type.toUpperCase (),
 					name,
 					'(' + vars (arg) + ')',
