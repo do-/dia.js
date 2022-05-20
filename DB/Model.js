@@ -258,7 +258,7 @@ module.exports = class {
         for (let name in columns) {
             let column = columns [name]
             if (typeof column === 'string') column = this.parse_column (column)
-            column.name = name
+            if (typeof column === 'object') column.name = name
             columns [name] = column
         }
     }

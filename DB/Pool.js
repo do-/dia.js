@@ -295,6 +295,8 @@ module.exports = class {
     }
     
     normalize_model_table_column (table, col) {
+    
+		if (typeof col !== 'object') return
 
         if (!col.TYPE_NAME && col.ref) {
 

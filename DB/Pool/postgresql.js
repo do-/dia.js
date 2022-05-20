@@ -768,11 +768,26 @@ module.exports = class extends require ('../Pool.js') {
     
     	let {existing, columns} = table
     	
-    	for (let action of ['add', 'alter', 'set_default'])
+    	for (let name of Object.keys (columns).sort ()) {
     	
-    		for (let name of Object.keys (columns).sort ())
+    		const col = columns [name]
 
-	    		this [`add_sql_${action}_column`] (table, columns [name], existing.columns, result)
+    		if (col === -Infinity) {
+    			
+    			if (name in existing.columns) result.push ({sql: `ALTER TABLE ${table.qname} DROP COLUMN IF EXISTS "${name}" CASCADE`, params: []})
+    			
+    			delete columns [name]
+    			
+    		}
+    		else {
+    		
+				for (let action of ['add', 'alter', 'set_default'])
+
+		    		this [`add_sql_${action}_column`] (table, col, existing.columns, result)
+
+    		}
+    			
+		}
 
     }
 
