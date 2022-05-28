@@ -171,6 +171,22 @@ module.exports = class {
                             
                         }
                         
+                        adjust_date_params (columns) {
+
+                        	if (this.cols.length !== 1) return
+
+                        	const def = columns [this.cols [0]]; if (!def) return
+
+                        	const {TYPE_NAME} = def, is_ts = /^(DATETIME|TIMESTAMP)$/i.test (TYPE_NAME)
+
+                        	if (!is_ts) return
+                        	
+                        	const fix = v => typeof v === 'string' && v.length === 10 ? v + 'T00:00:00' : v
+                        	
+                        	this.params = this.params.map (fix)
+                        	
+                        }
+                        
                         adjust_date_filter (columns) {
                         
                         	if (this.params.length != 1) return
@@ -219,6 +235,7 @@ module.exports = class {
                                 this.sql = this.adjust_field_names (src)
                                 
                                 this.adjust_date_filter (columns)
+                                this.adjust_date_params (columns)
                                 
                             }
 
