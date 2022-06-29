@@ -395,11 +395,13 @@ module.exports = class {
                     this.sql += ` ON (${this.join_condition}`
                     for (let filter of this.filters) {
                         this.sql += ` AND ${filter.sql}`
-                        for (let param of filter.params) query.params.push (
-                            typeof param !== 'boolean' ? param :
-                            param ? 1 :
-                            0
-                        )
+                        for (let param of filter.params) {
+                            let v = typeof param !== 'boolean' ? param :
+                                    param ? 1 :
+                                    0
+                            query.params.push (v)
+                            if (this.is_inner) query.params_cnt.push (v)
+                        }
                     }
                     this.sql += ')'
                 }
@@ -414,6 +416,7 @@ module.exports = class {
         for (let part of this.parts) part.adjust_cols ()
 
         this.params = []
+        this.params_cnt = []
         for (let part of this.parts) part.adjust_join ()
         
         let get_sql = (x) => x.sql
@@ -422,17 +425,22 @@ module.exports = class {
         this.sql += this.cols.map (get_sql)
         this.sql += '\nFROM '
         this.sql += this.parts.map (get_sql).join ('')
-        
+
         let filters = this.parts [0].filters
+
+        let root_params = []
+        for (let filter of filters) for (let param of filter.params) root_params.push (param)
+
         if (filters.length) {
             this.sql += '\nWHERE '
             this.sql += filters.map (get_sql).join ('\n\tAND ')
-            for (let filter of filters) for (let param of filter.params) this.params.push (param)
+            this.params.push(...root_params)
         }
         
         if (this.limit) {
         	this.sql_cnt = 'SELECT COUNT(*) FROM ' + this.parts.filter (p => p.is_root || p.is_inner	).map (get_sql).join ('')
 	        if (filters.length) this.sql_cnt += ' WHERE ' + filters.map (get_sql).join (' AND ')
+            this.params_cnt.push(...root_params)
         }
 
         if (this.order) this.sql += `\nORDER BY \n\t ${this.order}`
