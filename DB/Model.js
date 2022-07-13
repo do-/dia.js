@@ -345,6 +345,8 @@ module.exports = class {
 		}
 		else {
 
+			if (tab_or_col === -Infinity) return false
+
 			for (let k of ['MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in tab_or_col) return true
 
 		}	
