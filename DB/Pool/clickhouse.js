@@ -181,17 +181,26 @@ module.exports = class extends require ('../Pool.js') {
         
         for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [type])) {
         
-            let existing_columns = table.existing.columns
-
             let after = table.on_after_add_column
-        
-            for (let col of Object.values (table.columns)) {
 
-            	let name = col.name
+            let {existing, columns} = table
+
+            for (let name of Object.keys (columns).sort ()) {
+
+                let col = columns [name]
+
+                if (col === -Infinity) {
+
+                    if (name in existing.columns) result.push ({sql: `ALTER TABLE ${table.name} DROP COLUMN IF EXISTS "${name}"`, params: []})
+
+                    delete columns [name]
+
+                    continue
+                }
 
             	if (table.p_k.includes (name)) continue
 
-            	let ex = existing_columns [name]; if (ex) {
+                let ex = existing.columns [name]; if (ex) {
 
 					if (/UInt32/.test (ex.TYPE_NAME) && !/UInt32/.test (col.TYPE_NAME)) {
 
@@ -215,9 +224,9 @@ module.exports = class extends require ('../Pool.js') {
                     if (a) for (let i of a) result.push (i)
                 }                
 
-                existing_columns [col.name] = clone (col)
+                existing.columns [name] = clone (col)
                 
-                delete existing_columns [col.name].REMARK
+                delete existing.columns [name].REMARK
 
             }
 
