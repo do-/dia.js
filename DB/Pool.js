@@ -280,6 +280,8 @@ module.exports = class {
 
         for (let d of Object.values (model.table_drops)) this.normalize_model_table_name (d)
 
+        for (let d of Object.values (model.view_drops)) this.normalize_model_table_name (d)
+
 
     }
 
