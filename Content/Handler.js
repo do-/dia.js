@@ -321,6 +321,8 @@ module.exports = class {
         this.__resources.push (db)
 
         if (db.begin && this.is_transactional ()) await db.begin ()
+        
+        db.handler = this
 
         return db
 

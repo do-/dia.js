@@ -9,6 +9,9 @@ module.exports = class {
         this.backend = backend
     }
     
+    async release () {
+    }
+
     query (def) {
         return new Dia.DB.Query (this.model, def)
     }
