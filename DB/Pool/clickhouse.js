@@ -125,11 +125,15 @@ module.exports = class extends require ('../Pool.js') {
         
         if (col.TYPE_NAME == 'String') {
             delete col.COLUMN_SIZE
-        }                
+        }
 
-        if (/^uuid_generate_v4/i.test (col.COLUMN_DEF)) {
-			col.COLUMN_DEF = 'generateUUIDv4()'
-        }                
+		{
+
+			const m = /^\s*uuid_generate_v(\d+)/i.exec (col.COLUMN_DEF)
+
+			if (m) col.COLUMN_DEF = m [1] == 4 ? 'generateUUIDv4()' : null
+
+		}
         
         if (table.p_k.includes (col.name)) col.NULLABLE = false
 
