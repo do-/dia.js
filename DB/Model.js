@@ -62,8 +62,10 @@ module.exports = class {
         for (let m of merged) {
 
         	m.model = this
+        	
+        	const k = m.type + 's'; if (!(k in this)) this [k] = {}
 
-        	this [m.type + 's'] [m.name] = m
+        	this [k] [m.name] = m
 
         }
                 
@@ -78,8 +80,12 @@ module.exports = class {
 			}
 
 	        for (let k of ['data', 'init_data', 'sql', 'body', 'queue']) postpone (m, k)
-
-			let {triggers} = m; if (triggers) for (let k in triggers) postpone (triggers, k)
+	        
+	        if (m.type === 'table') {
+	        
+				let {triggers} = m; if (triggers) for (let k in triggers) postpone (triggers, k)
+	        
+	        }
 
 		}
 
