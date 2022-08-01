@@ -63,7 +63,13 @@ module.exports = class {
 
         	m.model = this
         	
-        	const k = m.type + 's'; if (!(k in this)) this [k] = {}
+        	const k = m.type + 's'; if (!(k in this)) {
+
+				this.all_types.push (k)
+
+        		this [k] = {}
+
+        	}
 
         	this [k] [m.name] = m
 
@@ -417,18 +423,19 @@ module.exports = class {
 
 	cleanup () {
 
-		const {tables, views} = this
-	
-		if (tables) for (let i of Object.values (tables)) delete i.triggers
+		const {tables, views} = this, TO_DEL = ['triggers', 'sql', 'init_data']
 
-		if (views) for (let i of Object.values (views)) delete i.sql
+		for (const type of [this.drop_types, 'procedures', 'functions']) 
 
-		try {
-			if (global.gc) global.gc ()
-		}
-		catch (x) {
-			darn (x)
-		}
+			this [type] = {}
+
+		for (const type of this.all_types) 
+
+			for (const def of Object.values (this [type])) 
+
+				for (const k of TO_DEL) 
+
+					if (k in def) def [k] = undefined
 
 	}
 
