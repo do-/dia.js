@@ -87,9 +87,6 @@ module.exports = class extends require ('../Pool.js') {
         		col.TYPE_NAME = 'Int32'
         	}
         }
-        else if (col.TYPE_NAME == 'CHAR') {
-            col.TYPE_NAME = 'FixedString'
-        }
         else if (/(BINARY|BLOB|CHAR|JSONB?|STRING|TEXT|XML)$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'String'
         }
