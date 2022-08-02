@@ -290,6 +290,7 @@ module.exports = class {
 	}
     
     normalize_model_table (table) {
+    	if (!('p_k' in table) && 'pk' in table) table.p_k = [table.pk]
 	    this.normalize_model_table_name (table)
         if (table.columns)  for (let col of Object.values (table.columns)) this.normalize_model_table_column (table, col)
         if (table.keys)     for (let k in table.keys)     this.normalize_model_table_key     (table, k)
