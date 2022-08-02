@@ -1,3 +1,4 @@
+const assert = require ('assert')
 const fs = require ('fs')
 const path = require ('path')
 const Config = require ('../Config.js')
@@ -439,6 +440,42 @@ module.exports = class {
 					if (k in def) def [k] = undefined
 
 	}
+
+	resolve_column_references () {
+
+		for (const type of this.all_types) 
+
+			for (const {name, columns} of Object.values (this [type])) if (columns) 
+
+				for (let col of Object.values (columns)) if (typeof col === 'object' && !('TYPE_NAME' in col) && 'ref' in col) {
+					
+					try {
+
+						const {ref} = col, {columns, pk} = this.get_relation (ref)
+
+						assert (columns, `"${ref}" has no columns`)
+						assert (pk,      `"${ref}" has no pk`)
+
+						const target = columns [pk]
+
+						assert (target,  `"${ref}.${pk}" not found`)
+						
+						col.TYPE_NAME = target.TYPE_NAME
+
+						if ('COLUMN_SIZE' in target) col.COLUMN_SIZE = target.COLUMN_SIZE
+
+					}
+					catch (cause) {
+					
+						darn (cause)
+
+						throw new Error (`Cannot resolve the "${name}.${col.name}" reference`, {cause})
+
+					}
+
+				}
+
+	}	
 
 	get_relation (name) {
 
