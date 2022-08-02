@@ -439,4 +439,18 @@ module.exports = class {
 
 	}
 
+	get_relation (name) {
+
+		for (const type of this.relation_types) {
+
+			const h = this [type]
+
+			if (name in h) return h [name]
+
+		}
+
+		throw new Error (`Relation "${name}" not found`)
+
+	}
+
 }
