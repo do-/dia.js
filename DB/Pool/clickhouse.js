@@ -277,7 +277,7 @@ module.exports = class extends require ('../Pool.js') {
             let existing_columns = table.existing.columns
 
             for (let col of Object.values (table.columns)) {
-            
+
             	const ex = existing_columns [col.name]; if (!ex) continue
             	
             	if (
@@ -289,6 +289,14 @@ module.exports = class extends require ('../Pool.js') {
             		(col.DECIMAL_DIGITS == ex.DECIMAL_DIGITS || parseInt (col.DECIMAL_DIGITS) < parseInt (ex.DECIMAL_DIGITS))
 
             	) continue
+
+            	if (table.p_k.includes (col.name)) {
+
+            		darn (`Warning: ${table.name}.${col.name} redefined, but it belongs to the PK, so skip it (ClickHouse would prohibit such a MODIFY COLUMN)`)
+
+            		continue
+
+            	}
 
 		        const on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
 		            	
