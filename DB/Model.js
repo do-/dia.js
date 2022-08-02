@@ -30,7 +30,6 @@ module.exports = class {
 
         }
 
-        this.todo           = []        
         this.relation_types = ['tables', 'views', 'foreign_tables', 'partitioned_tables']
         this.drop_types     = ['table_drops', 'view_drops']
         this.all_types      = [...this.relation_types, ...this.drop_types, 'procedures', 'functions']
@@ -38,11 +37,33 @@ module.exports = class {
         this.reload ()
 
     }
-    
+
     async pending () {
-    	return Promise.all (this.todo)
+
+    	let todo = [], add = (o, k, def) => {
+
+			const v = o [k]; switch (typeof v) {
+
+				case 'function' : return todo.push ((async () => {o [k] = await v.apply (def)}) ())
+
+				case 'object'   : for (const name in v) add (v, name, def)
+
+			}
+
+		}
+
+		for (const type of this.all_types)
+
+			for (const def of Object.values (this [type]))
+
+				for (const k of ['data', 'init_data', 'sql', 'body', 'queue', 'triggers'])
+
+					if (k in def) add (def, k, def)
+
+    	return Promise.all (todo)
+
     }
-    
+
     reload () {
 
     	for (let k of this.all_types) this [k] = {}
@@ -74,26 +95,6 @@ module.exports = class {
         	this [k] [m.name] = m
 
         }
-                
-		for (let m of merged) {
-
-			let postpone = (o, k) => {
-
-				let f = o [k]; if (!f || typeof f !== 'function') return
-
-				this.todo.push ((async () => {o [k] = await f.apply (m)}) ())
-
-			}
-
-	        for (let k of ['data', 'init_data', 'sql', 'body', 'queue']) postpone (m, k)
-	        
-	        if (m.type === 'table') {
-	        
-				let {triggers} = m; if (triggers) for (let k in triggers) postpone (triggers, k)
-	        
-	        }
-
-		}
 
     }
     
