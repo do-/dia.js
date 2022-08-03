@@ -242,16 +242,6 @@ module.exports = class {
 				m.sql       ? 'view'              : 
                               'table'
 
-			let {pk} = m; if (pk) {
-
-				m.p_k = Array.isArray (pk) ? pk : [pk]			
-
-			}
-			else {
-
-				m.p_k = []
-
-			}
 
         } else if (!m.type) {
 

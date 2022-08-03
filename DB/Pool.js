@@ -295,11 +295,11 @@ module.exports = class {
     
     normalize_model_table (table) {
     
-    	if (!('p_k' in table) && 'pk' in table) {
+    	if (!('p_k' in table)) {
 
     		const {pk} = table
 
-			table.p_k = Array.isArray (pk) ? pk : [pk]
+			table.p_k = pk == null ? [] : Array.isArray (pk) ? pk : [pk]
     	
     	}
     	
