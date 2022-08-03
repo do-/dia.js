@@ -81,24 +81,46 @@ module.exports = class {
         
         let merged = Object.values (all).map (l => this.merge (l))
 
-        for (let m of merged) {
-
-        	m.model = this
-        	
-        	const k = m.type + 's'; if (!(k in this)) {
-
-				this.all_types.push (k)
-
-        		this [k] = {}
-
-        	}
-
-        	this [k] [m.name] = m
-
-        }
+        for (let m of merged) this.add_definition (m)
 
     }
     
+    add_roster (type) {
+    
+		this.all_types.push (type)
+			
+		return this [type] = {}
+
+    }
+
+    get_roster (type) {
+    
+    	if (!(type in this)) return this.add_roster (type)
+
+    	const r = this [type]
+
+    	assert (r && typeof r === 'object', `Invalid type name: '${type}'`)
+
+    	return r
+
+    }
+    
+    add_definition (def) {
+
+    	const {name, type} = def; if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
+    	
+    	if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
+
+		const r = this.get_roster (type + 's')
+
+		assert (!(name in r), `${name} is already registered`)
+
+		def.model = this
+
+		r [name] = def
+
+    }
+
     merge__name (ov, nv) {
     
     	return ov
