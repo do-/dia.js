@@ -115,6 +115,22 @@ module.exports = class extends require ('../Pool.js') {
             col.TYPE_NAME = 'UInt8'
         }
         
+        if (/^U?Int/.test (col.TYPE_NAME) && col.COLUMN_DEF) {
+
+        	switch (String (col.COLUMN_DEF).toLowerCase ()) {
+
+        		case 'true':
+        			col.COLUMN_DEF = '1'
+        			break
+
+        		case 'false':
+        			col.COLUMN_DEF = '0'
+        			break
+
+        	}
+        
+        }
+
         if (col.TYPE_NAME == 'Decimal') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
             if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
