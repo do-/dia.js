@@ -220,8 +220,12 @@ module.exports = class {
                 }))
             }
         })
+        
+        const {model} = this
+        
+        model.resolve_column_references ()
 
-    	await this.model.pending ()
+    	await model.pending ()
     	
 		this.normalize_model ()
 
@@ -309,19 +313,8 @@ module.exports = class {
     
 		if (typeof col !== 'object') return
 
-        if (!col.TYPE_NAME && col.ref) {
-
-            let t = this.model.relations [col.ref]; if (!t) throw new Error (`${table.name}.${col.name} references ${col.ref}, but no such relation found in the model`)
-
-			let tpk = t.columns [t.pk]; for (let k of ['TYPE_NAME', 'COLUMN_SIZE']) {
-			
-            	let v = tpk [k]; if (v) col [k] = v
-
-            }
-
-        }
-
         col.TYPE_NAME_ORIGINAL = col.TYPE_NAME
+if (!col.TYPE_NAME) darn ({table, col})
         col.TYPE_NAME = col.TYPE_NAME.toUpperCase ()
 
         if (col.NULLABLE == undefined) col.NULLABLE   =        (col.COLUMN_DEF == null)
