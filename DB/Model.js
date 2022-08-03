@@ -267,6 +267,7 @@ module.exports = class {
 
     on_before_parse_table_columns (table) {}
     on_after_parse_table_columns (table) {}
+    on_after_resolve_column_references () {}
     
     parse_columns (columns) {
         for (let name in columns) {
@@ -474,6 +475,8 @@ module.exports = class {
 					}
 
 				}
+				
+		this.on_after_resolve_column_references ()
 
 	}	
 
