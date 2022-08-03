@@ -105,7 +105,31 @@ module.exports = class {
 
     }
     
+    guess_type (def) {
+    	
+		const {columns, body, sql} = def
+    
+    	if (columns === -Infinity) return 'table_drop'
+
+    	if (!columns && !body) {darn (def); throw new Error ('Impossible to guess definition type, see STDERR')}
+
+    	if (!columns)              return 'returns' in def ? 'function' : 'procedure'
+
+		if (sql === -Infinity)     return 'view_drop'
+
+		if (sql) return 'view'
+		
+		if ('db_link' in def)      return 'foreign_table'
+		
+		if ('partition' in def)    return 'partitioned_table'
+		
+		return 'table'
+
+    }
+    
     add_definition (def) {
+    
+    	if (!('type' in def)) def.type = this.guess_type (def)
 
     	const {name, type} = def; if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
     	
@@ -116,6 +140,16 @@ module.exports = class {
 		assert (!(name in r), `${name} is already registered`)
 
 		def.model = this
+		
+		let {columns} = def; if (columns) {
+
+			this.on_before_parse_table_columns (def)
+
+			this.parse_columns (def.columns)
+
+			this.on_after_parse_table_columns (def)
+
+        }
 
 		r [name] = def
 
@@ -232,46 +266,11 @@ module.exports = class {
     
     }
 
-    load_file (p, name) {
+    load_file (p) {
 
         let m = require (p)
 
         if (!('name' in m)) m.name = path.basename (p, '.js')
-        
-        if (!m.type && (m.data || m.init_data)) m.type = 'table'
-
-		if (m.columns === -Infinity) {
-			m.type = 'table_drop'
-			return m
-		}
-
-		if (m.sql === -Infinity) {
-			m.type = 'view_drop'
-			return m
-		}
-
-		if (m.columns) {
-
-			this.on_before_parse_table_columns (m)
-
-			this.parse_columns (m.columns)
-
-			this.on_after_parse_table_columns (m)
-			
-			if (!m.type) m.type = 
-				m.db_link   ? 'foreign_table'     : 
-				m.partition ? 'partitioned_table' : 
-				m.sql       ? 'view'              : 
-                              'table'
-
-
-        } else if (!m.type) {
-
-            m.type = m.returns ? 'function' : 'procedure'
-            
-            if (!m.body) throw `No SQL body defined for the ${m.type} named "${name}"`
-
-        }
 
         return m
 
