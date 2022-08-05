@@ -235,6 +235,20 @@ module.exports = class extends Dia.DB.Client {
         return this.select_scalar (sql, params)
 
     }
+        
+    async delete (table, data, options = {}) {
+    
+		await super.delete (table, data, options)
+		
+		if (options.vacuum) {
+		
+			await this.commit ()
+			
+			await this.do ('VACUUM ' + table)
+		
+		}
+		
+    }    
     
     async insert_if_absent (table, data) {
     
