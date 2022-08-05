@@ -21,6 +21,26 @@ module.exports = class extends Dia.DB.Client {
 	
 	}
 
+    async add_all_cnt (data, def, limit, offset) {
+
+        let q = this.query (def)        
+
+        if (limit == undefined) limit = q.limit
+        if (limit == undefined) throw 'LIMIT not set for add_all_cnt: ' + JSON.stringify (def)
+
+        if (offset == undefined) offset = q.offset
+        if (offset == undefined) offset = 0
+        
+        const [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
+
+        data [q.parts [0].alias] = all
+        data.cnt = cnt
+        data.portion = limit
+
+        return data
+
+    }	
+
 	async select_all_cnt (original_sql, original_params, limit, offset) {
 	
 		const {handler, pool: {ods_name, dw_name}} = this

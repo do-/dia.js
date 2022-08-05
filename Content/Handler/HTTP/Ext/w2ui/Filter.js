@@ -175,7 +175,7 @@ module.exports = class {
 
     constructor (q, db) {  
         this [PRODUCT] = db ? db.product : 'postgresql'
-        this [T_23_59] = this [PRODUCT] === 'clickhouse' ? 'T23:59:59' : 'T23:59:59.999'
+        this [T_23_59] = ['clickhouse', 'ods_dw'].includes (this [PRODUCT]) ? 'T23:59:59' : 'T23:59:59.999'
         this.set_sort (q.sort)
         this.set_search (q.search, q.searchLogic)
         if (q.limit > 0) this.LIMIT = [q.limit, q.offset]

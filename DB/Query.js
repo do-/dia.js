@@ -40,7 +40,7 @@ module.exports = class {
                     }                    
                     
                     this.table = t
-                    if (!model.relations [this.table]) throw new Error ('Model misses the definition of ' + this.table)
+                    if (!model.get_relation (this.table)) throw new Error ('Model misses the definition of ' + this.table)
                     this.alias = (a || t).trim ()
                     
                     let part = this
@@ -247,7 +247,7 @@ module.exports = class {
 
                     this.filters = []
                     
-                    let def = model.relations [this.table]
+                    let def = model.get_relation (this.table)
 
                     if (typeof v !== 'object') v = {[def.pk]: v}
 
@@ -318,7 +318,7 @@ module.exports = class {
                 let cols = []; for (let src of this.cols) {
 
                     if (src == '*') {
-                        for (let c in model.relations [part.table].columns) cols.push (new this.Col (c))
+                        for (let c in model.get_relation (part.table).columns) cols.push (new this.Col (c))
                     }
                     else {
                         cols.push (new this.Col (src))
@@ -338,27 +338,27 @@ module.exports = class {
                     if (!hint) return undefined
                     if (hint.indexOf ('=') > -1) return hint                    
                     if (hint.indexOf ('.') < 0) hint = `${query.parts[0].alias}.${hint}`                    
-                    return `${hint}=${this.alias}.${model.relations[this.table].pk}`
+                    return `${hint}=${this.alias}.${model.get_relation(this.table).pk}`
                 }
                 
                 let find_ref_from_prev_part = () => {
                     for (let part of query.parts) {
                         if (part === this) return undefined
-                        let table = model.relations [part.table]
+                        let table = model.get_relation (part.table)
                         if (!table) throw new Error ('Table not found: ' + part.table)
                         let cols = table.columns
                         let ref_col_names = []
                         for (let name in cols) if (cols [name].ref == this.table) ref_col_names.push (name)
                         switch (ref_col_names.length) {
                             case 0: continue
-                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.${model.relations[this.table].pk}`
+                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.${model.get_relation(this.table).pk}`
                             default: throw new Error (`Ambiguous join condition for ${this.alias}`)
                         }
                     }
                 }
                 
                 let find_ref_to_prev_part = () => {
-                    let table = model.relations [this.table]
+                    let table = model.get_relation (this.table)
                     if (!table) throw new Error ('Table not found: ' + this.table)
                     let cols = table.columns
                     for (let part of query.parts) {
@@ -367,7 +367,7 @@ module.exports = class {
                         for (let name in cols) if (cols [name].ref == part.table) ref_col_names.push (name)
                         switch (ref_col_names.length) {
                             case 0: continue
-                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.${model.relations[part.table].pk}`
+                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.${model.get_relation(part.table).pk}`
                             default: throw new Error (`Ambiguous join condition for ${this.alias}`)
                         }
                     }
