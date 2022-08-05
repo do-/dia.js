@@ -1,6 +1,25 @@
+const assert = require ('assert')
 const Dia = require ('../../Dia.js')
 
 module.exports = class extends Dia.DB.Client {
+
+	async warehouse (sql, params) {
+	
+		const {handler, pool: {ods_name, dw_name}} = this, [db_dw, db_ods] = [dw_name, ods_name].map (k => handler [k])
+
+		const m = /\b(?:FROM|UPDATE)\s+"?([\w\.]+)"?/gism.exec (sql); assert (m, `Can't get table name from ${sql}`)
+		
+    	const def = this.model.get_relation (m [1]);                  assert (def, `Can't get table definition for ${sql}`)
+
+    	const {archive} = def;                                        assert (archive, def.name + ' is not archivable')
+		
+		return db_dw.insert (archive.name,
+
+			(await db_ods.select_stream (sql, params))
+
+		)
+	
+	}
 
 	async select_all_cnt (original_sql, original_params, limit, offset) {
 	
