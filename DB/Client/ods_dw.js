@@ -21,6 +21,18 @@ module.exports = class extends Dia.DB.Client {
 	
 	}
 
+    async get (def) {
+
+		const {handler, pool: {ods_name, dw_name}} = this, [db_dw, db_ods] = [dw_name, ods_name].map (k => handler [k])
+
+		const d = await db_ods.get (def)
+
+		for (let k in d) return d
+
+		return db_dw.get (def)
+
+    }
+
     async add_all_cnt (data, def, limit, offset) {
 
         let q = this.query (def)        
