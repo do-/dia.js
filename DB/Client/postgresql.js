@@ -612,7 +612,7 @@ module.exports = class extends Dia.DB.Client {
 
         let rs = await this.select_all (`
             SELECT
-                table_from.relname AS table_name
+                case when current_schema <> pg_namespace.nspname then pg_namespace.nspname || '.' else '' END || table_from.relname AS table_name
                 , c.conname AS ref_name
                 , columns.attname AS column_name
                 , table_to.relname AS ref
@@ -624,8 +624,7 @@ module.exports = class extends Dia.DB.Client {
                 INNER JOIN pg_attribute AS columns ON columns.attrelid = table_from.oid AND c.conkey[1] = columns.attnum
             WHERE
                 c.contype = 'f'
-                AND pg_namespace.nspname = current_schema
-        `, [])          
+        `, [])
 
         let tables = this.model.tables
 
