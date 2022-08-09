@@ -612,7 +612,7 @@ module.exports = class extends Dia.DB.Client {
 
         let rs = await this.select_all (`
             SELECT
-                case when current_schema <> pg_namespace.nspname then pg_namespace.nspname || '.' else '' END || table_from.relname AS table_name
+                CASE WHEN current_schema <> pg_namespace.nspname THEN pg_namespace.nspname || '.' ELSE '' END || table_from.relname AS table_name
                 , c.conname AS ref_name
                 , columns.attname AS column_name
                 , table_to.relname AS ref
