@@ -27,9 +27,17 @@ module.exports = class extends Model {
 	
 	fill_in () {
 
-		this.template = this.get_template ()
+		const {ods_model} = this, {spy} = ods_model; if (spy) for (const def of Object.values (this.ods_model.tables)) if ('log' in def) {
+		
+			const log_table = spy.to_logging_table (def)
 			
-		for (const def of Object.values (this.ods_model.tables)) if ('archive' in def) {
+darn (log_table)			
+		
+		}
+
+		this.template = this.get_template ()			
+			
+		for (const def of Object.values (ods_model.tables)) if ('archive' in def) {
 
 			def.archive = this.adjust_options (def)
 

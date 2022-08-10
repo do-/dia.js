@@ -27,4 +27,20 @@ module.exports = class {
 
     }
 
+	to_logging_table_name (name) {
+		
+		return this.schema_name + '.' + name
+		
+	}
+	
+	to_logging_table (def) {
+	
+		const {name} = def
+		
+		return {
+			name: this.to_logging_table_name (name),
+		}
+
+	}
+
 }
