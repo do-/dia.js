@@ -1,6 +1,6 @@
 module.exports = class {
 
-    constructor (o = {}) {
+    constructor () {
 
 		this.columns = {
 			_id_rq  : {TYPE_NAME: 'uuid',   REMARK: 'Уникальный номер запроса', getter: h => h.uuid, NULLABLE: false},
@@ -9,17 +9,13 @@ module.exports = class {
 			_action : {TYPE_NAME: 'string', REMARK: 'Действие', getter: h => (h.rq || {}).action},		
 		}
 
-		for (const [k, v] of Object.entries (o.columns || {})) 
-		
-			if (v === undefined) delete this.columns [k]; else this.columns [k] = v
-			
-		this.verbose = o.verbose || 0
+		this.verbose = 0
 
     }
 
     get_signature (h) {
 
-    	let o = {}; for (const [k, {getter}] of Object.entries (this.columns)) {
+    	let o = {}; for (const [k, {getter}] of Object.entries (this.columns)) if (getter) {
 
     		const v = getter (h)
 

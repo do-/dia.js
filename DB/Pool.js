@@ -11,12 +11,6 @@ module.exports = class {
 		
 		this.log_category = o.log_category || 'db'
 
-		if ('spy' in o) this.init_spy ()
-
-    }
-    
-    init_spy () {
-		throw new Error ('Not implemented for this DBMS product')
     }
     
     log_info (label) {

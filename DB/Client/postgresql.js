@@ -289,7 +289,7 @@ module.exports = class extends Dia.DB.Client {
     
     async check_signature () {
     
-    	const {is_signed, handler, pool: {spy}} = this; if (is_signed || !spy || !handler) return
+    	const {is_signed, handler, pool: {model: {spy}}} = this; if (is_signed || !spy || !handler) return
     	
     	this.is_signed = true
 
