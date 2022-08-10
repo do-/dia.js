@@ -32,13 +32,23 @@ module.exports = class {
 		return this.schema_name + '.' + name
 		
 	}
+
+	to_logging_table_label (label) {
+		
+		return label + ' (история изменений)'
+		
+	}
 	
 	to_logging_table (def) {
-	
-		const {name} = def
-		
+
+		const {name, label} = def
+
 		return {
-			name: this.to_logging_table_name (name),
+		
+			name  : this.to_logging_table_name (name),
+			
+			label : this.to_logging_table_label (label),
+			
 		}
 
 	}
