@@ -48,6 +48,7 @@ module.exports = class extends Dia.DB.Client {
     
         let sql = this.fix_sql (original_sql)
                 
+    	await this.check_signature ()
         let log_event = this.log_start (sql, params)
         
         try {
@@ -84,6 +85,7 @@ module.exports = class extends Dia.DB.Client {
     	
         let sql = this.fix_sql (original_sql)
         
+    	await this.check_signature ()
         let log_event = this.log_start (sql, params)
         
         let qs = require ('pg-query-stream')
@@ -284,6 +286,18 @@ module.exports = class extends Dia.DB.Client {
         await this.do (sql, params)
 
     }
+    
+    async check_signature () {
+    
+    	const {is_signed, handler, pool: {spy}} = this; if (is_signed || !spy || !handler) return
+    	
+    	this.is_signed = true
+
+        const {sql, params} = spy.get_sql_params (handler)
+        
+		await this.do (sql, params)
+        
+    }
 
     async do (sql, params = []) {
 
@@ -294,7 +308,8 @@ module.exports = class extends Dia.DB.Client {
     		params = params.map (v => typeof v == 'object' && v != null ? JSON.stringify (v) : v)
 
     	}
-
+    	
+    	await this.check_signature ()
         let log_event = this.log_start (sql, params)
 
         try {
@@ -328,6 +343,8 @@ module.exports = class extends Dia.DB.Client {
     }
 
     async load (is, table, cols, o = {NULL: ''}) {
+
+    	await this.check_signature ()
 
 		return new Promise ((ok, fail) => {
 
