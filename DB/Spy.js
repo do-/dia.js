@@ -12,6 +12,8 @@ module.exports = class {
 		for (const [k, v] of Object.entries (o.columns || {})) 
 		
 			if (v === undefined) delete this.columns [k]; else this.columns [k] = v
+			
+		this.verbose = o.verbose || 0
 
     }
 

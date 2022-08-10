@@ -295,11 +295,11 @@ module.exports = class extends Dia.DB.Client {
 
         const {sql, params} = spy.get_sql_params (handler)
         
-		await this.do (sql, params)
+		await this.do (sql, params, {no_log: !spy.verbose})
         
     }
 
-    async do (sql, params = []) {
+    async do (sql, params = [], options = {}) {
 
     	if (params.length > 0) {
 
@@ -310,12 +310,14 @@ module.exports = class extends Dia.DB.Client {
     	}
     	
     	await this.check_signature ()
-        let log_event = this.log_start (sql, params)
+        let log_event = options.no_log ? null : this.log_start (sql, params)
 
         try {
             return await this.backend.query (sql, params)
         }
         catch (e) {
+
+        	if (!log_event) log_event = this.log_start (sql, params)
         
         	if (e.code == 23505) {
         	
@@ -337,7 +339,9 @@ module.exports = class extends Dia.DB.Client {
 
         }
         finally {
-			this.log_finish (log_event)
+        
+			if (log_event) this.log_finish (log_event)
+			
 		}
 
     }
