@@ -3,12 +3,17 @@ const wrapper = require ('../Client/postgresql.js')
 const crypto  = require ('crypto')
 const LogEvent = require ('../../Log/Events/Text.js')
 const ErrorEvent = require ('../../Log/Events/Error.js')
+const Spy = require ('./postgresql/Spy.js')
 
 module.exports = class extends require ('../Pool.js') {
 
     constructor (o) {
         super (o)
         this.backend = new Pool (o)
+    }
+    
+    init_spy () {
+    	this.spy = new Spy (this.options.spy)
     }
 
     is_not_to_merge (i) {
