@@ -8,6 +8,9 @@ module.exports = class extends require ('../../Spy.js') {
 		
 		this.setting_name = o.setting_name || DEFAULT_SETTING_NAME
 
+		this.columns._uuid.COLUMN_DEF = 'uuid_generate_v4 ()'
+		this.columns._ts.COLUMN_DEF   = 'now()'
+
     }
     
     get_sql_params (handler) {
