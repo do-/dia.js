@@ -1,6 +1,8 @@
 module.exports = class {
 
     constructor () {
+    
+    	this.global_definitions = {}
 
 		this.columns = {
 
@@ -22,6 +24,12 @@ module.exports = class {
 		this.archive_table_name_prefix = 'log_'
 		this.verbose = 0
 
+    }
+    
+    add_definition (def) {
+    
+    	this.global_definitions [def.name] = def
+    
     }
 
     get_signature (h) {

@@ -27,11 +27,21 @@ module.exports = class extends Model {
 	
 	fill_in () {
 
-		const {ods_model} = this, {spy} = ods_model; if (spy) for (const def of Object.values (this.ods_model.tables)) if (spy.option_name in def) {
+		const {ods_model} = this, {spy} = ods_model; if (spy) {
 		
-			const log_table = spy.to_logging_table (def)
+			for (const def of Object.values (spy.global_definitions)) {
 			
+				ods_model.add_definition (def)
+				
+			}
+		
+			for (const def of Object.values (this.ods_model.tables)) if (spy.option_name in def) {
+		
+				const log_table = spy.to_logging_table (def)
+
 darn (log_table)			
+			
+			}
 		
 		}
 
