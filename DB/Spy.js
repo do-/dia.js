@@ -21,7 +21,7 @@ module.exports = class {
 
 		this.option_name = 'log'
 		this.schema_name = 'log'
-		this.archive_table_name_prefix = 'log_'
+		this.archive_table_name_postfix = '__log'
 		this.verbose = 0
 
     }
@@ -54,7 +54,7 @@ module.exports = class {
 
 	to_archive_table_name (name) {
 		
-		return this.archive_table_name_prefix + '_' + name
+		return name + this.archive_table_name_postfix
 		
 	}
 
@@ -65,7 +65,7 @@ module.exports = class {
 	}
 	
 	to_logging_column (col, o = {}) {
-	
+
 		let c = {}; for (const k of ['name', 'REMARK', 'TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS', 'COLUMN_DEF']) {
 		
 			if (!(k in col)) continue
@@ -119,14 +119,14 @@ module.exports = class {
 		
 		}		
 
-		for (const col of Object.values (columns)) {
-		
-			if (except_columns && except_columns.includes (col.name)) continue
-		
+		const x = new Set (except_columns || []); for (const col of Object.values (columns)) {
+
+			if (x.has (col.name)) continue
+
 			const c = this.to_logging_column (col, {no_def: true})
-			
+
 			log.columns [c.name] = c
-		
+
 		}		
 
 		return log

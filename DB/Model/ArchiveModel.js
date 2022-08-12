@@ -39,6 +39,8 @@ module.exports = class extends Model {
 		
 				const log_table = spy.to_logging_table (def)
 
+				ods_model.add_definition (log_table)
+
 darn (log_table)			
 			
 			}

@@ -46,6 +46,16 @@ module.exports = class extends require ('../../Spy.js') {
     	}
 
     }
+
+	to_logging_column (col, o = {}) {
+
+		let c = super.to_logging_column (col, o)
+
+		if (/^serial/i.test (c.TYPE_NAME)) c.TYPE_NAME = 'INT'
+
+		return c
+
+	}
     
     get_sql_params (handler) {
     
