@@ -6,9 +6,6 @@ module.exports = class {
 
 		this.columns = {
 
-/*
-			_tg_op:			'char[1] // Триггерная операция',
-*/		
 			_uuid   : {TYPE_NAME: 'uuid',      REMARK: 'Первичный ключ в самой таблице истории'},
 			_ts     : {TYPE_NAME: 'timestamp', REMARK: 'Дата/время события'},
 
