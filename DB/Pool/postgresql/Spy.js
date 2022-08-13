@@ -15,7 +15,13 @@ module.exports = class extends require ('../../Spy.js') {
 			COLUMN_SIZE: 1, 
 			REMARK: 'Триггерная операция', 
 			TRG_COLUMN_DEF: 'LEFT (TG_OP, 1)',
-		},
+		}
+
+		this.columns._is_to_copy = {
+			TYPE_NAME: 'bool', 
+			COLUMN_DEF: 'true', 
+			REMARK: 'true, если запись зафиксирована и готова для архивирования',
+		}
 	
 		this.add_definition (this.get_fetch_function_definition ())
 
@@ -62,9 +68,11 @@ module.exports = class extends require ('../../Spy.js') {
 		if (/^serial/i.test (c.TYPE_NAME)) c.TYPE_NAME = 'INT'
 		
 		if ('getter' in col) {
-		
-			c.TRG_COLUMN_DEF = `_s->>'${c.name}'`
-			
+
+			c.TRG_COLUMN_DEF = `(_s->>'${c.name}')`
+
+			if (!/(text|char|string)/i.test (c.TYPE_NAME)) c.TRG_COLUMN_DEF += `::${c.TYPE_NAME}`
+
 		}
 		else if ('TRG_COLUMN_DEF' in col) {
 		
@@ -114,8 +122,8 @@ module.exports = class extends require ('../../Spy.js') {
 		
 			let value; if (name in this.columns) {
 
-				value = TRG_COLUMN_DEF ? `(${TRG_COLUMN_DEF})::${logging_table.name}.${name}%TYPE` : COLUMN_DEF
-			
+				value = TRG_COLUMN_DEF || COLUMN_DEF
+
 				if (value == null) {
 
 					darn (`Bizarre field: ${logging_table.name}.${name}, never to be set`)
