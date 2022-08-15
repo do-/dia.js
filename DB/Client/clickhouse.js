@@ -101,10 +101,21 @@ module.exports = class extends Dia.DB.Client {
     	this.carp_write_only ()
     }
     
-    async delete () {
-    	this.carp_write_only ()
-    }
+
+    async delete (table, data) {
     
+		let {sql, params} = this.query ({[table]: data})
+		
+		if (params.length == 0) throw 'DELETE without a filter? If sure, use this.db.do directly.'
+		
+		sql = 'ALTER TABLE ' + table + ' DELETE ' + sql
+			.slice (sql.indexOf ('WHERE'))
+			.replace (RegExp (table + '\\.', 'g'), '')
+		
+		return this.do (sql, params)
+		
+    }    
+
     async load (is, table, fields) {
         
     	const sql = `INSERT INTO ${table} (${fields})`, body = new SqlPrepender (sql)
