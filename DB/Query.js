@@ -40,7 +40,7 @@ module.exports = class {
                     }                    
                     
                     this.table = t
-                    if (!model.relations [this.table]) throw new Error ('Model misses the definition of ' + this.table)
+                    if (!model.get_relation (this.table)) throw new Error ('Model misses the definition of ' + this.table)
                     this.alias = (a || t).trim ()
                     
                     let part = this
@@ -247,7 +247,7 @@ module.exports = class {
 
                     this.filters = []
                     
-                    let def = model.relations [this.table]
+                    let def = model.get_relation (this.table)
 
                     if (typeof v !== 'object') v = {[def.pk]: v}
 
@@ -318,7 +318,7 @@ module.exports = class {
                 let cols = []; for (let src of this.cols) {
 
                     if (src == '*') {
-                        for (let c in model.relations [part.table].columns) cols.push (new this.Col (c))
+                        for (let c in model.get_relation (part.table).columns) cols.push (new this.Col (c))
                     }
                     else {
                         cols.push (new this.Col (src))
@@ -338,27 +338,27 @@ module.exports = class {
                     if (!hint) return undefined
                     if (hint.indexOf ('=') > -1) return hint                    
                     if (hint.indexOf ('.') < 0) hint = `${query.parts[0].alias}.${hint}`                    
-                    return `${hint}=${this.alias}.${model.relations[this.table].pk}`
+                    return `${hint}=${this.alias}.${model.get_relation(this.table).pk}`
                 }
                 
                 let find_ref_from_prev_part = () => {
                     for (let part of query.parts) {
                         if (part === this) return undefined
-                        let table = model.relations [part.table]
+                        let table = model.get_relation (part.table)
                         if (!table) throw new Error ('Table not found: ' + part.table)
                         let cols = table.columns
                         let ref_col_names = []
                         for (let name in cols) if (cols [name].ref == this.table) ref_col_names.push (name)
                         switch (ref_col_names.length) {
                             case 0: continue
-                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.${model.relations[this.table].pk}`
+                            case 1: return `${part.alias}.${ref_col_names[0]}=${this.alias}.${model.get_relation(this.table).pk}`
                             default: throw new Error (`Ambiguous join condition for ${this.alias}`)
                         }
                     }
                 }
                 
                 let find_ref_to_prev_part = () => {
-                    let table = model.relations [this.table]
+                    let table = model.get_relation (this.table)
                     if (!table) throw new Error ('Table not found: ' + this.table)
                     let cols = table.columns
                     for (let part of query.parts) {
@@ -367,7 +367,7 @@ module.exports = class {
                         for (let name in cols) if (cols [name].ref == part.table) ref_col_names.push (name)
                         switch (ref_col_names.length) {
                             case 0: continue
-                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.${model.relations[part.table].pk}`
+                            case 1: return `${this.alias}.${ref_col_names[0]}=${part.alias}.${model.get_relation(part.table).pk}`
                             default: throw new Error (`Ambiguous join condition for ${this.alias}`)
                         }
                     }
@@ -395,11 +395,13 @@ module.exports = class {
                     this.sql += ` ON (${this.join_condition}`
                     for (let filter of this.filters) {
                         this.sql += ` AND ${filter.sql}`
-                        for (let param of filter.params) query.params.push (
-                            typeof param !== 'boolean' ? param :
-                            param ? 1 :
-                            0
-                        )
+                        for (let param of filter.params) {
+                            let v = typeof param !== 'boolean' ? param :
+                                    param ? 1 :
+                                    0
+                            query.params.push (v)
+                            if (this.is_inner) query.params_cnt.push (v)
+                        }
                     }
                     this.sql += ')'
                 }
@@ -414,6 +416,7 @@ module.exports = class {
         for (let part of this.parts) part.adjust_cols ()
 
         this.params = []
+        this.params_cnt = []
         for (let part of this.parts) part.adjust_join ()
         
         let get_sql = (x) => x.sql
@@ -422,17 +425,22 @@ module.exports = class {
         this.sql += this.cols.map (get_sql)
         this.sql += '\nFROM '
         this.sql += this.parts.map (get_sql).join ('')
-        
+
         let filters = this.parts [0].filters
+
+        let root_params = []
+        for (let filter of filters) for (let param of filter.params) root_params.push (param)
+
         if (filters.length) {
             this.sql += '\nWHERE '
             this.sql += filters.map (get_sql).join ('\n\tAND ')
-            for (let filter of filters) for (let param of filter.params) this.params.push (param)
+            this.params.push(...root_params)
         }
         
         if (this.limit) {
         	this.sql_cnt = 'SELECT COUNT(*) FROM ' + this.parts.filter (p => p.is_root || p.is_inner	).map (get_sql).join ('')
 	        if (filters.length) this.sql_cnt += ' WHERE ' + filters.map (get_sql).join (' AND ')
+            this.params_cnt.push(...root_params)
         }
 
         if (this.order) this.sql += `\nORDER BY \n\t ${this.order}`
