@@ -102,7 +102,9 @@ module.exports = class extends Model {
     	let columns = []; for (const [k, v] of Object.entries (clone (def.columns))) {
 
 			if (except_columns && except_columns.includes (k)) continue
-			
+
+			if (!v) continue
+
 			delete v.ref
 
 			columns [k] = v
@@ -120,7 +122,9 @@ module.exports = class extends Model {
     	let columns = []; for (const [k, v] of Object.entries (clone (def.columns))) {
 
 			if (except_columns && except_columns.includes (k)) continue
-			
+
+			if (!v) continue
+
 			delete v.ref
 
 			columns [k] = v
