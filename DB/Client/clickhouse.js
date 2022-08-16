@@ -160,7 +160,7 @@ module.exports = class extends Dia.DB.Client {
 
 	async insert (table_name, data) {
     
-		let table = this.model.relations [table_name]; if (!table) throw 'Table not found: ' + table_name
+		let table = this.model.get_relation (table_name); if (!table) throw 'Table not found: ' + table_name
 
 		if (!isStream.readable (data)) {
 		
