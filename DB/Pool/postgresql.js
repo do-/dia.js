@@ -774,8 +774,19 @@ module.exports = class extends require ('../Pool.js') {
 
     		if (col === -Infinity) {
     			
-    			if (name in existing.columns) result.push ({sql: `ALTER TABLE ${table.qname} DROP COLUMN IF EXISTS "${name}" CASCADE`, params: []})
-    			
+			if (name in existing.columns) {
+
+			    let before = table.on_before_drop_column
+
+			    if (typeof before === 'function') before = before (table)
+
+			    let b = before [name]
+
+			    if (b) for (let i of b) result.push (i)
+
+			    result.push ({sql: `ALTER TABLE ${table.qname} DROP COLUMN IF EXISTS "${name}" CASCADE`, params: []})
+			}
+			
     			delete columns [name]
     			
     		}
