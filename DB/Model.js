@@ -141,7 +141,7 @@ module.exports = class {
 
 		def.model = this
 		
-		let {columns} = def; if (columns) {
+		let {columns} = def; if (columns && columns != -Infinity) {
 
 			this.on_before_parse_table_columns (def)
 
