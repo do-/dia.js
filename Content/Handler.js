@@ -353,6 +353,8 @@ module.exports = class {
 
     	let {module_name, method_name} = this, fn = module_name + '.js', {_inc_fresh} = conf
 
+        let module
+
     	let scanned = []; for (let p of conf.get_content_paths (module_name)) {
     	
     		let abs = path.resolve (p, fn); if (!fs.existsSync (abs)) continue
@@ -361,19 +363,17 @@ module.exports = class {
 
 			if (abs in _inc_fresh && _inc_fresh [abs] < mtime) delete require.cache [abs]
 
-			let module = require (abs)
+			module = {...module, ...require (abs)}
 
 			_inc_fresh [abs] = mtime
 
-			if (method_name in module) return module
-			
 			scanned.push (abs)
 
     	}
+
+        if ((!module || !(method_name in module)) && scanned.length > 0) this.warn (`Didn't find ${method_name} in ${scanned}`)
     	
-    	if (scanned.length > 0) this.warn (`Didn't find ${method_name} in ${scanned}`)
-    	
-    	return null
+        return module
 
     }
 
@@ -381,7 +381,7 @@ module.exports = class {
 
         let {module_name, method_name} = this, module = this.get_module ()
 
-        if (!module) throw new Error (`Module / method not defined: ${module_name}.${method_name}`)
+        if (!module || !(method_name in module)) throw new Error (`Module / method not defined: ${module_name}.${method_name}`)
 
         return (this.module = module) [method_name]
 
