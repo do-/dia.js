@@ -1,7 +1,6 @@
 const LOGICAL_OPERATORS = new Set(['and', 'or', 'not']);
 const IN_SET_OPERATORS = new Set(['in', 'not in']);
 const PRODUCT = Symbol ('__product__')
-const T_23_59 = Symbol ('__t_23_59__')
 
 module.exports = class {
 
@@ -95,13 +94,7 @@ module.exports = class {
         
         if (Array.isArray (s.value)) {
 
-        	if (s.type == 'date') {        	
-				s.value = s.value.map (dt_iso)
-				s.value [1] += this [T_23_59]
-        	}
-        	else {        	
-	            s.value = s.value.map ((o) => typeof o == 'object' ? o.id : o)
-        	}
+			s.value = s.value.map ((o) => typeof o == 'object' ? o.id : o)
             
         }
         else if (s.value != null) {
@@ -120,8 +113,17 @@ module.exports = class {
             }
 
             if (s.type == 'date') {
+            
             	s.value = dt_iso (s.value)
-				if (s.operator == 'less') s.value += this [T_23_59]
+
+				if (s.operator == 'less') {
+					let dt = new Date (s.value)
+					dt.setDate (1 + dt.getDate ())
+					s.operator = 'less!'
+					s.expr = s.field + ' <'
+					s.value = dt.toJSON ().slice (0, 10)
+				}
+				
             }
         
         }
@@ -161,11 +163,23 @@ module.exports = class {
     
         if (!search || !search.length || !logic) return
         
-        for (let s of search) this.adjust_term (s)
-    
+        let _search = []; for (const t of search) if (t.type === 'date' && Array.isArray (t.value)) {
+
+        	const {field, type, value: [dt_from, dt_to]} = t
+
+        	_search.push ({field, type, operator: 'more', value: dt_from})
+        	_search.push ({field, type, operator: 'less', value: dt_to})
+
+        }
+        else {
+        	_search.push (t)
+        }
+
+        for (let t of _search) this.adjust_term (t)
+
         switch (logic) {
-            case 'AND': return this.set_and (search)
-            case 'OR' : return this.set_or  (search)
+            case 'AND': return this.set_and (_search)
+            case 'OR' : return this.set_or  (_search)
         }
 
     }
@@ -180,9 +194,8 @@ module.exports = class {
             
     }
 
-    constructor (q, db) {  
+    constructor (q, db) {
         this [PRODUCT] = db ? db.product : 'postgresql'
-        this [T_23_59] = this [PRODUCT] === 'clickhouse' ? 'T23:59:59' : 'T23:59:59.999'
         this.set_sort (q.sort)
         this.set_search (q.search, q.searchLogic)
         if (q.limit > 0) this.LIMIT = [q.limit, q.offset]

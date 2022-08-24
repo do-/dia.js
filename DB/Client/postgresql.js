@@ -48,6 +48,7 @@ module.exports = class extends Dia.DB.Client {
     
         let sql = this.fix_sql (original_sql)
                 
+    	await this.check_signature ()
         let log_event = this.log_start (sql, params)
         
         try {
@@ -84,6 +85,7 @@ module.exports = class extends Dia.DB.Client {
     	
         let sql = this.fix_sql (original_sql)
         
+    	await this.check_signature ()
         let log_event = this.log_start (sql, params)
         
         let qs = require ('pg-query-stream')
@@ -235,6 +237,20 @@ module.exports = class extends Dia.DB.Client {
         return this.select_scalar (sql, params)
 
     }
+        
+    async delete (table, data, options = {}) {
+    
+		await super.delete (table, data, options)
+		
+		if (options.vacuum) {
+		
+			await this.commit ()
+			
+			await this.do ('VACUUM ' + table)
+		
+		}
+		
+    }    
     
     async insert_if_absent (table, data) {
     
@@ -270,8 +286,20 @@ module.exports = class extends Dia.DB.Client {
         await this.do (sql, params)
 
     }
+    
+    async check_signature () {
+    
+    	const {is_signed, handler, pool: {model: {spy}}} = this; if (is_signed || !spy || !handler) return
+    	
+    	this.is_signed = true
 
-    async do (sql, params = []) {
+        const {sql, params} = spy.get_sql_params (handler)
+        
+		await this.do (sql, params, {no_log: !spy.verbose})
+        
+    }
+
+    async do (sql, params = [], options = {}) {
 
     	if (params.length > 0) {
 
@@ -280,13 +308,16 @@ module.exports = class extends Dia.DB.Client {
     		params = params.map (v => typeof v == 'object' && v != null ? JSON.stringify (v) : v)
 
     	}
-
-        let log_event = this.log_start (sql, params)
+    	
+    	await this.check_signature ()
+        let log_event = options.no_log ? null : this.log_start (sql, params)
 
         try {
             return await this.backend.query (sql, params)
         }
         catch (e) {
+
+        	if (!log_event) log_event = this.log_start (sql, params)
         
         	if (e.code == 23505) {
         	
@@ -308,12 +339,16 @@ module.exports = class extends Dia.DB.Client {
 
         }
         finally {
-			this.log_finish (log_event)
+        
+			if (log_event) this.log_finish (log_event)
+			
 		}
 
     }
 
     async load (is, table, cols, o = {NULL: ''}) {
+
+    	await this.check_signature ()
 
 		return new Promise ((ok, fail) => {
 
@@ -598,7 +633,7 @@ module.exports = class extends Dia.DB.Client {
 
         let rs = await this.select_all (`
             SELECT
-                table_from.relname AS table_name
+                CASE WHEN current_schema <> pg_namespace.nspname THEN pg_namespace.nspname || '.' ELSE '' END || table_from.relname AS table_name
                 , c.conname AS ref_name
                 , columns.attname AS column_name
                 , table_to.relname AS ref
@@ -610,8 +645,7 @@ module.exports = class extends Dia.DB.Client {
                 INNER JOIN pg_attribute AS columns ON columns.attrelid = table_from.oid AND c.conkey[1] = columns.attnum
             WHERE
                 c.contype = 'f'
-                AND pg_namespace.nspname = current_schema
-        `, [])          
+        `, [])
 
         let tables = this.model.tables
 

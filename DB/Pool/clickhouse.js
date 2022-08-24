@@ -87,9 +87,6 @@ module.exports = class extends require ('../Pool.js') {
         		col.TYPE_NAME = 'Int32'
         	}
         }
-        else if (col.TYPE_NAME == 'CHAR') {
-            col.TYPE_NAME = 'FixedString'
-        }
         else if (/(BINARY|BLOB|CHAR|JSONB?|STRING|TEXT|XML)$/.test (col.TYPE_NAME)) {
             col.TYPE_NAME = 'String'
         }
@@ -118,6 +115,22 @@ module.exports = class extends require ('../Pool.js') {
             col.TYPE_NAME = 'UInt8'
         }
         
+        if (/^U?Int/.test (col.TYPE_NAME) && col.COLUMN_DEF) {
+
+        	switch (String (col.COLUMN_DEF).toLowerCase ()) {
+
+        		case 'true':
+        			col.COLUMN_DEF = '1'
+        			break
+
+        		case 'false':
+        			col.COLUMN_DEF = '0'
+        			break
+
+        	}
+        
+        }
+
         if (col.TYPE_NAME == 'Decimal') {
             if (!col.COLUMN_SIZE) col.COLUMN_SIZE = 10
             if (col.DECIMAL_DIGITS == undefined) col.DECIMAL_DIGITS = 0
@@ -125,7 +138,15 @@ module.exports = class extends require ('../Pool.js') {
         
         if (col.TYPE_NAME == 'String') {
             delete col.COLUMN_SIZE
-        }                
+        }
+
+		{
+
+			const m = /^\s*uuid_generate_v(\d+)/i.exec (col.COLUMN_DEF)
+
+			if (m) col.COLUMN_DEF = m [1] == 4 ? 'generateUUIDv4()' : null
+
+		}
         
         if (table.p_k.includes (col.name)) col.NULLABLE = false
 
@@ -181,17 +202,26 @@ module.exports = class extends require ('../Pool.js') {
         
         for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [type])) {
         
-            let existing_columns = table.existing.columns
-
             let after = table.on_after_add_column
-        
-            for (let col of Object.values (table.columns)) {
 
-            	let name = col.name
+            let {existing, columns} = table
+
+            for (let name of Object.keys (columns).sort ()) {
+
+                let col = columns [name]
+
+                if (col === -Infinity) {
+
+                    if (name in existing.columns) result.push ({sql: `ALTER TABLE ${table.name} DROP COLUMN IF EXISTS "${name}"`, params: []})
+
+                    delete columns [name]
+
+                    continue
+                }
 
             	if (table.p_k.includes (name)) continue
 
-            	let ex = existing_columns [name]; if (ex) {
+                let ex = existing.columns [name]; if (ex) {
 
 					if (/UInt32/.test (ex.TYPE_NAME) && !/UInt32/.test (col.TYPE_NAME)) {
 
@@ -215,9 +245,9 @@ module.exports = class extends require ('../Pool.js') {
                     if (a) for (let i of a) result.push (i)
                 }                
 
-                existing_columns [col.name] = clone (col)
+                existing.columns [name] = clone (col)
                 
-                delete existing_columns [col.name].REMARK
+                delete existing.columns [name].REMARK
 
             }
 
@@ -263,7 +293,7 @@ module.exports = class extends require ('../Pool.js') {
             let existing_columns = table.existing.columns
 
             for (let col of Object.values (table.columns)) {
-            
+
             	const ex = existing_columns [col.name]; if (!ex) continue
             	
             	if (
@@ -275,6 +305,14 @@ module.exports = class extends require ('../Pool.js') {
             		(col.DECIMAL_DIGITS == ex.DECIMAL_DIGITS || parseInt (col.DECIMAL_DIGITS) < parseInt (ex.DECIMAL_DIGITS))
 
             	) continue
+
+            	if (table.p_k.includes (col.name)) {
+
+            		darn (`Warning: ${table.name}.${col.name} redefined, but it belongs to the PK, so skip it (ClickHouse would prohibit such a MODIFY COLUMN)`)
+
+            		continue
+
+            	}
 
 		        const on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
 		            	

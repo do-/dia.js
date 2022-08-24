@@ -937,17 +937,17 @@ module.exports = class extends require ('../Pool.js') {
                 let src = triggers [name]
                 
                 let [phase, ...events] = name.toUpperCase ().split ('_')
-                
+
                 let glob = `on_${name}_${table.name}`
-                
-                result.push ({sql: `DROP TRIGGER IF EXISTS "${glob}" ON ${table.qname}`})
-                
-                if (!src) continue
-                
+
+				result.push ({sql: `DROP FUNCTION IF EXISTS "${glob}" () CASCADE`})
+
+                if (!src || src === -Infinity) continue
+
                 const QUOT = '$_TTT_$'
 
                 result.push ({sql: `
-                	CREATE OR REPLACE FUNCTION 
+                	CREATE FUNCTION 
                 		"${glob}" () 
                 	RETURNS 
                 		trigger 
@@ -1078,7 +1078,9 @@ module.exports = class extends require ('../Pool.js') {
 
     normalize_model_table_trigger (table, k) {
 
-        let src = table.triggers [k].replace (/\s+/g, ' ').trim ()
+        let src = table.triggers [k]; if (src === -Infinity) return
+
+        src = src.replace (/\s+/g, ' ').trim ()
 
         if (!src.match (/^DECLARE/)) src = `BEGIN ${src} END;`
         

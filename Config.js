@@ -170,6 +170,8 @@ module.exports = class {
 			
 				.filter (i => i)
 				
+		value.push (__filename.replace ('fig.js', 'tent'))
+				
 		Object.defineProperty (this, '_content_paths', {value, writable: false, configurable: true})
 		
 		return value

@@ -9,6 +9,9 @@ module.exports = class {
         this.backend = backend
     }
     
+    async release () {
+    }
+
     query (def) {
         return new Dia.DB.Query (this.model, def)
     }
@@ -160,7 +163,6 @@ module.exports = class {
     async add_all_cnt (data, def, limit, offset) {
 
         let q = this.query (def)        
-
         if (limit == undefined) limit = q.limit
         if (limit == undefined) throw 'LIMIT not set for add_all_cnt: ' + JSON.stringify (def)
 
@@ -168,10 +170,9 @@ module.exports = class {
         if (offset == undefined) offset = 0
         
         let [limited_sql, limited_params] = this.to_limited_sql_params (q.sql, q.params, limit, offset)
-
         let [all, cnt] = await Promise.all ([
         	this.select_all    (limited_sql, limited_params),
-        	this.select_scalar (q.sql_cnt, q.params),
+            this.select_scalar (q.sql_cnt, q.params_cnt),
         ])
 
         data [q.parts [0].alias] = all

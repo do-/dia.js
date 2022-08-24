@@ -1,3 +1,4 @@
+const assert = require ('assert')
 const fs = require ('fs')
 const path = require ('path')
 const Config = require ('../Config.js')
@@ -30,7 +31,6 @@ module.exports = class {
 
         }
 
-        this.todo           = []        
         this.relation_types = ['tables', 'views', 'foreign_tables', 'partitioned_tables']
         this.drop_types     = ['table_drops', 'view_drops']
         this.all_types      = [...this.relation_types, ...this.drop_types, 'procedures', 'functions']
@@ -38,11 +38,33 @@ module.exports = class {
         this.reload ()
 
     }
-    
+
     async pending () {
-    	return Promise.all (this.todo)
+
+    	let todo = [], add = (o, k, def) => {
+
+			const v = o [k]; switch (typeof v) {
+
+				case 'function' : return todo.push ((async () => {o [k] = await v.apply (def)}) ())
+
+				case 'object'   : for (const name in v) add (v, name, def)
+
+			}
+
+		}
+
+		for (const type of this.all_types)
+
+			for (const def of Object.values (this [type]))
+
+				for (const k of ['data', 'init_data', 'sql', 'body', 'queue', 'triggers'])
+
+					if (k in def) add (def, k, def)
+
+    	return Promise.all (todo)
+
     }
-    
+
     reload () {
 
     	for (let k of this.all_types) this [k] = {}
@@ -59,32 +81,80 @@ module.exports = class {
         
         let merged = Object.values (all).map (l => this.merge (l))
 
-        for (let m of merged) {
-
-        	m.model = this
-
-        	this [m.type + 's'] [m.name] = m
-
-        }
-                
-		for (let m of merged) {
-
-			let postpone = (o, k) => {
-
-				let f = o [k]; if (!f || typeof f !== 'function') return
-
-				this.todo.push ((async () => {o [k] = await f.apply (m)}) ())
-
-			}
-
-	        for (let k of ['data', 'init_data', 'sql', 'body', 'queue']) postpone (m, k)
-
-			let {triggers} = m; if (triggers) for (let k in triggers) postpone (triggers, k)
-
-		}
+        for (let m of merged) this.add_definition (m)
 
     }
     
+    add_roster (type) {
+    
+		this.all_types.push (type)
+			
+		return this [type] = {}
+
+    }
+
+    get_roster (type) {
+    
+    	if (!(type in this)) return this.add_roster (type)
+
+    	const r = this [type]
+
+    	assert (r && typeof r === 'object', `Invalid type name: '${type}'`)
+
+    	return r
+
+    }
+    
+    guess_type (def) {
+    	
+		const {columns, body, sql} = def
+    
+    	if (columns === -Infinity) return 'table_drop'
+
+    	if (!columns && !body) {darn (def); throw new Error ('Impossible to guess definition type, see STDERR')}
+
+    	if (!columns)              return 'returns' in def ? 'function' : 'procedure'
+
+		if (sql === -Infinity)     return 'view_drop'
+
+		if (sql) return 'view'
+		
+		if ('db_link' in def)      return 'foreign_table'
+		
+		if ('partition' in def)    return 'partitioned_table'
+		
+		return 'table'
+
+    }
+    
+    add_definition (def) {
+    
+    	if (!('type' in def)) def.type = this.guess_type (def)
+
+    	const {name, type} = def; if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
+    	
+    	if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
+
+		const r = this.get_roster (type + 's')
+
+		assert (!(name in r), `${name} is already registered`)
+
+		def.model = this
+		
+		let {columns} = def; if (columns) {
+
+			this.on_before_parse_table_columns (def)
+
+			this.parse_columns (def.columns)
+
+			this.on_after_parse_table_columns (def)
+
+        }
+
+		r [name] = def
+
+    }
+
     merge__name (ov, nv) {
     
     	return ov
@@ -196,56 +266,11 @@ module.exports = class {
     
     }
 
-    load_file (p, name) {
+    load_file (p) {
 
         let m = require (p)
 
         if (!('name' in m)) m.name = path.basename (p, '.js')
-        
-        if (!m.type && (m.data || m.init_data)) m.type = 'table'
-
-		if (m.columns === -Infinity) {
-			m.type = 'table_drop'
-			return m
-		}
-
-		if (m.sql === -Infinity) {
-			m.type = 'view_drop'
-			return m
-		}
-
-		if (m.columns) {
-
-			this.on_before_parse_table_columns (m)
-
-			this.parse_columns (m.columns)
-
-			this.on_after_parse_table_columns (m)
-			
-			if (!m.type) m.type = 
-				m.db_link   ? 'foreign_table'     : 
-				m.partition ? 'partitioned_table' : 
-				m.sql       ? 'view'              : 
-                              'table'
-
-			let {pk} = m; if (pk) {
-
-				m.p_k = Array.isArray (pk) ? pk : [pk]			
-
-			}
-			else {
-
-				m.p_k = []
-
-			}
-
-        } else if (!m.type) {
-
-            m.type = m.returns ? 'function' : 'procedure'
-            
-            if (!m.body) throw `No SQL body defined for the ${m.type} named "${name}"`
-
-        }
 
         return m
 
@@ -253,6 +278,7 @@ module.exports = class {
 
     on_before_parse_table_columns (table) {}
     on_after_parse_table_columns (table) {}
+    on_after_resolve_column_references () {}
     
     parse_columns (columns) {
         for (let name in columns) {
@@ -345,6 +371,8 @@ module.exports = class {
 		}
 		else {
 
+			if (tab_or_col === -Infinity) return false
+
 			for (let k of ['MIN_LENGTH', 'MIN', 'MAX', 'PATTERN']) if (k in tab_or_col) return true
 
 		}	
@@ -409,18 +437,71 @@ module.exports = class {
 
 	cleanup () {
 
-		const {tables, views} = this
-	
-		if (tables) for (let i of Object.values (tables)) delete i.triggers
+		const {tables, views} = this, TO_DEL = ['triggers', 'sql', 'init_data']
 
-		if (views) for (let i of Object.values (views)) delete i.sql
+		for (const type of [this.drop_types, 'procedures', 'functions']) 
 
-		try {
-			if (global.gc) global.gc ()
+			this [type] = {}
+
+		for (const type of this.all_types) 
+
+			for (const def of Object.values (this [type])) 
+
+				for (const k of TO_DEL) 
+
+					if (k in def) def [k] = undefined
+
+	}
+
+	resolve_column_references () {
+
+		for (const type of this.all_types) 
+
+			for (const {name, columns} of Object.values (this [type])) if (columns) 
+
+				for (let col of Object.values (columns)) if (typeof col === 'object' && !('TYPE_NAME' in col) && 'ref' in col) {
+					
+					try {
+
+						const {ref} = col, {columns, pk} = this.get_relation (ref)
+
+						assert (columns, `"${ref}" has no columns`)
+						assert (pk,      `"${ref}" has no pk`)
+
+						const target = columns [pk]
+
+						assert (target,  `"${ref}.${pk}" not found`)
+						
+						col.TYPE_NAME = target.TYPE_NAME
+
+						if ('COLUMN_SIZE' in target) col.COLUMN_SIZE = target.COLUMN_SIZE
+
+					}
+					catch (cause) {
+					
+						darn (cause)
+
+						throw new Error (`Cannot resolve the "${name}.${col.name}" reference`, {cause})
+
+					}
+
+				}
+				
+		this.on_after_resolve_column_references ()
+
+	}	
+
+	get_relation (name) {
+
+		for (const type of this.relation_types) {
+
+			const h = this [type]
+
+			if (name in h) return h [name]
+
 		}
-		catch (x) {
-			darn (x)
-		}
+
+		throw new Error (`Relation "${name}" not found`)
 
 	}
 
