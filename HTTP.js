@@ -87,7 +87,9 @@ module.exports = class {
 						}))
 
 						switch (rp.statusCode) {
-							case 200 : return ok   (rp_body)
+							case 200 :
+							case 201 :
+									return ok   (rp_body)
 							default  : return fail (this.to_error (rp, rp_body))
 						}
 
