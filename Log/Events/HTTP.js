@@ -41,7 +41,13 @@ module.exports = class extends Event {
 		
 		delete o.url
 		
-		if (o.auth) o.auth = o.auth.split (':') [0] + ':XXXXXX'
+		const MASKED = 'XXXXXX'
+		if (o.auth) o.auth = o.auth.split (':') [0] + ':' + MASKED
+		if (o.headers) {
+			if (o.headers.authorization) o.headers.authorization = MASKED
+			if (o.headers.Authorization) o.headers.Authorization = MASKED
+		}
+
 		
 		return JSON.stringify (o)
 	
