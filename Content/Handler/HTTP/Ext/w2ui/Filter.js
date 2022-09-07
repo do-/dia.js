@@ -5,7 +5,7 @@ module.exports = class {
 
     op (src) {switch (src) {
         case 'is':       return ' = ?'        
-        case 'not is':   return ' <> ?'        
+        case 'is not':   return ' <> ?'        
         case 'less':     return ' <= ?'        
         case 'more':     return ' >= ?'        
         case 'less!':    return ' < ?'
