@@ -160,7 +160,9 @@ module.exports = class extends require ('../../Spy.js') {
 	
 	to_watching_trigger (logging_table) {
 	
-		let watched_cols = []; for (const name in logging_table.columns) if (!(name in this.columns)) watched_cols.push (name)
+		let watched_cols = []
+		for (const name in logging_table.columns) if (!(name in this.columns))
+			watched_cols.push (logging_table.columns [name].TYPE_NAME == 'json' ? name + '::text' : name)
 
 		return `
 			
