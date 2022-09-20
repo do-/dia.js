@@ -318,7 +318,8 @@ module.exports = class {
                 let cols = []; for (let src of this.cols) {
 
                     if (src == '*') {
-                        for (let c in model.get_relation (part.table).columns) cols.push (new this.Col (c))
+                        let columns = model.get_relation (part.table).columns
+                        for (let c in columns) if (columns[c] != -Infinity) cols.push (new this.Col (c))
                     }
                     else {
                         cols.push (new this.Col (src))
