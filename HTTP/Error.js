@@ -1,4 +1,4 @@
-const RE_FAULTSTRING = new RegExp ('<\s*(?:\w+:)?faultstring\s*>(.*?)<\/')
+const RE_FAULTSTRING = new RegExp ('<\s*(?:\w+:)?faultstring[^>]*>(.*?)<\/')
 
 module.exports = class extends Error {
 
