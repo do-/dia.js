@@ -3,6 +3,7 @@ const http     = require ('http')
 const https    = require ('https')
 const stream   = require ('stream')
 const LogEvent = require ('./Log/Events/HTTP.js')
+const HTTPError = require ('./HTTP/Error.js')
 
 module.exports = class {
 
@@ -57,20 +58,6 @@ module.exports = class {
 				
 			}
 			
-			to_error (rp, rp_body) {
-
-				let x = new Error (rp.statusCode + ' ' + rp.statusMessage)
-			
-				x.code = rp.statusCode
-			
-				x.body = rp_body
-
-				x.parent = rp.log_event
-
-				return x
-
-			}
-
 			async response (o, body) {
 
 				let rp_body = ''
@@ -90,7 +77,8 @@ module.exports = class {
 							case 200 :
 							case 201 :
 									return ok   (rp_body)
-							default  : return fail (this.to_error (rp, rp_body))
+							default  : 
+									return fail (new HTTPError (o, rp, rp_body))
 						}
 
 					})
