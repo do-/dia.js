@@ -28,7 +28,7 @@ module.exports = class extends require ('../Pool.js') {
     	let {url, auth} = this
 
     	const {conf, log_meta} = o, {parent} = log_meta
-
+/*
 		if (parent && 'method_name' in parent && 'rq' in parent) {
 		
 			const {uuid} = parent
@@ -36,7 +36,7 @@ module.exports = class extends require ('../Pool.js') {
 			if (uuid) url += '&session_id=' + uuid
 		
 		}
-
+*/
     	const factory = new HTTP ({url, auth, method: 'POST'})
 
     	const agent = await factory.acquire ({conf, log_meta})
