@@ -29,6 +29,20 @@ module.exports = class extends Dia.DB.Client {
     
     async release (success) {   
     }
+
+	set_session (id, timeout) {
+	
+		let {o} = this.backend
+		
+		o.path = o.path
+			.replace (/&session_id=[^&]*/, '')
+			.replace (/&session_timeout=[^&]*/, '')
+
+		if (id) o.path += '&session_id=' + id
+
+		if (timeout) o.path += '&session_timeout=' + timeout
+	
+	}
     
     to_limited_sql_params (original_sql, original_params, limit, offset) {
         let params = original_params.slice ()

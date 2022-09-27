@@ -9,8 +9,6 @@ module.exports = class extends require ('../Pool.js') {
         	
 		let [url, auth] = o.connectionString.slice ('clickhouse://'.length).split ('@').reverse ()
 		
-		this.auth = auth
-
 		let p = url.split ('/')
 		
 		this.database = p.pop ()
@@ -19,29 +17,21 @@ module.exports = class extends require ('../Pool.js') {
 
 		if (p.length < 2 || p [1]) p.unshift ('http:/')
 
-		this.url = p.join ('/')
+		url = p.join ('/')
+
+    	this.factory = new HTTP ({url, auth, method: 'POST'})
 
     }
 
     async acquire (o = {}) {
 
-    	let {url, auth} = this
+    	const {conf, log_meta} = o
 
-    	const {conf, log_meta} = o, {parent} = log_meta
-/*
-		if (parent && 'method_name' in parent && 'rq' in parent) {
-		
-			const {uuid} = parent
-			
-			if (uuid) url += '&session_id=' + uuid
-		
-		}
-*/
-    	const factory = new HTTP ({url, auth, method: 'POST'})
+    	const agent = await this.factory.acquire ({conf, log_meta})
+    	
+    	const cn = this.inject (new wrapper (agent), o)
 
-    	const agent = await factory.acquire ({conf, log_meta})
-
-        return this.inject (new wrapper (agent), o)
+        return cn
 
     }
 
