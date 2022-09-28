@@ -1,3 +1,4 @@
+const fs       = require ('fs')
 const zlib       = require ('zlib')
 
 // Borrowed from https://github.com/sindresorhus/is-stream
@@ -61,7 +62,13 @@ module.exports = class extends Dia.DB.Client {
 
     	sql = this.bind (sql, params)
        	       	
-       	let input = await this.backend.responseStream ({}, sql + ' FORMAT JSONEachRow')
+       	let input = await this.backend.responseStream ({
+       		path: this.backend.o.path + '&enable_http_compression=1',
+			headers: {
+				"Content-Type": "text/plain",
+				"Accept-Encoding": "gzip",
+			}				       	
+       	}, sql + ' FORMAT JSONEachRow')
 
 		input.on ('close', () => this.log_finish (log_event))
 
@@ -84,7 +91,7 @@ module.exports = class extends Dia.DB.Client {
 		input.on ('error', x => result.destroy (x))
 
 		reader.on ('close', () => result.end ()).on ('line', s => {
-
+darn (s)
 			try {
 				result.write (JSON.parse (s))
 			}
