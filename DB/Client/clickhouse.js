@@ -1,3 +1,5 @@
+const zlib       = require ('zlib')
+
 // Borrowed from https://github.com/sindresorhus/is-stream
 
 const isStream = stream =>
@@ -163,7 +165,12 @@ module.exports = class extends Dia.DB.Client {
 
 				})
 
-				this.backend.response ({}, body)
+				this.backend.response ({				
+					headers: {
+						"Content-Type": "text/plain",
+						"Content-Encoding": "gzip",
+					}				
+				}, body.pipe (zlib.createGzip ({level: 9})))
 					.then (() => error ? fail (error) : ok ())
 					.catch (x => fail (error || x))
 
