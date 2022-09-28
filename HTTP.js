@@ -2,6 +2,7 @@ const url      = require ('url')
 const http     = require ('http')
 const https    = require ('https')
 const stream   = require ('stream')
+const zlib     = require ('zlib')
 const LogEvent = require ('./Log/Events/HTTP.js')
 const HTTPError = require ('./HTTP/Error.js')
 
@@ -135,6 +136,15 @@ module.exports = class {
 						
 							let code    = rp.statusCode							
 							let headers = rp.headers
+
+							if (headers ['content-encoding'] === 'gzip') {
+							
+								rp = rp.pipe (zlib.createGunzip ())
+
+								rp.statusCode = code
+								rp.headers = headers
+							
+							}
 
 							this.log_write (log_event.set ({
 								code,
