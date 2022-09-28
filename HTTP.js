@@ -137,20 +137,33 @@ module.exports = class {
 							let code    = rp.statusCode							
 							let headers = rp.headers
 
-							if (headers ['content-encoding'] === 'gzip') {
-							
-								rp = rp.pipe (zlib.createGunzip ())
-
-								rp.statusCode = code
-								rp.headers = headers
-							
-							}
-
 							this.log_write (log_event.set ({
 								code,
 								response_headers: headers,
 								phase: 'response_headers',
 							}))
+
+							{
+							
+								const 
+									CONTENT_ENCODING = 'content-encoding', 
+									enc = headers [CONTENT_ENCODING],
+									wrapper =
+										enc === 'gzip' ? zlib.createGunzip () :
+										null
+								
+								if (wrapper) {
+								
+									rp = rp.pipe (wrapper)
+									
+									delete headers [CONTENT_ENCODING]
+
+									rp.headers = headers									
+									rp.statusCode = code
+								
+								}
+
+							}
 
 							rp.on ('error', x => fail (x))
 							
