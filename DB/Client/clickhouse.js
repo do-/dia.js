@@ -1,4 +1,3 @@
-const fs       = require ('fs')
 const zlib       = require ('zlib')
 
 // Borrowed from https://github.com/sindresorhus/is-stream
