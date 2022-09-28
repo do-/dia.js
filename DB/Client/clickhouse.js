@@ -131,6 +131,14 @@ module.exports = class extends Dia.DB.Client {
     }    
 
     async load (is, table, fields) {
+    
+        if (is._readableState.objectMode) {
+        
+        	let columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String'}
+
+	        is = is.pipe (new LineWriter ({table: {name: '(GENERATED)', columns}}))
+
+        }
         
     	const sql = `INSERT INTO ${table} (${fields})`, body = new SqlPrepender (sql)
    
