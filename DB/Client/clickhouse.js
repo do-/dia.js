@@ -90,7 +90,7 @@ module.exports = class extends Dia.DB.Client {
 		input.on ('error', x => result.destroy (x))
 
 		reader.on ('close', () => result.end ()).on ('line', s => {
-darn (s)
+
 			try {
 				result.write (JSON.parse (s))
 			}
