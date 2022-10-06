@@ -187,8 +187,10 @@ module.exports = class extends Dia.DB.Client {
         let {columns} = def
         for (let k in data) {
         	if (!columns [k]) continue
+            let column = columns [k]
             let v = data [k]
             if (typeof v === 'undefined') continue            
+            if (column.TYPE_NAME == 'NUMERIC' && v == 'NaN') v = null
             fields.push (k)
             args.push ('?')
             params.push (v)
