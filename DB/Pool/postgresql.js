@@ -1027,7 +1027,16 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_update_keys () {
     
         let result = []
-        
+
+        const invariant = function (s) {
+            if (s == null) return ''
+            return s
+                .replace (/B'/g, "'")
+                .replace (/[\s\(\)]/g, '')
+                .replace (/::\"\w+\"/g, '')
+                .toLowerCase ()
+        }
+
         for (let table of Object.values (this.model.tables)) {
         
             let keys = table.keys
@@ -1047,16 +1056,7 @@ module.exports = class extends require ('../Pool.js') {
                 let original_name = name.split (table.name + '_') [1]
                 
            		if (old_src && before && name in before) darn (`[SCHEMA WARNING] REDUNDANT on_before_create_index: ${table.name}.${original_name}`)
-                
-                function invariant (s) {
-                    if (s == null) return ''
-                    return s
-                    	.replace (/B'/g, "'")
-                    	.replace (/[\s\(\)]/g, '')
-                    	.replace (/::\"\w+\"/g, '')
-                    	.toLowerCase ()
-                }
-                
+
                 if (invariant (src) == invariant (old_src)) continue
 
                 if (old_src) {
@@ -1347,13 +1347,15 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_drop_proc () {
     
         let result = []
-        
+
+        const vars = function (o, t = '') {
+            return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)
+        }
+
         for (let type of ['function', 'procedure']) {
                 
 			for (let {name, returns, arg, language, options} of Object.values (this.model [type + 's'])) {
 
-				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
-								
 				let body = (() => {
 
 					switch (language) {
@@ -1413,13 +1415,15 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_create_proc () {
 
         let result = []
-        
+
+        const vars = function (o, t = '') {
+            return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)
+        }
+
         for (let type of ['function', 'procedure']) {
                 
 			for (let {name, returns, arg, declare, body, language, options} of Object.values (this.model [type + 's'])) {
 
-				function vars (o, t = '') {return !o ? '' : Object.entries (o).map (i => i [0] + ' ' + i [1] + t)}
-				
 				if (returns) returns = 'RETURNS ' + returns
 
 				if (language == 'plpgsql') {
