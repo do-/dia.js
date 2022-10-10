@@ -1,0 +1,35 @@
+name: build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "master" ]
+  schedule:
+    - cron: '16 14 * * 1'
+
+jobs:
+  eslint:
+    name: eslint
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        node-version: [10.24.1, latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: use node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: install eslint
+        run: npm install eslint@7.32.0
+
+      - name: run eslint
+        run: npx eslint .
+          --config .eslintrc.json
+          --ext .js

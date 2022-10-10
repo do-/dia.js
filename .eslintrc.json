@@ -1,0 +1,21 @@
+{
+    "env": {
+        "node": true,
+        "commonjs": true,
+        "es6": true
+    },
+    "parserOptions": {
+        "ecmaVersion": "2020"
+    },
+    "extends": [
+        "eslint:recommended"
+    ],
+    "rules": {
+        "no-undef": "off",
+        "no-unused-vars": "off",
+        "no-fallthrough": "off",
+        "no-case-declarations": "off",
+        "no-mixed-spaces-and-tabs": "off",
+        "no-useless-escape": "off"
+    }
+}
