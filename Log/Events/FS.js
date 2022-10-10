@@ -10,13 +10,13 @@ module.exports = class extends Event {
 		
 		super ({category: 'f_s', ...o})
 		
-		if (this.action == 'append') this.size = 0n
+		if (this.action == 'append') this.size = BigInt (0)
 
 	}
 	
 	get_meter () {
 	
-		this.size = 0n
+		this.size = BigInt (0)
 	
 		let me = this
 
