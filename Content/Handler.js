@@ -50,7 +50,7 @@ module.exports = class {
     	if (!(ttl > 0)) return main
     	
     	return Promise.race ([
-
+            // eslint-disable-next-line no-async-promise-executor
     		new Promise (async (ok, fail) => {
 
     			try {
@@ -69,7 +69,7 @@ module.exports = class {
     			}
 
     		}),
-    		
+            // eslint-disable-next-line no-async-promise-executor
     		new Promise (async (ok, fail) => {
 
     			watch = setTimeout (() => 
