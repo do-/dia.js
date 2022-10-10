@@ -4,7 +4,10 @@ module.exports = class extends Promise {
 
 	constructor (timer, comment = 'starting as Promise') {
 	
-		if (typeof timer === 'function') return super (timer)
+		if (typeof timer === 'function') {
+			super (timer)
+			return
+		}
 
 		assert (timer, 'timer not set')
 
