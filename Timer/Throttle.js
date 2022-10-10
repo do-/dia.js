@@ -46,7 +46,10 @@ module.exports = class {
 
 	set tolerance (v) {
 	
-		if (v == null) return this [S_TOLERANCE] = null
+		if (v == null) {
+			this [S_TOLERANCE] = null
+			return
+		}
 		
 		assert_non_negative_int (v, 'tolerance')
 		
