@@ -44,37 +44,26 @@ module.exports = class {
     }
     
     async get_data () {
-    
-    	let watch, main = this.get_method ().call (this), ttl = this.get_ttl (); 
-    	
-    	if (!(ttl > 0)) return main
-    	
-    	return Promise.race ([
-            // eslint-disable-next-line no-async-promise-executor
-    		new Promise (async (ok, fail) => {
 
-    			try {
-    			
-    				let data = await main
+    	const main = this.get_method ().call (this); if (!(main instanceof Promise)) return main
+
+    	const ttl = this.get_ttl (); if (!(ttl > 0)) return main
+
+    	let watch; return Promise.race ([
+    	
+    		main.then (data => {
+
+    			clearTimeout (watch)
     				
-    				clearTimeout (watch)
-    				
-    				ok (data)
-    				
-    			}
-    			catch (x) {
-    			
-    				fail (x)
-    			
-    			}
+    			return data
 
     		}),
-            // eslint-disable-next-line no-async-promise-executor
-    		new Promise (async (ok, fail) => {
 
-    			watch = setTimeout (() => 
+    		new Promise ((ok, fail) => {
 
-    				fail (new Error ('Dia handler timeout expired: ' + ttl + ' ms elapsed'))
+    			watch = setTimeout (
+    			
+    				() => fail (new Error ('Dia handler timeout expired: ' + ttl + ' ms elapsed'))
 
     				, ttl + 1
     			
