@@ -133,7 +133,9 @@ module.exports = class extends Transform {
 
 		}
 		catch (x) {
-		
+
+			let xx = x
+
 			const {null_field_name} = x; if (null_field_name) {
 			
 				let message = `Null value not allowed for ${this.table.name}.${null_field_name}`
@@ -149,11 +151,11 @@ module.exports = class extends Transform {
 
 				}
 
-				x = new Error (message)
+				xx = new Error (message)
 			
 			}
 
-			this.destroy (x)
+			this.destroy (xx)
 
 		}
 
