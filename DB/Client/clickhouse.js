@@ -153,7 +153,7 @@ module.exports = class extends Dia.DB.Client {
 		const log_event = this.log_start (sql)
 
 		try {
-
+			// eslint-disable-next-line no-async-promise-executor
 			await new Promise (async (ok, fail) => {
 			
 				let error = null
