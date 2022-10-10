@@ -3,7 +3,7 @@ const {Readable, PassThrough} = require ('stream')
 const WrappedError = require ('../../Log/WrappedError.js')
 const to_tsv       = require ('./postgresql/to_tsv.js')
 
-let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {}
+let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {console.log ('no pg-query-stream, ok')}
 
 module.exports = class extends Dia.DB.Client {
 
