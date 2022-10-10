@@ -364,7 +364,12 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_update_keys () {
     
         let result = []
-        
+
+        const invariant = function (s) {
+            if (s == null) return ''
+            return s.replace (/[\s\(\)]/g, '').toLowerCase ()
+        }
+
         for (let table of Object.values (this.model.tables)) {
         
             let keys = table.keys
@@ -378,11 +383,6 @@ module.exports = class extends require ('../Pool.js') {
                 let src = keys [name]
                 
                 let old_src = existing_keys [name]
-                
-                function invariant (s) {
-                    if (s == null) return ''
-                    return s.replace (/[\s\(\)]/g, '').toLowerCase ()
-                }
 
                 if (invariant (src) == invariant (old_src)) continue
 
