@@ -26,8 +26,10 @@ module.exports = class extends CookieSession {
     	let {id} = this
 
         if (!id) return this.h.no_user ()
-        
-        if (this.user = await this.o.sessions.to_get (id)) return this.keep_alive ()
+
+        this.user = await this.o.sessions.to_get (id)
+
+        if (this.user) return this.keep_alive ()
 
 		this.h.warn ('Session not found', {id})
 		

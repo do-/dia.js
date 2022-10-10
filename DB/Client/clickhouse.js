@@ -333,8 +333,10 @@ module.exports = class extends Dia.DB.Client {
 			{
 			
 				const m = RE_NULLABLE.exec (type)
-				
-				col.TYPE_NAME = (col.NULLABLE = !!m) ? m [1] : type
+
+				col.NULLABLE = !!m
+
+				col.TYPE_NAME = col.NULLABLE ? m [1] : type
 			
 			}
 
