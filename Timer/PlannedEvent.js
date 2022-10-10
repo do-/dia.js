@@ -23,7 +23,7 @@ module.exports = class {
 		this.status      = ST_NEW		
 
 		if (!timer) throw new Error ('timer not set')
-		if (!date instanceof Date) throw new Error ('date must be Date')
+		if (!(date instanceof Date)) throw new Error ('date must be Date')
 		if (!label || typeof label !== 'string') throw new Error ('Invalid label')
 	
 		this.timer       = timer
