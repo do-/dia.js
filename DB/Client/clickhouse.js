@@ -57,7 +57,7 @@ module.exports = class extends Dia.DB.Client {
 
         sql = sql.replace (/\blower\b\s*\(/gsmi, 'lowerUTF8(')
 
-        let log_event = this.log_start (sql, params)
+        let log_event = this.backend.set_parent_log_event (this.log_start (sql, params))        
 
     	sql = this.bind (sql, params)
        	       	
@@ -150,7 +150,7 @@ module.exports = class extends Dia.DB.Client {
         
     	const sql = `INSERT INTO ${table} (${fields})`, body = new SqlPrepender (sql)
    
-		const log_event = this.log_start (sql)
+        let log_event = this.backend.set_parent_log_event (this.log_start (sql))        
 
 		try {
 
@@ -275,7 +275,7 @@ module.exports = class extends Dia.DB.Client {
     
     async do (sql, params = []) {
     
-        let log_event = this.log_start (sql, params)
+        let log_event = this.backend.set_parent_log_event (this.log_start (sql, params))        
 
     	sql = this.bind (sql, params)
     	        
