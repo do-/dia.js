@@ -21,7 +21,7 @@ module.exports = class {
         this.o = o
         
     }
-    
+        
     async acquire (ao = {}) {
     	
     	let {conf, log_meta} = ao
@@ -32,7 +32,19 @@ module.exports = class {
 				this.o = o
 				this.log_meta = log_meta
 			}
-			
+
+			set_parent_log_event (e) {
+
+				let {log_meta} = this
+
+				log_meta.parent = e
+
+				log_meta.category = e.category
+
+				return e
+
+			}
+
 			log_write (e) {
 
 				conf.log_event (e)
