@@ -62,6 +62,8 @@ module.exports = class {
 	}
 	
 	to_logging_column (col, o = {}) {
+	
+		if (col === -Infinity) return col
 
 		let c = {}; for (const k of ['name', 'REMARK', 'TYPE_NAME', 'COLUMN_SIZE', 'DECIMAL_DIGITS', 'COLUMN_DEF']) {
 		
@@ -116,15 +118,11 @@ module.exports = class {
 		
 		}		
 
-		const x = new Set (except_columns || []); for (const col of Object.values (columns)) {
+		const x = new Set (except_columns || []); for (const [name, col] of Object.entries (columns)) 
 
-			if (x.has (col.name)) continue
+			if (!x.has (name)) 
 
-			const c = this.to_logging_column (col, {no_def: true})
-
-			log.columns [c.name] = c
-
-		}		
+				log.columns [name] = this.to_logging_column (col, {no_def: true})
 
 		return log
 

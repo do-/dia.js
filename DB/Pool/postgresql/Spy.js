@@ -64,6 +64,8 @@ module.exports = class extends require ('../../Spy.js') {
 	to_logging_column (col, o = {}) {
 
 		let c = super.to_logging_column (col, o)
+		
+		if (c === -Infinity) return c
 
 		if (/^serial/i.test (c.TYPE_NAME)) c.TYPE_NAME = 'INT'
 		
@@ -118,7 +120,7 @@ module.exports = class extends require ('../../Spy.js') {
 
 		let src = [], dst = []
 
-		for (const {name, TYPE_NAME, TRG_COLUMN_DEF, COLUMN_DEF, getter} of Object.values (logging_table.columns)) {
+		for (const {name, TYPE_NAME, TRG_COLUMN_DEF, COLUMN_DEF, getter} of Object.values (logging_table.columns)) if (name) {
 		
 			let value; if (name in this.columns) {
 
@@ -161,7 +163,7 @@ module.exports = class extends require ('../../Spy.js') {
 	to_watching_trigger (logging_table) {
 	
 		let watched_cols = []
-		for (const name in logging_table.columns) if (!(name in this.columns))
+		for (const name in logging_table.columns) if (!(name in this.columns) && logging_table.columns [name] !== -Infinity)
 			watched_cols.push (logging_table.columns [name].TYPE_NAME == 'json' ? name + '::text' : name)
 
 		return `

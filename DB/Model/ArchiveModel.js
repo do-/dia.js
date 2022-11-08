@@ -119,18 +119,22 @@ module.exports = class extends Model {
 
     	const {name, label, pk, partition, except_columns} = def.archive
 
-    	let columns = []; for (const [k, v] of Object.entries (clone (def.columns))) {
+    	let columns = []; for (let [k, v] of Object.entries (def.columns)) {
 
 			if (except_columns && except_columns.includes (k)) continue
 
-			if (!v) continue
+			if (v !== -Infinity) {
 
-			delete v.ref
+				v = clone (v)
+
+				delete v.ref
+
+			}
 
 			columns [k] = v
 
 		}
-				
+
 		return {name, label, pk, partition, columns}
 
     }
