@@ -8,13 +8,28 @@ module.exports = class {
 
 		o.ts = new Date ()
 
-		if (!('uuid' in o)) o.uuid = Dia.new_uuid ()
+		if (!('uuid' in o)) {
+		
+			const {parent} = o; if (parent) {
+			
+				o.uuid = String (++ parent.cnt_children)
+			
+			}
+			else {
+
+				o.uuid = Dia.new_uuid ()
+
+			}
+		
+		}
 
 		o.path = []; for (let i = o; i; i = i.parent) o.path.unshift (i.uuid)
 		
 		if (!o.category) o.category = 'app'
 
 		this.set (o)
+		
+		this.cnt_children = 0n
 
 	}
 	
