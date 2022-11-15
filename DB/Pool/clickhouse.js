@@ -62,10 +62,23 @@ module.exports = class extends require ('../Pool.js') {
 
         if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
         
-        let def = col.COLUMN_DEF
-        if (def != undefined) {
-            if (def.indexOf (')') < 0) def = this.gen_sql_quoted_literal (def)
-            sql += ' DEFAULT ' + def
+        {
+        
+        	sql += ' DEFAULT '
+
+        	const {COLUMN_DEF} = col; if (COLUMN_DEF == null) {
+        	
+        		sql += 'NULL'
+        	
+        	}
+        	else {
+
+        		const def = String (COLUMN_DEF)
+
+        		sql += def.indexOf (')') < 0 ? this.gen_sql_quoted_literal (def) : def
+
+        	}
+        	
         }
 
         return sql
@@ -291,13 +304,6 @@ module.exports = class extends require ('../Pool.js') {
     
     gen_sql_alter_columns () {
     
-    	const diff = (ex, col) => {
-    	
-    		let d = null
-    	
-    		
-    	}
-
         let result = []
 
         for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [type])) {
@@ -347,7 +353,7 @@ module.exports = class extends require ('../Pool.js') {
             	}
 
 		        const on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
-		            	
+
 				result.push ({
 					sql: `ALTER TABLE ${table.name}${on_cluster} MODIFY COLUMN ${col.name} ` + this.gen_sql_column_definition (col),
 					params: []
