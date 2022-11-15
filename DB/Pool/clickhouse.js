@@ -290,6 +290,13 @@ module.exports = class extends require ('../Pool.js') {
     }
     
     gen_sql_alter_columns () {
+    
+    	const diff = (ex, col) => {
+    	
+    		let d = null
+    	
+    		
+    	}
 
         let result = []
 
@@ -301,19 +308,39 @@ module.exports = class extends require ('../Pool.js') {
 
             	const ex = existing_columns [col.name]; if (!ex) continue
             	
-            	if (
+            	let diff = new Map ()
+            	
+				for (const name of [
+					'TYPE_NAME',
+					'NULLABLE',   
+					'COLUMN_DEF', 
+					'COLUMN_SIZE',
+					'DECIMAL_DIGITS',			
+				]) {
 
-            		 col.TYPE_NAME  === ex.TYPE_NAME  && 
-            		 col.NULLABLE   === ex.NULLABLE   && 
-            		(col.COLUMN_DEF  == ex.COLUMN_DEF  || ex.COLUMN_DEF == this.gen_sql_quoted_literal (col.COLUMN_DEF)) && 
-            		(col.COLUMN_SIZE == ex.COLUMN_SIZE || parseInt (col.COLUMN_SIZE) < parseInt (ex.COLUMN_SIZE)) &&
-            		(col.DECIMAL_DIGITS == ex.DECIMAL_DIGITS || parseInt (col.DECIMAL_DIGITS) < parseInt (ex.DECIMAL_DIGITS))
+					const from = ex [name], to = col [name]; if (from == to) continue
 
-            	) continue
+					switch (name) {
+					
+						case 'COLUMN_SIZE':
+						case 'DECIMAL_DIGITS': 
+							if (parseInt (from) >= parseInt (to)) continue
+							break
+							
+						case 'COLUMN_DEF':
+							if (from == this.gen_sql_quoted_literal (to)) continue
+							break
+					}
 
+					diff.set (name, [from, to])
+
+				}
+				
+				if (diff.size === 0) continue
+            	
             	if (table.p_k.includes (col.name)) {
 
-            		darn (`Warning: ${table.name}.${col.name} redefined, but it belongs to the PK, so skip it (ClickHouse would prohibit such a MODIFY COLUMN)`)
+            		darn (`Warning: ${table.name}.${col.name} redefined (${[...diff.entries ()].map (([name, [from, to]])=> `${name}: ${from} -> ${to}`).join ('; ')}), but it belongs to the PK, so skip it (ClickHouse would prohibit such a MODIFY COLUMN)`)
 
             		continue
 
