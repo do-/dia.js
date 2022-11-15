@@ -57,7 +57,7 @@ module.exports = class extends Dia.DB.Client {
 	
 		const {handler, pool: {ods_name, dw_name}} = this
 		
-		let dbs = [dw_name, ods_name].map (k => handler [k]); if (/\s+DESC\s*$/i.test (original_sql)) dbs.reverse ()
+		let dbs = [dw_name, ods_name].map (k => handler [k]); if (/\bDESC$/i.test (original_sql.trim ())) dbs.reverse () // njsscan-ignore: regex_dos
 
 		const st_cnts = dbs.map (db => db.select_scalar (db.to_counting_sql (original_sql), original_params))
 
