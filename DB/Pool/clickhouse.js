@@ -1,5 +1,6 @@
 const wrapper = require ('../Client/clickhouse.js')
 const HTTP = require ('../../HTTP.js')
+const HTTPLogEvent = require ('../../Log/Events/HTTP/clickhouse.js')
 
 module.exports = class extends require ('../Pool.js') {
 
@@ -26,6 +27,8 @@ module.exports = class extends require ('../Pool.js') {
     async acquire (o = {}) {
 
     	const {conf, log_meta} = o
+    	
+    	log_meta.event_class = HTTPLogEvent
 
     	const agent = await this.factory.acquire ({conf, log_meta})
     	

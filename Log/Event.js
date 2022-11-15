@@ -79,5 +79,11 @@ module.exports = class {
 		}
 
 	}
+	
+	is_to_skip () {
+	
+		return false
+	
+	}
 
 }

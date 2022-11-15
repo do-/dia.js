@@ -192,8 +192,8 @@ module.exports = class {
 	
 	log_event (e) {
 
-		this.get_logger (e.category).write (e)
-		
+		if (!e.is_to_skip ()) this.get_logger (e.category).write (e)
+
 		return e
 
 	}
