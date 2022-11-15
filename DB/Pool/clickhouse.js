@@ -53,27 +53,35 @@ module.exports = class extends require ('../Pool.js') {
     gen_sql_column_definition (col) {
     
         let sql = col.TYPE_NAME
-        
-        if (col.COLUMN_SIZE > 0) {
-            sql += '(' + col.COLUMN_SIZE
-            if (col.DECIMAL_DIGITS) sql += ',' + col.DECIMAL_DIGITS
-            sql += ')'
-        }
 
-        if (col.NULLABLE) sql = 'Nullable(' + sql + ')'
-        
         {
         
-        	sql += ' DEFAULT '
+        	const {COLUMN_SIZE} = col; if (COLUMN_SIZE) {
+
+	            sql += '(' + COLUMN_SIZE
+
+	            const {DECIMAL_DIGITS} = col; if (DECIMAL_DIGITS) sql += ',' + DECIMAL_DIGITS
+
+	            sql += ')'
+
+        	}
+        
+        }
+        
+        const {NULLABLE} = col; if (NULLABLE) sql = 'Nullable(' + sql + ')'
+
+        {
 
         	const {COLUMN_DEF} = col; if (COLUMN_DEF == null) {
-        	
-        		sql += 'NULL'
-        	
+
+        		if (NULLABLE) sql += ' DEFAULT NULL'
+
         	}
         	else {
 
-        		const def = String (COLUMN_DEF)
+	        	sql += ' DEFAULT '
+
+	       		const def = String (COLUMN_DEF)
 
         		sql += def.indexOf (')') < 0 ? this.gen_sql_quoted_literal (def) : def
 
