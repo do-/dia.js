@@ -222,8 +222,9 @@ module.exports = class {
                             }
                             
                             src = src.trim ()
-                            
-                            let col_etc_other = /^(\w+)(\.\.\.)?(\s*(?:NOT\s+)?\S*)\s*$/.exec (src)
+
+                            // eslint-disable-next-line security/detect-unsafe-regex
+                            let col_etc_other = /^(\w+)(\.\.\.)?(\s*(?:NOT\s+)?\S*)$/.exec (src)
 
                             if (col_etc_other) {
                             
