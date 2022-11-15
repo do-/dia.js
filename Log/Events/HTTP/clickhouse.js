@@ -9,8 +9,13 @@ module.exports = class extends Event {
 
 		const {o: {path}, response_headers} = this
 		
-		this.path.pop ()
-		this.path.push (this.uuid = response_headers ['x-clickhouse-query-id'])
+		{
+		
+			this.path.pop ()
+
+			const query_id = response_headers ['x-clickhouse-query-id']; if (query_id) this.path.push (this.uuid = query_id)
+		
+		}
 
 		let o = {}, sum = response_headers ['x-clickhouse-summary']
 		
@@ -44,7 +49,7 @@ module.exports = class extends Event {
 	
 	is_to_skip () {
 
-		return this.phase !== 'response_headers'
+		return this.phase !== 'response_headers' || !this.response_headers ['x-clickhouse-query-id']
 
 	}	
 						
