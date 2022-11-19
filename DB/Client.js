@@ -423,7 +423,8 @@ module.exports = class {
 
     log_finish (e) {
         	
-    	return this.log_write (e.finish ())
+		e.level = 'info'
+		return this.log_write (e.finish ())
 
     }
     

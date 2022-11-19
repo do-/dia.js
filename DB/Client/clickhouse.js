@@ -187,21 +187,26 @@ module.exports = class extends Dia.DB.Client {
 		}
 		catch (error) {
 			
-			log_event.level = 'error'
-			log_event.phase = 'error'
-			log_event.message = error.message
-
-			this.log_write (log_event)
-
-			throw new Error ('ClickHouse server error', {cause: error})
+		    this.log_error (log_event, error)
 		
 		}
 		finally {
 		
-			log_event.level = 'info'
 			this.log_finish (log_event)
 
 		}
+
+    }
+    
+    log_error (log_event, error) {
+    
+		log_event.level = 'error'
+		log_event.phase = 'error'
+		log_event.message = error.message
+
+		this.log_write (log_event)
+
+		throw new Error ('ClickHouse server error', {cause: error})
 
     }
 
@@ -294,6 +299,9 @@ module.exports = class extends Dia.DB.Client {
         try {        
 			await this.backend.response ({}, sql)			
         }
+		catch (error) {			
+		    this.log_error (log_event, error)		
+		}
         finally {        
             this.log_finish (log_event)        
         }
