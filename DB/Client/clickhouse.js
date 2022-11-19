@@ -77,10 +77,17 @@ module.exports = class extends Dia.DB.Client {
 
 			input.on ('error', fail)
 			
-			let x = 'Clickhouse server returned ' + input.statusCode
-				
-			reader.on ('close', () => fail (new Error (x))).on ('line', s => x += ' ' + s)
-			
+			log_event.level = 'error'
+			log_event.phase = 'error'
+			log_event.message = ''
+
+			reader
+				.on ('close', () => {
+					this.log_write (log_event)
+					fail (new Error ('ClickHouse server error'))
+				})
+				.on ('line', s => log_event.message += s)
+
 		})
 		
 		o.objectMode = true
