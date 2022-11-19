@@ -2,13 +2,13 @@ const Event = require ('../HTTP.js')
 const url   = require ('url')
 
 module.exports = class extends Event {
-    
+
 	get_message () {
-	
+
 		if (this.is_to_skip ()) return ''
 
-		const {o: {path}, response_headers} = this
-		
+		const {o: {path}, response_headers} = this; if (!response_headers) return
+
 		{
 		
 			this.path.pop ()
@@ -48,8 +48,19 @@ module.exports = class extends Event {
 	}
 	
 	is_to_skip () {
+	
+		switch (this.phase) {
+		
+			case 'error': 
+				return false
 
-		return this.phase !== 'response_headers' || !this.response_headers ['x-clickhouse-query-id']
+			case 'response_headers': 
+				return !this.response_headers ['x-clickhouse-query-id']
+
+			default: 
+				return true
+		
+		}
 
 	}	
 						
