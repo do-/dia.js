@@ -18,7 +18,17 @@ module.exports = class extends Error {
 	
 	adjust_message () {
 	
-		const m = RE_FAULTSTRING.exec (this.body); if (m) this.message = m [1]
+		const {body} = this; if (!body) return
+		
+		this.message = body
+		
+		{
+
+			const m = RE_FAULTSTRING.exec (this.message)
+			
+			if (m) this.message = m [1]
+
+		}	
 	
 	}
 
