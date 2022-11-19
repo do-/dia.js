@@ -28,4 +28,16 @@ module.exports = class extends Transform {
 
 	}
 
+	_flush (callback) {
+	
+		if (this.is_virgin) {
+		
+			this.push (this.sql + ' FORMAT TSV\n')
+		
+		}
+		
+		callback ()
+
+	}
+
 }
