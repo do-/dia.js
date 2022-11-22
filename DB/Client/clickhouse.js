@@ -149,7 +149,7 @@ module.exports = class extends Dia.DB.Client {
     
         if (is._readableState.objectMode) {
         
-        	let columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String'}
+        	let columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String', NULLABLE: true}
 
 	        is = is.pipe (new LineWriter ({table: {name: '(GENERATED)', columns}}))
 
