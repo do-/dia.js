@@ -17,7 +17,14 @@ module.exports = class extends Dia.DB.Client {
     }
     
     async break () {
-        return this.backend.break ()
+    	
+    	try {
+	        await this.backend.break ()
+    	}
+    	catch (x) {
+    		this.warn ('' + x)
+    	}
+    	
     }
 
     async commit () {

@@ -388,15 +388,15 @@ module.exports = class {
     call (method_name, ...args) {
     	return this.module [method_name].apply (this, args)
     }
-    
+
 	async break () {
-	
+
 		let todo = []; for (const r of this.__resources)
-		
+
 			if (typeof r.break === 'function')
-			
+
 				todo.push (r.break ())
-			
+
 		return Promise.all (todo)
 
 	}
