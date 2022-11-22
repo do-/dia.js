@@ -11,6 +11,10 @@ module.exports = class extends Dia.DB.Client {
         return e.code == '23505' && /_pkey$/.test (e.constraint)
     }
     
+    async break () {
+        return this.backend.end ()
+    }
+    
     async release (success) {
     
         if (this.backend.is_txn_pending) try {        
