@@ -117,7 +117,7 @@ module.exports = class {
 					let dt = new Date (s.value)
 					dt.setDate (1 + dt.getDate ())
 					s.operator = 'less!'
-					s.expr = s.field + ' <'
+					s.expr = s.field + ' < ?'
 					s.value = dt.toJSON ().slice (0, 10)
 				}
 				
