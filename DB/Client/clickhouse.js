@@ -32,6 +32,17 @@ module.exports = class extends Dia.DB.Client {
     async release (success) {   
     }
 
+    async break () {
+
+    	try {
+	        await this.backend.break ()
+    	}
+    	catch (x) {
+    		this.warn ('' + x)
+    	}
+
+    }
+
 	set_session (id, timeout) {
 	
 		let {o} = this.backend
