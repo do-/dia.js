@@ -188,11 +188,22 @@ module.exports = class {
         if (q.limit) throw 'LIMIT set, use add_all_cnt: ' + JSON.stringify (def)
         data [q.parts [0].alias] = await this.select_all (q.sql, q.params)
         return data
-    }    
+    }
     
     async list (def) {
-        let q = this.query (def)
-        return await this.select_all (q.sql, q.params)
+
+        const q = this.query (def), {sql, params, limit, offset} = q
+
+        if ('LIMIT' in def && 'ORDER' in def) {
+
+			const [limited_sql, limited_params] = this.to_limited_sql_params (sql, params, limit, offset)
+
+			return this.select_all (limited_sql, limited_params)
+
+        }
+
+        return this.select_all (sql, params)
+
     }
 
     async fold (def, callback, data) {
