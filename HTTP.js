@@ -5,6 +5,7 @@ const stream   = require ('stream')
 const zlib     = require ('zlib')
 const LogEvent = require ('./Log/Events/HTTP.js')
 const HTTPError = require ('./HTTP/Error.js')
+const WarningEvent = require ('./Log/Events/Warning.js')
 
 module.exports = class {
 
@@ -31,7 +32,25 @@ module.exports = class {
 			constructor (o) {
 				this.o = o
 				this.log_meta = log_meta
+				this._requests = []
 			}
+
+			async break () {
+
+				for (const rq of this._requests) {
+
+					const {socket} = rq; if (!socket) continue
+
+					try {    	
+						socket.destroy ()
+					}
+					catch (x) {    	
+  				  		this.warn ('' + x)						
+					}
+
+				}
+
+			}			
 
 			set_parent_log_event (e) {
 
@@ -52,6 +71,16 @@ module.exports = class {
 				return e
 
 			}
+			
+			warn (label, o = {}) {
+
+				return this.log_write (new WarningEvent ({
+					...(this.log_meta || {}),
+					label,
+					...o
+				}))
+
+			}			
 			
 			async release () {
 				// do nothing
@@ -198,6 +227,8 @@ module.exports = class {
 				    		ok (await this.responseStream (o, body))
 							
 						})
+						
+						this._requests.push (rq)
 
 						rq.on ('error', x => fail (x))	
 
