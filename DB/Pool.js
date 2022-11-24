@@ -24,7 +24,7 @@ module.exports = class {
     
     async init_queue (relation, o) {
 
-    	let {model, _timers} = this, {conf} = model, {name, label, queue, columns} = relation
+    	let {model, _timers} = this, {conf} = model, {name, p_k, label, queue, columns} = relation
 
     	for (let k of ['label']) if (!queue [k]) queue [k] = relation [k]
     	
@@ -33,7 +33,7 @@ module.exports = class {
     	let is_empty = async () => this.do_with_db ({
     		label: `Checking if ${name} is empty`,
     		f: async db => {
-    			let l = await db.list ({[name]: {LIMIT: 1}})
+    			let l = await db.list ({[`${name}(${p_k})`]: {LIMIT: 1, ORDER: queue.ORDER || clone (p_k)}})
     			return l.length == 0
     		}
     	})
