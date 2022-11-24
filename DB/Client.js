@@ -193,16 +193,12 @@ module.exports = class {
     async list (def) {
 
         const q = this.query (def), {sql, params, limit, offset} = q
+        
+        if (limit == null) return this.select_all (sql, params)
 
-        if ('LIMIT' in def && 'ORDER' in def) {
+		const [limited_sql, limited_params] = this.to_limited_sql_params (sql, params, limit, offset)
 
-			const [limited_sql, limited_params] = this.to_limited_sql_params (sql, params, limit, offset)
-
-			return this.select_all (limited_sql, limited_params)
-
-        }
-
-        return this.select_all (sql, params)
+		return this.select_all (limited_sql, limited_params)
 
     }
 
