@@ -447,11 +447,12 @@ module.exports = class extends Dia.DB.Client {
 				) AS name
                 , pg_description.description AS label
                 , pg_class.relpersistence = 'u' AS unlogged
+                , pg_class.relkind
             FROM 
                 pg_namespace
                 LEFT JOIN pg_class ON (
                     pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind IN ('r', 'p')
+                    AND pg_class.relkind IN ('r', 'p', 'v')
                 )
                 LEFT JOIN pg_description ON (
                     pg_description.objoid = pg_class.oid
@@ -459,11 +460,51 @@ module.exports = class extends Dia.DB.Client {
                 )
         `, [])
         
-        let {tables, partitioned_tables} = this.model
+        let {model} = this, {tables, partitioned_tables, table_drops, views, view_drops} = model
+        
+        const RE_SYS = /^(pg_|information_schema\.)/
         
         for (let r of rs) {
+        	
+        	const {name, relkind} = r
+        	
+        	if (relkind === 'v') {
+
+				if (RE_SYS.test (name)) continue
+
+				if (name in view_drops) {
+				
+					view_drops [name].existing = r
+				
+					continue
+					
+				}
+
+				if (name in views) continue
+
+				model.odd ({type: 'unknown_view', id: name})
+
+				continue
+
+        	}        	
         
-			let t = tables [r.name] || partitioned_tables [r.name]; if (!t) continue
+			let t = tables [name] || partitioned_tables [name]; if (!t) {
+
+				if (RE_SYS.test (name)) continue
+				
+				if (name in table_drops) {
+				
+					table_drops [name].existing = r
+				
+					continue
+					
+				}
+
+				model.odd ({type: 'unknown_table', id: name})
+
+				continue
+
+			}
 			
 			r.p_k = []
         
@@ -472,6 +513,9 @@ module.exports = class extends Dia.DB.Client {
             t.existing = r
 
         }
+
+		for (const i of Object.values (table_drops)) if (!i.existing) model.odd ({type: 'dropped_table', id: i.name})
+		for (const i of Object.values (view_drops))  if (!i.existing) model.odd ({type: 'dropped_view',  id: i.name})
         
         for (let partitioned_table of Object.values (partitioned_tables)) {
         
