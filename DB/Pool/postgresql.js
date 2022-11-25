@@ -789,6 +789,11 @@ module.exports = class extends require ('../Pool.js') {
 					result.push ({sql: `ALTER TABLE ${table.qname} DROP COLUMN IF EXISTS "${name}" CASCADE`, params: []})
 
 				}
+				else {
+				
+					this.model.odd ({type: 'dropped_column', id: `${table.name}.${name}`})
+				
+				}
 			
     			delete columns [name]
     			
