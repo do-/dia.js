@@ -905,7 +905,7 @@ module.exports = class extends require ('../Pool.js') {
         		} 
         		else {
 
-        			if (!model.relations [ref]) this.model.odd ({type: 'ref', id: `${table.name}.${name}`})
+        			if (!model.relations [ref]) this.model.odd ({type: 'unknown_ref', id: `${table.name}.${name}`})
 
         		}
 
