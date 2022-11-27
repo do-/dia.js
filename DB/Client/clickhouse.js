@@ -342,13 +342,17 @@ module.exports = class extends Dia.DB.Client {
     
     async load_schema_tables () {
 
-        let {tables, partitioned_tables} = this.model
+        const {model} = this, {tables, partitioned_tables} = model
 
 		let rs = await this.select_all ("SELECT * FROM system.tables WHERE database=?", [this.pool.database])
 
         for (let r of rs) {
-            let t = tables [r.name] || partitioned_tables [r.name]
-            if (!t) continue
+        	const {name} = r
+            let t = tables [name] || partitioned_tables [name]
+            if (!t) {
+				model.odd ({type: 'unknown_table', id: name})
+           		continue
+            }
             r.columns = {}
             r.keys = {}
             t.existing = r
