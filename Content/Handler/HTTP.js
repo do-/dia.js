@@ -4,7 +4,8 @@ const Handler = require ('../Handler')
 const stream = require ('stream')
 const contentDisposition = require ('content-disposition')
 
-const bfj = require ('bfj'), BFJ_THRESHOLD = 1e6
+const BFJ_THRESHOLD = 1e6
+let bfj; try {bfj = require ('bfj')} catch (x) {}
 
 class HttpError extends Error {
 
