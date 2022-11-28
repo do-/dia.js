@@ -5,7 +5,7 @@ const stream = require ('stream')
 const contentDisposition = require ('content-disposition')
 
 const BFJ_THRESHOLD = 1e6
-let bfj; try {bfj = require ('bfj')} catch (x) {}
+let bfj; try {bfj = require ('bfj')} catch (x) {/**/}
 
 class HttpError extends Error {
 
