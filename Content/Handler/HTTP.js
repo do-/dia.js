@@ -4,6 +4,8 @@ const Handler = require ('../Handler')
 const stream = require ('stream')
 const contentDisposition = require ('content-disposition')
 
+const bfj = require ('bfj'), BFJ_THRESHOLD = 1e6
+
 class HttpError extends Error {
 
 	constructor (line) {
@@ -148,20 +150,48 @@ exports.Handler = class extends Handler {
 
     }
 
+	async check_http_request_body_json () {
+
+		const len = this.http.request.headers ['content-length']; if (parseInt (len) < BFJ_THRESHOLD) return false
+	
+		try {
+		
+			const o = await bfj.parse (this.http.request)
+
+			if (Array.isArray (o)) throw '400 A plain object, not an array expected'
+
+			for (let i in o) this.rq [i] = o [i]
+			
+			return true
+
+		}
+		catch (x) {
+		
+			throw '400 Broken JSON'
+		
+		}
+	
+	}
+	
+	async check_http_request_body () {
+	
+		const {method} = this.http.request; if (method !== 'POST' && method !== 'PUT') return
+		
+		if (this.get_content_type () === 'application/json' && bfj && await this.check_http_request_body_json ()) return
+
+		this.body = await this.get_http_request_body (this.http.request)
+
+		this.parse_http_request_body ()
+
+	}
+    
     async read_params () {
         
         this.rq = {}
         
-        switch (this.http.request.method) {
-            case 'POST':
-            case 'PUT':
-                this.body = await this.get_http_request_body (this.http.request)
-                this.parse_http_request_body ()
-                break
-        }
-        
-        let uri = url.parse (this.http.request.url)
-        new URLSearchParams (uri.search).forEach ((v, k) => this.rq [k] = v)
+        await this.check_http_request_body ()
+
+        new URLSearchParams (url.parse (this.http.request.url).search).forEach ((v, k) => this.rq [k] = v)
         
         this.parse_x_headers ()
 
