@@ -391,30 +391,37 @@ module.exports = class extends require ('../Pool.js') {
 
         let result = []
         
-        for (let table of Object.values (this.model.tables)) {
+        for (const table of Object.values (this.model.tables)) {
 
-            let data = table._data_modified || table.data
+            const data = table._data_modified || table.data; if (!data || !data.length) continue
 
-            if (!data || !data.length) continue
-            
-            for (let record of data) {
-            
-                let [f, s, v] = [[], [], []]
-                            
-                for (let k in record) {
-                
+            for (const record of data) {
+
+                let [f, s, v, params] = [[], [], [], []]
+
+                for (const k in table.columns) {
+                                            
                     f.push (k)
-                    v.push (record [k])
+                    
+                    if (k in record) {
+
+                    	v.push ('?')
+                    	params.push (record [k])
+
+                    }
+                    else {
+
+                    	v.push ('DEFAULT')
+
+                    }
 
                     if (!table.p_k.includes (k)) s.push (`${k}=EXCLUDED.${k}`)
 
                 }
                 
-                let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
-                
-                v = v.map (s => this.gen_sql_quoted_literal (s))
-                            
-                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (${v}) ON CONFLICT (${table.pk}) DO ${something}`})
+                const something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
+
+                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (${v}) ON CONFLICT (${table.pk}) DO ${something}`, params})
 
             }
         
