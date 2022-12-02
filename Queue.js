@@ -164,6 +164,12 @@ module.exports = class extends EventEmitter {
 		this.timer.set_ticker (v)
 
 	}
+
+	set_period (v) {
+
+		this.timer.throttle.period = v
+
+	}
 	
 	set_cron (cron) {
 	
