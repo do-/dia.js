@@ -35,8 +35,14 @@ module.exports = class {
         this.drop_types     = ['table_drops', 'view_drops']
         this.all_types      = [...this.relation_types, ...this.drop_types, 'procedures', 'functions']
 
+		this._oddities = []
+
         this.reload ()
 
+    }
+    
+    odd (o) {
+    	this._oddities.push (o)
     }
 
     async pending () {
@@ -436,6 +442,8 @@ module.exports = class {
     }
 
 	cleanup () {
+
+		this._oddities = []
 
 		const {tables, views} = this, TO_DEL = ['triggers', 'sql', 'init_data']
 

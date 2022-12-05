@@ -241,11 +241,21 @@ module.exports = class extends require ('../Pool.js') {
 
                 if (col === -Infinity) {
 
-                    if (name in existing.columns) result.push ({sql: `ALTER TABLE ${table.name} DROP COLUMN IF EXISTS "${name}"`, params: []})
+                    if (name in existing.columns) {
+                    
+                    	result.push ({sql: `ALTER TABLE ${table.name} DROP COLUMN IF EXISTS "${name}"`, params: []})
+                    
+                    }
+                    else {
+                    
+						this.model.odd ({type: 'dropped_column', id: `${table.name}.${name}`})
+
+                    }
 
                     delete columns [name]
 
                     continue
+                    
                 }
 
             	if (table.p_k.includes (name)) continue
@@ -357,7 +367,7 @@ module.exports = class extends require ('../Pool.js') {
             	
             	if (table.p_k.includes (col.name)) {
 
-            		darn (`Warning: ${table.name}.${col.name} redefined (${[...diff.entries ()].map (([name, [from, to]])=> `${name}: ${from} -> ${to}`).join ('; ')}), but it belongs to the PK, so skip it (ClickHouse would prohibit such a MODIFY COLUMN)`)
+					this.model.odd ({type: 'alter_pk_column', id: `${table.name}.${col.name}`, data: [...diff.entries ()]})
 
             		continue
 

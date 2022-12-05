@@ -391,30 +391,37 @@ module.exports = class extends require ('../Pool.js') {
 
         let result = []
         
-        for (let table of Object.values (this.model.tables)) {
+        for (const table of Object.values (this.model.tables)) {
 
-            let data = table._data_modified || table.data
+            const data = table._data_modified || table.data; if (!data || !data.length) continue
 
-            if (!data || !data.length) continue
-            
-            for (let record of data) {
-            
-                let [f, s, v] = [[], [], []]
-                            
-                for (let k in record) {
-                
+            for (const record of data) {
+
+                let [f, s, v, params] = [[], [], [], []]
+
+                for (const k in table.columns) {
+                                            
                     f.push (k)
-                    v.push (record [k])
+                    
+                    if (k in record) {
+
+                    	v.push ('?')
+                    	params.push (record [k])
+
+                    }
+                    else {
+
+                    	v.push ('DEFAULT')
+
+                    }
 
                     if (!table.p_k.includes (k)) s.push (`${k}=EXCLUDED.${k}`)
 
                 }
                 
-                let something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
-                
-                v = v.map (s => this.gen_sql_quoted_literal (s))
-                            
-                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (${v}) ON CONFLICT (${table.pk}) DO ${something}`})
+                const something = s.length ? 'UPDATE SET ' + s : 'NOTHING'
+
+                result.push ({sql: `INSERT INTO ${table.qname} (${f}) VALUES (${v}) ON CONFLICT (${table.pk}) DO ${something}`, params})
 
             }
         
@@ -665,7 +672,7 @@ module.exports = class extends require ('../Pool.js') {
         if (name in existing_columns) {
         
             if (after && name in after) {
-                darn (`[SCHEMA WARNING] REDUNDANT on_after_add_column: ${table.name}.${name}`)
+            	this.model.odd ({type: 'on_after_add_column', id: `${table.name}.${name}`})
                 delete after[name]
             }
 
@@ -789,6 +796,11 @@ module.exports = class extends require ('../Pool.js') {
 					result.push ({sql: `ALTER TABLE ${table.qname} DROP COLUMN IF EXISTS "${name}" CASCADE`, params: []})
 
 				}
+				else {
+				
+					this.model.odd ({type: 'dropped_column', id: `${table.name}.${name}`})
+				
+				}
 			
     			delete columns [name]
     			
@@ -899,8 +911,8 @@ module.exports = class extends require ('../Pool.js') {
 
         		} 
         		else {
-        		
-        			if (!model.relations [ref]) darn (`WARNING! ${table.name}.${name} references non existing ${ref}!`)
+
+        			if (!model.relations [ref]) this.model.odd ({type: 'unknown_ref', id: `${table.name}.${name}`})
 
         		}
 
@@ -1055,14 +1067,9 @@ module.exports = class extends require ('../Pool.js') {
                 
                 let original_name = name.split (table.name + '_') [1]
                 
-           		if (old_src && before && name in before) darn (`[SCHEMA WARNING] REDUNDANT on_before_create_index: ${table.name}.${original_name}`)
+           		if (old_src && before && name in before) this.model.odd ({type: 'on_before_create_index', id: `${table.name}.${original_name}`})
 
                 if (invariant (src) == invariant (old_src)) continue
-
-                if (old_src) {
-					darn (`[SCHEMA WARNING] INDEX REDEFINED: ${name} (see below)`)
-					darn ([table.name + '.' + original_name, old_src, src])
-                }
 
                 if (old_src) {
                 	result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
@@ -1138,8 +1145,8 @@ module.exports = class extends require ('../Pool.js') {
 			}
 			else {
 			
-				darn (`trg_check_column_value: column ${table.name}.${name} not found`)
-			
+				this.model.odd ({type: 'trg_check_column_value', id: `${table.name}.${name}`})
+
 			}
 
     	return sql

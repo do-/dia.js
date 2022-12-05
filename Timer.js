@@ -159,10 +159,12 @@ module.exports = class extends EventEmitter {
 	}
 	
 	at (ts, comment) {
+
+		if (!(ts instanceof Date)) ts = new Date (ts)
 	
 		if (comment == null) {
-		
-			comment = `at (${ts}) called`
+
+			comment = `at (${ts.toISOString ()}) called`
 			
 			let s = (new Error ('?')).stack.split (/[\n\r]+/).slice (1).find (s => !/Timer.js:/.test (s))
 			
@@ -174,7 +176,7 @@ module.exports = class extends EventEmitter {
 
 		}
 
-		new PlannedEvent (this, ts instanceof Date ? ts : new Date (ts), comment)
+		new PlannedEvent (this, ts, comment)
 
 	}	
 	

@@ -250,6 +250,8 @@ module.exports = class {
                     let def = model.get_relation (this.table)
 
                     if (typeof v !== 'object') v = {[def.pk]: v}
+                    
+                    if ('LIMIT' in v && !('ORDER' in v)) v.ORDER = clone (def.pk)
 
                     for (let fs in v) {
                     
@@ -260,7 +262,7 @@ module.exports = class {
                         switch (fs) {
                         
                             case 'ORDER':
-                                query.order = val.trim ()
+                                query.order = String (val).trim ()
                                 	.split (/\s*,\s*/)
                                 	.map (i => i.indexOf ('.') > 0 ? i : this.alias + '.' + i)
                                 	.join (',')

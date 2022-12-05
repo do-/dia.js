@@ -4,14 +4,19 @@ module.exports = class extends Error {
 
 	constructor (o, rp, rp_body) {
 
-		super (rp.statusCode + ' ' + rp.statusMessage)
-	
-		this.code = rp.statusCode
-			
+		const {statusCode, statusMessage} = rp
+
+		const status = statusCode + ' ' + statusMessage
+
+		super (status)
+
+		this.code   = statusCode
+		this.status = status
+
 		this.body = rp_body.trim ()
 
 		this.parent = rp.log_event
-		
+
 		this.adjust_message ()
 
 	}

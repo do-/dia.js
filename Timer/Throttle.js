@@ -4,6 +4,7 @@ const S_PERIOD      = Symbol ('period')
 const S_TOLERANCE   = Symbol ('tolerance')
 const S_COUNT_FAILS = Symbol ('cnt_fails')
 const S_NEXT_DATE   = Symbol ('next_date')
+const S_LAST_DATE   = Symbol ('last_date')
 const S_MESSAGE     = Symbol ('message')
 
 module.exports = class {
@@ -83,6 +84,8 @@ module.exports = class {
 		
 		this [S_PERIOD] = v
 
+		this.recalc ()
+
 	}
 	
 	get cnt_fails () {
@@ -100,21 +103,32 @@ module.exports = class {
 	clear () {
 		
 		this [S_NEXT_DATE] = null
+		this [S_LAST_DATE] = null
 		this [S_MESSAGE]   = null
 		
 	}
 
-	register_start () {
+	recalc () {
 
 		const {period, cnt_fails} = this, {length} = period
 
 		const delay = period [Math.min (cnt_fails, length - 1)]
 
 		if (delay === 0) return this.clear ()
+		
+		const last = this [S_LAST_DATE]; if (!last) return
 
-		this [S_NEXT_DATE] = Date.now () + delay
+		this [S_NEXT_DATE] = last + delay
 
-		this [S_MESSAGE] = `delayed until ${delay} ms since the last run`
+		this [S_MESSAGE] = `${new Date (last).toISOString ()} + ${delay} ms`
+
+	}
+
+	register_start	() {
+
+		this [S_LAST_DATE] = Date.now ()
+		
+		this.recalc ()
 
 	}
 

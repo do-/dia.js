@@ -2,6 +2,7 @@ const Dia = require ('../../Dia.js')
 const {Readable, PassThrough} = require ('stream')
 const WrappedError = require ('../../Log/WrappedError.js')
 const to_tsv       = require ('./postgresql/to_tsv.js')
+const assert       = require ('assert')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {console.log ('no pg-query-stream, ok')}
 
@@ -447,11 +448,13 @@ module.exports = class extends Dia.DB.Client {
 				) AS name
                 , pg_description.description AS label
                 , pg_class.relpersistence = 'u' AS unlogged
+                , pg_class.relkind
+                , pg_class.reltuples AS _est_cnt
             FROM 
                 pg_namespace
                 LEFT JOIN pg_class ON (
                     pg_class.relnamespace = pg_namespace.oid
-                    AND pg_class.relkind IN ('r', 'p')
+                    AND pg_class.relkind IN ('r', 'p', 'v')
                 )
                 LEFT JOIN pg_description ON (
                     pg_description.objoid = pg_class.oid
@@ -459,11 +462,51 @@ module.exports = class extends Dia.DB.Client {
                 )
         `, [])
         
-        let {tables, partitioned_tables} = this.model
+        let {model} = this, {tables, partitioned_tables, table_drops, views, view_drops} = model
+        
+        const RE_SYS = /^(pg_|information_schema\.)/
         
         for (let r of rs) {
+        	
+        	const {name, relkind} = r
+        	
+        	if (relkind === 'v') {
+
+				if (RE_SYS.test (name)) continue
+
+				if (name in view_drops) {
+				
+					view_drops [name].existing = r
+				
+					continue
+					
+				}
+
+				if (name in views) continue
+
+				model.odd ({type: 'unknown_view', id: name})
+
+				continue
+
+        	}        	
         
-			let t = tables [r.name] || partitioned_tables [r.name]; if (!t) continue
+			let t = tables [name] || partitioned_tables [name]; if (!t) {
+
+				if (RE_SYS.test (name)) continue
+				
+				if (name in table_drops) {
+				
+					table_drops [name].existing = r
+
+					continue
+					
+				}
+
+				model.odd ({type: 'unknown_table', id: name})
+
+				continue
+
+			}
 			
 			r.p_k = []
         
@@ -471,7 +514,12 @@ module.exports = class extends Dia.DB.Client {
             
             t.existing = r
 
+        	if (relkind === 'r' && r._est_cnt < 0) model.odd ({type: 'never_analyzed_table', id: name})
+
         }
+
+		for (const i of Object.values (table_drops)) if (!i.existing) model.odd ({type: 'dropped_table', id: i.name})
+		for (const i of Object.values (view_drops))  if (!i.existing) model.odd ({type: 'dropped_view',  id: i.name})
         
         for (let partitioned_table of Object.values (partitioned_tables)) {
         
@@ -679,72 +727,133 @@ module.exports = class extends Dia.DB.Client {
 	
     async load_schema_table_data () {
     
-    	let tables = []
+    	const {model} = this
+    
+    	let tables = []; for (const table of Object.values (model.tables)) if ('data' in table && 'existing' in table) {
 
-    	for (let table of Object.values (this.model.tables)) {
+    		const {name, data} = table
 
-    		let {name, data} = table
+    		if (!Array.isArray (data)) {
 
-    		if (!data || !data.length) continue
+				model.odd ({type: 'invalid_data', id: `${name}`})
 
-    		let idx = {}, f = {}, {p_k} = table, pk = r => p_k.map (k => '' + r [k]).join (' ')
-    		
-    		for (let r of Object.values (table.data)) {
+    			continue
 
-    			for (let k in r) if (!(k in f)) f [k] = 1
-    		
-    			idx [pk (r)] = clone (r)
-    			
     		}
+
+			const {length} = table.data; if (length === 0) {
+
+				model.odd ({type: 'empty_data', id: `${name}`})
+
+    			continue
+
+    		}
+
+    		const {p_k} = table, pk = r => p_k.map (k => '' + r [k]).join (' ')
     		
-    		let {existing} = table; if (!existing) continue
+    		let idx = new Map (); for (const r of Object.values (table.data)) idx.set (pk (r), clone (r))
     		
-    		let cols = Object.keys (f).filter (n => existing.columns [n]); if (!cols.length) continue
-    		
-			let ids = Object.keys (idx); if (!ids.length) continue
-			
+    		const limit = Math.max (2 * length, 1000); if (table.existing._est_cnt > limit) model.odd ({type: 'excess_data', id: name})
+
+    		let sql = `SELECT JSON_AGG (t) FROM (SELECT * FROM ${name} ORDER BY ${p_k} LIMIT ${limit}) t`, params = []
+
 			tables.push ({
 				name, 
-				cols, 
-				ids, 
 				idx,
 				pk,
-				key: p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")})`
+				kv: `'${name}',(${sql})`,
+				params,
+				cols: Object.keys (table.columns).filter (n => !p_k.includes (n)),
+				key: p_k.length == 1 ? table.pk : `CONCAT (${p_k.join (",' ',")})`,
 			})
 			
 		}
-    		
-		let qq = s => this.pool.gen_sql_quoted_literal (s)
+
+		const eq = (rv, dv) => {switch (rv) {
+
+			case null:
+				return dv == null
+				
+			case false:
+				switch (dv) {
+					case false:
+					case 'false':
+					case 0:
+					case '0':
+						return true
+					default:
+						return false
+				}
+		
+			case true:
+				switch (dv) {
+					case true:
+					case 'true':
+					case 1:
+					case '1':
+						return true
+					default:
+						return false
+				}
+		
+			default:
+
+				if (Array.isArray (rv)) {
+
+					try {
+						assert.deepStrictEqual (rv, JSON.parse (dv))
+						return true
+					}
+					catch (x) {
+						return false
+					}
+
+				}
+				else {
+					return rv == dv
+				}
+
+		}}
 
 		while (tables.length) {
+
+			const part = tables.splice (0, 10)
 		
-			let part = tables.splice (0, 50)
+			const {v} = await this.select_hash (
 
-			let args = []; for (let {name, cols, ids, key} of part) {
-			
-				args.push (qq (name))
-				
-				args.push (`(SELECT json_agg (t) FROM (SELECT ${cols} FROM ${name}) t WHERE ${key} IN (${ids.map (qq)}))`)
+				`SELECT JSON_BUILD_OBJECT (${part.map (t => t.kv)}) v`,
 
-			}
+				Array.prototype.concat.apply ([], part.map (t => t.params))
 
-			let data = await this.select_hash (`SELECT json_build_object (${args}) v`)
+			)
 			
-			for (let [name, list] of Object.entries (data.v)) {
+			for (const [name, list] of Object.entries (v)) {
 			
-				let table = this.model.tables [name], {p_k} = table, {cols, idx, pk} = part.find (i => i.name == name)
+				const table = model.tables [name], {p_k} = table, {cols, idx, pk} = part.find (i => i.name === name)
 
 				main: for (let r of list || []) {
 
-					let id = pk (r), d = idx [id]; if (!d) continue main
+					const id = pk (r); if (!idx.has (id)) {
+					
+						model.odd ({type: 'unknown_data', id: `${name} [${id}]`, data: r})
 
-					for (let k in d) if (!p_k.includes (k) && '' + r [k] != '' + d [k]) continue main
+						continue main
+					
+					}
+					
+					const d = idx.get (id); for (let k of cols) {
+					
+						const rv = r [k], dv = k in d ? d [k] : table.columns [k].COLUMN_DEF
+					
+						if (!eq (rv, dv)) continue main
+						
+					}
 
-					delete idx [id]
+					idx.delete (id)
 					
 				}
-				
-				table._data_modified = Object.values (idx)
+
+				table._data_modified = [...idx.values ()]
 
 			}
 
