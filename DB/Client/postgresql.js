@@ -395,18 +395,23 @@ module.exports = class extends Dia.DB.Client {
 
 			sql = `COPY ${table} (${cols}) FROM STDIN ${sql}`
 
-	        let log_event = this.log_start (sql)
+	        const log_event = this.log_start (sql), croak = e => fail (this.wrap_error (e, log_event))
+
+			is.on ('error', croak)
+
+    		if (is._readableState.objectMode) {
+    		
+    			const o2s = new to_tsv (cols)
+
+				o2s.on ('error', croak)
+
+    			is = is.pipe (o2s)
+    		
+    		}
 
 			let os = this.backend.query (require ('pg-copy-streams').from (sql))
-
-			os.on ('finish', () => ok (this.log_finish (log_event)))
-			
-			let croak = e => fail (this.wrap_error (e, log_event))
-
 			os.on ('error', croak)
-			is.on ('error', croak)
-			
-    		if (is._readableState.objectMode) is = is.pipe (new to_tsv (cols))
+			os.on ('finish', () => ok (this.log_finish (log_event)))			
 
 			is.pipe (os)
 
