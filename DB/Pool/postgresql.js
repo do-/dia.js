@@ -8,6 +8,8 @@ module.exports = class extends require ('../Pool.js') {
 
     constructor (o) {
         super (o)
+        o.max = o.max || 100
+        o.idleTimeoutMillis = o.idleTimeoutMillis || 0
         this.backend = new Pool (o)
     }
 
