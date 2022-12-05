@@ -852,7 +852,7 @@ module.exports = class extends Dia.DB.Client {
 					
 						const rv = r [k], dv = k in d ? d [k] : table.columns [k].COLUMN_DEF
 					
-						if (!eq (rv, dv)) continue main
+						if (!(model.conf.db._no_default_update_data && !(k in d) || eq (rv, dv))) continue main
 						
 					}
 
