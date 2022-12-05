@@ -613,6 +613,8 @@ module.exports = class extends Dia.DB.Client {
             let t = tables [r.table_name] || partitioned_tables [r.table_name]; if (!t) continue
 
             delete r.table_name; t.existing.columns [r.name] = r
+            
+			if (!(r.name in t.columns)) model.odd ({type: 'unknown_column', id: t.name + '.' + r.name})
 
         }
 
