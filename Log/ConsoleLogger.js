@@ -58,7 +58,7 @@ module.exports = class {
 		}
 		catch (x) {
 		
-			console.error (x)
+			console.error (x) // njsscan-ignore: generic_error_disclosure
 		
 		}
 
