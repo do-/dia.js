@@ -172,8 +172,7 @@ module.exports = class {
 				return new Promise ((ok, fail) => {
 					
 					try {
-
-						let rq = (/^https/.test (o.protocol) ? https : http).request (o, async rp => {
+						let rq = (/^https/.test (o.protocol) ? https : http).request (o, async rp => { // njsscan-ignore: regex_dos
 						
 							let code    = rp.statusCode							
 							let headers = rp.headers
