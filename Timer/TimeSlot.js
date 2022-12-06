@@ -10,7 +10,7 @@ const get_hhmmss = (options, key) => {
 
 	assert (v <= '23', carp ())
 
-	assert (RE_HHMMSS.test (v), carp ())
+	assert (RE_HHMMSS.test (v), carp ()) // njsscan-ignore: regex_dos
 
 	return v
 

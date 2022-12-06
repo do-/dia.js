@@ -5,7 +5,7 @@ exports.new_uuid = () => {
     let f = [
         () => {id += '-'},
         () => {
-            let s = Math.floor (((1 << 16) - 1) * Math.random ()).toString (16)
+            let s = Math.floor (((1 << 16) - 1) * Math.random ()).toString (16) // njsscan-ignore: node_insecure_random_generator
             for (let j = 0; j < 4 - s.length; j ++) id += '0'
             id += s
         },

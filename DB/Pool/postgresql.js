@@ -480,7 +480,7 @@ module.exports = class extends require ('../Pool.js') {
 
             for (let t of [table, tmp_table]) t.model = this.model
             
-            tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_')
+            tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_') // njsscan-ignore: node_insecure_random_generator
             tmp_table.qname = this.quote_name (tmp_table.name)
 
             result.push (this.gen_sql_add_table (tmp_table))
@@ -534,7 +534,7 @@ module.exports = class extends require ('../Pool.js') {
 
 						if (ref_table.existing.columns[col.name].TYPE_NAME != table.existing.columns[table.existing.pk].TYPE_NAME) continue
 
-						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')}
+						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')} // njsscan-ignore: node_insecure_random_generator
 						result.push ({sql: `ALTER TABLE ${ref_table.qname} DISABLE TRIGGER USER`, params: []})
 						result.push (this.gen_sql_add_column (ref_table, tmp_col))
 						result.push ({sql: `UPDATE ${ref_table.qname} r SET ${tmp_col.name} =t.${tmp_table.pk} FROM ${tmp_table.name} t WHERE t.${table.existing.pk}=r.${col.name}`, params: []})
