@@ -822,7 +822,7 @@ module.exports = class extends Dia.DB.Client {
 
 		}}
 
-		const no_default_update_data = this.pool.options.no_default_update_data
+		const {no_default_update_data} = this.pool.options
 
 		while (tables.length) {
 
