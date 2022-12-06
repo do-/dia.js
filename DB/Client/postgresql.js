@@ -822,6 +822,8 @@ module.exports = class extends Dia.DB.Client {
 
 		}}
 
+		const no_default_update_data = model.conf && model.conf.db && model.conf.db.no_default_update_data
+
 		while (tables.length) {
 
 			const part = tables.splice (0, 10)
@@ -849,11 +851,15 @@ module.exports = class extends Dia.DB.Client {
 					}
 					
 					const d = idx.get (id); for (let k of cols) {
+
+						const k_in_d = k in d
+
+						if (!no_default_update_data || k_in_d) {
+
+							const rv = r [k], dv = k_in_d ? d [k] : table.columns [k].COLUMN_DEF
 					
-						const rv = r [k], dv = k in d ? d [k] : table.columns [k].COLUMN_DEF
-					
-						if (!eq (rv, dv)) continue main
-						
+							if (!eq (rv, dv)) continue main
+						}
 					}
 
 					idx.delete (id)
