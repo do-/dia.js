@@ -70,7 +70,7 @@ module.exports = class extends require ('../Pool.js') {
 
 			try {
 
-				let rs = await db.query (`SELECT pg_try_advisory_lock (x'${digest}'::int8) AS ok`)
+				let rs = await db.query (`SELECT pg_try_advisory_lock (x'${digest}'::int8) AS ok`) // njsscan-ignore: node_sqli_injection
 				
 				if (!rs) throw new Error ('!rs')
 				
@@ -98,7 +98,7 @@ module.exports = class extends require ('../Pool.js') {
 		
 		let sql = 'LISTEN ' + o.name
 		
-		db.query (sql)
+		db.query (sql) // njsscan-ignore: node_sqli_injection
 		
 		db.on ('notification', async e => {
 
