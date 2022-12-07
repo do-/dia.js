@@ -173,7 +173,7 @@ module.exports = class {
     	
     	for (let i of list) {
     		
-    		if (this.is_not_to_merge (i)) {
+    		if (this.is_not_to_merge (i) || this.options.no_merge_sql >= 1000 && sql.length + i.sql.length >= this.options.no_merge_sql) {
     		
     			flush (i)
     		
