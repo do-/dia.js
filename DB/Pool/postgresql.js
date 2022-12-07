@@ -27,7 +27,7 @@ module.exports = class extends require ('../Pool.js') {
 
     async run (list, o = {}) {
     
-    	if (!o.no_merge_sql) list = this.merge_sql (list)
+    	if (!o.no_merge_sql || o.no_merge_sql >= 1000) list = this.merge_sql (list)
     
     	return super.run (list)
 
