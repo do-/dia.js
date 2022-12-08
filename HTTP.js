@@ -153,7 +153,7 @@ module.exports = class {
 
 				if (!log_event) {
 
-					log_event = this.log_write (new (this.log_meta.event_class || LogEvent) ({
+					log_event = this.log_write (new ((this.log_meta || {}).event_class || LogEvent) ({
 						...(this.log_meta || {}),
 						o,
 						phase: 'before',
