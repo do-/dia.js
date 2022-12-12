@@ -150,7 +150,7 @@ module.exports = class extends Dia.DB.Client {
 		
 		sql = 'ALTER TABLE ' + table + ' DELETE ' + sql
 			.slice (sql.indexOf ('WHERE'))
-			.replace (RegExp (table + '\\.', 'g'), '')
+			.split (table + '.').join ('')
 		
 		return this.do (sql, params)
 		
