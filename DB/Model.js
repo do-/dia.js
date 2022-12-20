@@ -149,6 +149,8 @@ module.exports = class {
 		
 		let {columns} = def; if (columns && columns !== -Infinity) {
 
+			if (typeof columns === 'function') def.columns = columns = columns (def)
+
 			this.on_before_parse_table_columns (def)
 
 			this.parse_columns (def.columns)
