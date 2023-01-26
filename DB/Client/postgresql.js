@@ -125,7 +125,9 @@ module.exports = class extends Dia.DB.Client {
     
     async get (def) {
     
-        const {sql, params, parts: [{cols}]} = this.query (def)
+        let {sql, params, parts: [{cols}], order} = this.query (def)
+
+	if (order) [sql, params] = this.to_limited_sql_params (sql, params, 1, 0)
 
         return this [cols.length === 1 ? 'select_scalar' : 'select_hash'].call (this, sql, params)
     
