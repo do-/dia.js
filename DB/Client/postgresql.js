@@ -3,10 +3,11 @@ const {Readable, PassThrough} = require ('stream')
 const WrappedError = require ('../../Log/WrappedError.js')
 const to_tsv       = require ('./postgresql/to_tsv.js')
 const assert       = require ('assert')
+const PgCursor     = require ('pg-cursor')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {console.log ('no pg-query-stream, ok')}
 
-module.exports = class extends Dia.DB.Client {
+class PgClient extends Dia.DB.Client {
 
     is_pk_violation (e) {
         return e.code == '23505' && /_pkey$/.test (e.constraint)
@@ -56,17 +57,41 @@ module.exports = class extends Dia.DB.Client {
 		return new WrappedError (e, {log_meta: {...this.log_meta, parent: log_event}})
     }
 
-    async select_all (original_sql, params = []) {
-    
+    async select_all (original_sql, params = [], options = {}) {
+
+    	if (!options.maxRows) options.maxRows = PgClient.MAX_SELECT_ALL
+
         let sql = this.fix_sql (original_sql)
                 
     	await this.check_signature ()
+
         let log_event = this.log_start (sql, params)
         
         try {
-            let result = await this.backend.query (sql, params)
-            return result.rows
-        }
+        
+        	const {maxRows, isPartial} = options
+
+			const cursor = this.backend.query (new PgCursor (sql, params))
+
+			const result = await new Promise ((ok, fail) => {
+
+				cursor.read (isPartial ? maxRows : maxRows + 1, (err, rows) => {
+
+					cursor.close ()
+
+					if (err) return fail (Error (err))
+
+					if (!isPartial && rows.length > maxRows) return fail (Error (maxRows + ' rows limit exceeded. Plesae fix the request or consider using select_stream instead of select_all'))
+
+					ok (rows)
+
+				})
+
+			})
+			
+			return result
+
+        }        
         catch (e) {
 
             if (e.code == 23505) {
@@ -88,7 +113,9 @@ module.exports = class extends Dia.DB.Client {
             throw this.wrap_error (e, log_event)
         }
         finally {
+
             this.log_finish (log_event)
+
         }
         
     }
@@ -119,7 +146,7 @@ module.exports = class extends Dia.DB.Client {
 
     async select_hash (sql, params) {
 		params = (params || []).map (v => typeof v == 'object' && v != null && !(v instanceof Uint8Array) ? JSON.stringify (v) : v)
-        let all = await this.select_all (sql, params)
+        let all = await this.select_all (sql, params, {maxRows: 1, isPartial: true})
         return all.length ? all [0] : {}
     }
     
@@ -875,3 +902,7 @@ module.exports = class extends Dia.DB.Client {
     }    	
 
 }
+
+PgClient.MAX_SELECT_ALL = 4294967294
+
+module.exports = PgClient
