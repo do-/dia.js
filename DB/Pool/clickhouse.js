@@ -218,8 +218,14 @@ module.exports = class extends require ('../Pool.js') {
             tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_') // njsscan-ignore: node_insecure_random_generator
             
             tmp_table.qname = this.quote_name (tmp_table.name)
-
-            result.push (this.gen_sql_add_table (tmp_table))
+            
+            try {
+	            result.push (this.gen_sql_add_table (tmp_table))
+            }
+            catch (x) {
+            	darn (x)
+            	continue
+            }
             
             let cols = []
 
