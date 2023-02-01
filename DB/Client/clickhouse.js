@@ -353,6 +353,9 @@ module.exports = class extends Dia.DB.Client {
 				model.odd ({type: 'unknown_table', id: name})
            		continue
             }
+            {
+            	const {sorting_key} = r; if (sorting_key) r.p_k = sorting_key.split (',').map (s => s.trim ())
+            }
             r.columns = {}
             r.keys = {}
             t.existing = r

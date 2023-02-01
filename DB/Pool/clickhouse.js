@@ -182,7 +182,79 @@ module.exports = class extends require ('../Pool.js') {
     }
 
     gen_sql_recreate_tables () {
-        return [] // TODO: recreate table
+    
+		const result = [], {model} = this
+
+        for (const type of ['tables', 'partitioned_tables']) for (const table of Object.values (model [type])) {
+        
+            const {existing} = table; if (!existing) continue
+
+            if ('' + table.p_k == '' + existing.p_k && table.engine == existing.engine) continue
+
+            let on = table.on_before_recreate_table; if (on) {
+            	
+            	if (typeof on === 'function') on = on (table)
+            	
+            	if (on == null) on = []
+            	
+            	if (!Array.isArray (on)) on = [on]
+            	
+            	result.push (...on)
+
+            }
+            
+            delete table.model
+
+            let tmp_table = clone (table)
+
+            for (let сol_name of existing.p_k)
+            
+                if (!tmp_table.p_k.includes (сol_name))
+                
+	                tmp_table.columns [сol_name] = existing.columns [сol_name]
+
+            for (let t of [table, tmp_table]) t.model = this.model
+            
+            tmp_table.name = 't_' + String (Math.random ()).replace (/\D/g, '_') // njsscan-ignore: node_insecure_random_generator
+            
+            tmp_table.qname = this.quote_name (tmp_table.name)
+
+            result.push (this.gen_sql_add_table (tmp_table))
+            
+            let cols = []
+
+            for (let col of Object.values (tmp_table.columns)) {
+
+                let col_name = col.name; if (!existing.columns [col_name]) continue
+
+                cols.push (col_name)
+
+                if (tmp_table.p_k.includes (col_name)) continue
+
+                delete col.COLUMN_DEF
+
+                delete existing.columns [col_name].COLUMN_DEF
+
+                result.push (this.gen_sql_add_column (tmp_table, col))
+
+            }
+
+            result.push ({sql: `INSERT INTO ${tmp_table.qname} (${cols}) SELECT ${cols} FROM ${table.name}`})
+
+            result.push ({sql: `DROP TABLE ${table.qname}`})
+            
+            result.push ({sql: `RENAME TABLE ${tmp_table.qname} TO ${table.qname}`})
+
+            existing.pk  = table.pk
+
+            existing.p_k = table.p_k
+
+            for (let name of table.p_k) existing.columns [name] = table.columns [name]
+
+		}
+    
+        return result
+        
     }
     
     gen_sql_add_tables () {
