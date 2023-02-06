@@ -79,7 +79,7 @@ class PgClient extends Dia.DB.Client {
 
 					cursor.close ()
 
-					if (err) return fail (Error (err))
+					if (err) return fail (err)
 
 					if (!isPartial && rows.length > maxRows) return fail (Error (maxRows + ' rows limit exceeded. Plesae fix the request or consider using select_stream instead of select_all'))
 
