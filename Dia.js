@@ -1,4 +1,6 @@
-console.log (new Date ().toString (), "Dia.js is loading...")
+if (process.env.NODE_ENV != 'test') {
+    console.log (new Date ().toString (), "Dia.js is loading...")
+}
 
 require ('./H4xx.js')
 
