@@ -29,9 +29,9 @@ module.exports = class {
 				}			
 			}
 
-			assert (level    != null, carp ('Level not set'))
-			assert (category != null, carp ('Category not set'))
-			assert (path     != null, carp ('Path not set'))
+			if (!level)    carp ('Level not set')
+			if (!category) carp ('Category not set')
+			if (!path)     carp ('Path not set')
 
 			let s = level + ' '
 
