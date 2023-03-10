@@ -27,7 +27,7 @@ const RE_NULLABLE = /^Nullable\((.*?)\)$/
 const RE_CAST     = /^CAST\('?(.*?)'?,.*\)$/i
 const RE_DIM      = /^(.*?)\((.+)\)$/
 
-module.exports = class extends Dia.DB.Client {
+class ChClient extends Dia.DB.Client {
     
     async release (success) {   
     }
@@ -326,16 +326,34 @@ module.exports = class extends Dia.DB.Client {
     
     }        
 
-    async select_all (sql, params = []) {
+    async select_all (sql, params = [], options = {}) {
 
-    	return this.select_loop (sql, params, (d, a) => a.push (d), [])
+    	if (!options.maxRows) options.maxRows = ChClient.MAX_SELECT_ALL
+
+   		const all = [], rs = await this.select_stream (sql, params)
+
+   		for await (const r of rs) {
+   		
+   			if (all.length >= options.maxRows) {
+   			
+   				rs.destroy ()
+   			
+   				break
+   				
+   			}
+
+   			all.push (r)
+
+   		}
+
+		return all
 
     }
-    
+
     async select_hash (sql, params = []) {
 
-		let [h] = await this.select_all (sql, params)
-		
+		let [h] = await this.select_all (sql, params, {maxRows: 1})
+
 		return h || {}
 
     }
@@ -428,3 +446,7 @@ module.exports = class extends Dia.DB.Client {
     async load_schema_table_triggers () { }
 
 }
+
+ChClient.MAX_SELECT_ALL = 4294967294
+
+module.exports = ChClient
