@@ -205,15 +205,9 @@ module.exports = class extends Model {
 
 					src: function () {return `
 
-						IF TG_OP = 'UPDATE' THEN
+						IF TG_OP = 'UPDATE' AND NOT OLD._is_copied AND NEW._is_copied THEN
 
-							IF NOT OLD._is_copied AND NEW._is_copied THEN
-
-								NEW._is_to_delete = true;
-
-								PERFORM pg_notify ('dia', '{"type":"_archive","action":"purge","id":"${this.name}"}');
-
-							END IF;
+							NEW._is_to_delete = true;
 
 						END IF;
 
@@ -235,6 +229,12 @@ module.exports = class extends Model {
 							_cnt int;
 
 						BEGIN
+
+							IF TG_OP = 'UPDATE' AND NOT OLD._is_copied AND NEW._is_copied THEN
+
+								PERFORM pg_notify ('dia', '{"type":"_archive","action":"purge","id":"${this.name}"}');
+
+							END IF;
 
 							IF NEW._is_to_copy THEN
 
