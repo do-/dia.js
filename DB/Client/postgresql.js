@@ -200,6 +200,8 @@ class PgClient extends Dia.DB.Client {
             
             outer: for (let ix of Object.values (keys)) {
 
+                if (!ix) continue
+
                 if (!ix.match (/^\s*CREATE\s*UNIQUE/i)) continue
                 
                 let cols = ix.slice (1 + ix.indexOf ('('), ix.lastIndexOf (')'))
