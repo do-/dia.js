@@ -261,7 +261,7 @@ module.exports = class {
 
     }
     
-    async update (table, data, key) {
+    async update (table, data, key, return_expr = '*') {
 
         let def = this.model.tables [table]
         if (!def) throw 'Table not found: ' + table
@@ -298,7 +298,7 @@ module.exports = class {
         
         if (!fields.length) return new Promise ((ok, fail) => ok (darn ('Nothig to update in ' + table + ', only key fields supplied: '  + JSON.stringify ([filter, params]))))
 
-        return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')}`, params)
+        return this.do (`UPDATE ${table} SET ${fields} WHERE ${filter.join (' AND ')} RETURNING ${return_expr}`, params)
 
     }
 
