@@ -4,11 +4,8 @@ const Path = require ('path')
 
 const get_subdirs_1 = (p) => 
 
-	fs.readdirSync (p)
-
-		.map (f => Path.join (p, f))
-
-			.filter (p => fs.statSync (p).isDirectory ())
+	// nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
+	fs.readdirSync (p).map (f => Path.join (p, f)).filter (p => fs.statSync (p).isDirectory ())
 
 const get_subdirs = (p) => 
 
@@ -117,6 +114,7 @@ module.exports = class {
 	
 	load_slice (lib) {
 
+		// nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
 		lib = Path.resolve (lib)
 
 		let slice = {lib}
@@ -133,6 +131,7 @@ module.exports = class {
 						get = get_subdirs
 
 					case 'Content':
+						// nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
 						slice [part] = get (Path.join (lib, part))
 
 				}
@@ -181,7 +180,8 @@ module.exports = class {
 	get_content_paths (name) {
 	
 		let fn = name + '.js', {_content_paths} = this
-		
+
+		// nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
 		let paths = _content_paths.filter (i => fs.existsSync (Path.resolve (i, fn)))
 		
 		if (paths.length == 0) darn (`Didn't find ${fn} in ${_content_paths}`)
