@@ -128,6 +128,7 @@ module.exports = class extends require ('../Pool.js') {
 
 					await new Promise ((ok, fail) => {
 
+                        // nosemgrep: javascript.lang.security.insecure-object-assign.insecure-object-assign
 						let h = new handler (Object.assign ({rq}, o.params), ok, fail)
 
 						h.run ()

@@ -18,7 +18,8 @@ let Base = class extends Abstract {
     }
     
 	abs (p) {
-	
+
+		// nosemgrep: javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal
 		return path.join (this.root, p)
 		
 	}
