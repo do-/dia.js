@@ -1,0 +1,22 @@
+name: semgrep
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    container: returntocorp/semgrep:1.3.0
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: run semgrep
+        run: semgrep ci
+          --config p/default
+          --metrics=off
+          --no-git-ignore
+          --no-suppress-errors
