@@ -4,10 +4,7 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "master" ]
-  schedule:
-    - cron: '16 14 * * 1'
 
 jobs:
   eslint:
@@ -18,7 +15,7 @@ jobs:
       security-events: write
     strategy:
       matrix:
-        node-version: [10.24.1, latest]
+        node-version: [16.13.0]
     steps:
       - uses: actions/checkout@v3
       - name: use node.js ${{ matrix.node-version }}
