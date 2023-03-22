@@ -13,7 +13,7 @@ module.exports = class {
 	}
 	
 	create_http_server () {
-
+		// nosemgrep: problem-based-packs.insecure-transport.js-node.using-http-server.using-http-server
 		return http.createServer (
 			(request, response) => this.create_http_handler ({request, response}).run ()
 		)
