@@ -76,7 +76,7 @@ module.exports = class {
 
         sql += `, ${o.label}`;     if (o.label != o.label_name) sql += ` AS ${o.label_name}`
 
-		for (let col of o.columns) if (columns [col]) sql += `, ${col}`
+		for (let col of o.columns) if (columns [col] && columns[col] != -Infinity) sql += `, ${col}`
 
 		sql += ` FROM ${t}`
 
