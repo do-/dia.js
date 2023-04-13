@@ -4,21 +4,21 @@ const Dia = require ('../../Dia.js')
 module.exports = class extends Dia.DB.Client {
 
 	async warehouse (sql, params) {
-	
+
 		const {handler, pool: {ods_name, dw_name}} = this, [db_dw, db_ods] = [dw_name, ods_name].map (k => handler [k])
 
 		const m = /\b(?:FROM|UPDATE)\s+"?([\w\.]+)"?/gism.exec (sql); assert (m, `Can't get table name from ${sql}`)
-		
+
     	const def = this.model.get_relation (m [1]);                  assert (def, `Can't get table definition for ${sql}`)
 
     	const {archive} = def;                                        assert (archive, def.name + ' is not archivable')
-		
+
 		return db_dw.insert (archive.name,
 
 			(await db_ods.select_stream (sql, params))
 
 		)
-	
+
 	}
 
     async get (def) {
@@ -35,14 +35,14 @@ module.exports = class extends Dia.DB.Client {
 
     async add_all_cnt (data, def, limit, offset) {
 
-        let q = this.query (def)        
+        let q = this.query (def)
 
         if (limit == undefined) limit = q.limit
         if (limit == undefined) throw 'LIMIT not set for add_all_cnt: ' + JSON.stringify (def)
 
         if (offset == undefined) offset = q.offset
         if (offset == undefined) offset = 0
-        
+
         const [all, cnt] = await this.select_all_cnt (q.sql, q.params, limit, offset)
 
         data [q.parts [0].alias] = all
@@ -51,12 +51,19 @@ module.exports = class extends Dia.DB.Client {
 
         return data
 
-    }	
+    }
+
+	async add (data, def) {
+		let q = this.query (def)
+		if (q.limit) throw 'LIMIT set, use add_all_cnt: ' + JSON.stringify (def)
+		data [q.parts [0].alias] = await this.select_all (q.sql, q.params)
+		return data
+	}
 
 	async select_all_cnt (original_sql, original_params, limit, offset) {
-	
+
 		const {handler, pool: {ods_name, dw_name}} = this
-		
+
 		let dbs = [dw_name, ods_name].map (k => handler [k])
 
 		if (/\s+DESC\s*$/i.test (original_sql)) { // njsscan-ignore: regex_dos
@@ -77,7 +84,7 @@ module.exports = class extends Dia.DB.Client {
 			}
 
 			let num = available - offset; if (num > limit) num = limit
-			
+
 			const db = dbs [i], [q, p] = db.to_limited_sql_params (original_sql, original_params, limit, offset)
 
 			st_data.push (db.select_all (q, p))
@@ -111,6 +118,30 @@ module.exports = class extends Dia.DB.Client {
 			, cnt [0] + cnt [1]
 
 		]
+
+	}
+
+	async select_all (original_sql, original_params) {
+
+		const {handler, pool: {ods_name, dw_name}} = this
+
+		let dbs = [dw_name, ods_name].map (k => handler [k])
+
+		if (/\s+DESC\s*$/i.test (original_sql)) { // njsscan-ignore: regex_dos
+			dbs.reverse ()
+		}
+
+		let st_data = []; for (let i of [0, 1]) {
+			st_data.push (dbs [i].select_all (original_sql, original_params))
+		}
+
+		return await (async st => {
+
+			let r = await Promise.all (st_data)
+
+			return [...r [0], ...r [1]]
+
+		}) (st_data)
 
 	}
 
