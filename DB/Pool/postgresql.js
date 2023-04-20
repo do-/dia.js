@@ -1010,6 +1010,8 @@ module.exports = class extends require ('../Pool.js') {
         if (src === -Infinity) src = null
 
         if (src != null) {        
+            if (glob.length > 63) throw `Index name "${k}" for table "${table.name}" is too long`
+
         	if (typeof src == 'object') {
         		{
         			const K = 'constraint_error_messages'
