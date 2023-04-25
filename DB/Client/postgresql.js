@@ -2,7 +2,7 @@ const Dia = require ('../../Dia.js')
 const {Readable, PassThrough} = require ('stream')
 const WrappedError = require ('../../Log/WrappedError.js')
 const to_tsv       = require ('./postgresql/to_tsv.js')
-const assert       = require ('assert')
+const util         = require ('util')
 const PgCursor     = require ('pg-cursor')
 
 let pg_query_stream; try {pg_query_stream = require ('pg-query-stream')} catch (x) {console.log ('no pg-query-stream, ok')}
@@ -834,20 +834,7 @@ class PgClient extends Dia.DB.Client {
 		
 			default:
 
-				if (typeof rv == 'object') {
-
-					try {
-						assert.deepStrictEqual (rv, JSON.parse (dv))
-						return true
-					}
-					catch (x) {
-						return false
-					}
-
-				}
-				else {
-					return rv == dv
-				}
+				return typeof rv === 'object' ? util.isDeepStrictEqual (rv, JSON.parse (dv)) : rv == dv
 
 		}}
 
