@@ -834,7 +834,7 @@ class PgClient extends Dia.DB.Client {
 		
 			default:
 
-				if (Array.isArray (rv)) {
+				if (typeof rv == 'object') {
 
 					try {
 						assert.deepStrictEqual (rv, JSON.parse (dv))
