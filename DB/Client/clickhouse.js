@@ -157,50 +157,44 @@ class ChClient extends Dia.DB.Client {
     }    
 
     async load (is, table, fields) {
-    
+
+    	const {backend} = this, headers = {"Content-Type": "text/plain"}, plug = xform => {
+
+        	is.on ('error', x => {x._is_from_input_stream = true; xform.destroy (x)})
+
+	        is = is.pipe (xform)
+
+    	}
+
         if (is._readableState.objectMode) {
         
-        	let columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String', NULLABLE: true}
-
-	        is = is.pipe (new LineWriter ({table: {name: '(GENERATED)', columns}}))
-
+        	const columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String', NULLABLE: true}
+        	
+        	plug (new LineWriter ({table: {name: '(GENERATED)', columns}}))
+        	
         }
         
-    	const sql = `INSERT INTO ${table} (${fields})`, body = new SqlPrepender (sql)
-   
-        let log_event = this.backend.set_parent_log_event (this.log_start (sql))        
+        {
+
+        	const sql = `INSERT INTO ${table} (${fields})`
+
+        	var log_event = backend.set_parent_log_event (this.log_start (sql))
+        
+	        plug (new SqlPrepender (sql))
+
+        }
+
+        {
+
+			headers ['Content-Encoding'] = 'gzip'
+
+	        plug (zlib.createGzip ({level: 9}))
+
+        }
 
 		try {
-
-			await new Promise ((ok, fail) => {
-			
-				let error = null
-
-				is.on ('error', x => {
-				
-					error = x
-
-					try {
-						body.end ()
-					}
-					catch (e) {
-						darn (e)
-					}
-
-				})
-
-				this.backend.response ({				
-					headers: {
-						"Content-Type": "text/plain",
-						"Content-Encoding": "gzip",
-					}				
-				}, body.pipe (zlib.createGzip ({level: 9})))
-					.then (() => error ? fail (error) : ok ())
-					.catch (x => fail (error || x))
-
-				is.pipe (body)
-
-			})
+ 
+			await backend.response ({headers}, is)
 
 		}
 		catch (error) {
@@ -216,15 +210,15 @@ class ChClient extends Dia.DB.Client {
 
     }
     
-    log_error (log_event, error) {
+    log_error (log_event, cause) {
     
 		log_event.level = 'error'
 		log_event.phase = 'error'
-		log_event.message = error.message
+		log_event.message = cause.message
 
 		this.log_write (log_event)
 
-		throw new Error ('ClickHouse server error', {cause: error})
+		throw cause._is_from_input_stream ? cause : Error ('ClickHouse server error: ' + cause.message, {cause})
 
     }
 
