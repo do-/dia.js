@@ -229,9 +229,25 @@ module.exports = class {
 						
 						this._requests.push (rq)
 
-						rq.on ('error', x => fail (x))	
+						rq.on ('error', x => fail (x))
 
-						is_body_stream ? body.pipe (rq) : has_body ? rq.end (body) : rq.end ()
+						if (is_body_stream) {
+
+							body.on ('error', x => rq.destroy (x))
+
+							body.pipe (rq)
+
+						}
+						else if (has_body) {
+						
+							rq.end (body)
+							
+						}
+						else {
+						
+							rq.end ()
+							
+						}
 
 					}
 					catch (x) {
