@@ -156,7 +156,7 @@ class ChClient extends Dia.DB.Client {
 		
     }    
 
-    async load (is, table, fields) {
+    async load (is, table_name, fields) {
 
     	const {backend} = this, headers = {"Content-Type": "text/plain"}, plug = xform => {
 
@@ -166,9 +166,15 @@ class ChClient extends Dia.DB.Client {
 
     	}
 
+		let columns = {};
         if (is._readableState.objectMode) {
-        
-        	const columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String', NULLABLE: true}
+			if (Array.isArray(fields)) {
+				for (const name of fields) {
+					columns[name] = { name, TYPE_NAME: 'String', NULLABLE: true };
+				}
+			} else {
+				columns = fields;
+			}
         	
         	plug (new LineWriter ({table: {name: '(GENERATED)', columns}}))
         	
@@ -176,7 +182,7 @@ class ChClient extends Dia.DB.Client {
         
         {
 
-        	const sql = `INSERT INTO ${table} (${fields})`
+        	const sql = `INSERT INTO ${table_name} (${Object.keys(columns)})`;
 
         	var log_event = backend.set_parent_log_event (this.log_start (sql))
         

@@ -54,6 +54,7 @@ const not_null_to_string = (v, {TYPE_NAME}) => {
 
 		case "DATETIME":
 		case "DateTime":
+		case "TIMESTAMP":
 			return s.slice (0, 19)
 			
 		default:
