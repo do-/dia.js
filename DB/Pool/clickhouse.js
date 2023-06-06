@@ -189,7 +189,11 @@ module.exports = class extends require ('../Pool.js') {
         
             const {existing} = table; if (!existing) continue
 
-            if ('' + table.p_k == '' + existing.p_k && table.engine == existing.engine) continue
+            if (table.engine == existing.engine) {
+
+            	if (table.engine.slice (-9) != 'MergeTree' || '' + table.p_k == '' + existing.p_k) continue
+
+            }
 
             let on = table.on_before_recreate_table; if (on) {
             	
@@ -207,8 +211,8 @@ module.exports = class extends require ('../Pool.js') {
 
             let tmp_table = clone (table)
 
-            for (let сol_name of existing.p_k)
-            
+            if (existing.p_k) for (let сol_name of existing.p_k)
+
                 if (!tmp_table.p_k.includes (сol_name))
                 
 	                tmp_table.columns [сol_name] = existing.columns [сol_name]
