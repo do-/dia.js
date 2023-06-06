@@ -166,20 +166,19 @@ class ChClient extends Dia.DB.Client {
 
     	}
 
-		let columns = {};
-        if (is._readableState.objectMode) {
-			if (Array.isArray(fields)) {
-				for (const name of fields) {
-					columns[name] = { name, TYPE_NAME: 'String', NULLABLE: true };
-				}
-			} else {
-				columns = fields;
-			}
-        	
-        	plug (new LineWriter ({table: {name: '(GENERATED)', columns}}))
-        	
-        }
-        
+		let columns; if (Array.isArray (fields)) {
+
+			columns = {}; for (const name of fields) columns [name] = {name, TYPE_NAME: 'String', NULLABLE: true}
+
+		} 
+		else {
+			
+			columns = fields
+
+		}
+
+		if (is._readableState.objectMode) plug (new LineWriter ({table: {name: '(GENERATED)', columns}}))
+
         {
 
         	const sql = `INSERT INTO ${table_name} (${Object.keys(columns)})`;
