@@ -291,7 +291,9 @@ module.exports = class extends require ('../Pool.js') {
 
         let on_cluster = table.on_cluster? ` ON CLUSTER ${table.on_cluster}` : ''
 
-		let sql = `CREATE TABLE ${table.name}${on_cluster}(${p_k.map (k => k + ' ' + this.gen_sql_column_definition (columns [k]))}) ENGINE=${engine} ORDER BY (${p_k})`
+		let sql = `CREATE TABLE ${table.name}${on_cluster}(${p_k.map (k => k + ' ' + this.gen_sql_column_definition (columns [k]))}) ENGINE=${engine}`
+
+		if (engine.slice (-9) === 'MergeTree') sql += ` ORDER BY (${p_k})`
 
 		let p = table.partition_by || (table.partition || {}).by; if (p) sql += ' PARTITION BY ' + p
 
