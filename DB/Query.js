@@ -266,7 +266,7 @@ module.exports = class {
                             case 'ORDER':
                                 query.order = String (val).trim ()
                                 	.split (/\s*,\s*/)
-                                	.map (i => i.indexOf ('.') > 0 ? i : this.alias + '.' + i)
+                                	.map (i => i.indexOf ('.') > 0 || i.indexOf ('CASE') > -1 ? i : this.alias + '.' + i)
                                 	.join (',')
                                 break
                                 
