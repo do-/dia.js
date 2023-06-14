@@ -666,12 +666,14 @@ module.exports = class extends require ('../Pool.js') {
 
     add_sql_add_column (table, col, existing_columns, result) {
 
-        let {name} = col, after = table.on_after_add_column
+        let {name} = col
 
         if (table.p_k.includes (name)) return
-        
+
         if (name in existing_columns) {
-        
+
+            let after = table.on_after_add_column = typeof table.on_after_add_column === 'function' ? table.on_after_add_column() : table.on_after_add_column
+
             if (after && name in after) {
             	this.model.odd ({type: 'on_after_add_column', id: `${table.name}.${name}`})
                 delete after[name]
@@ -853,9 +855,11 @@ module.exports = class extends require ('../Pool.js') {
 
             if (table.p_k.includes (col.name) || !existing.columns [col.name]) continue
 
-            if (typeof after === 'function') after = after (table)
+            if (typeof after === 'function')
+                throw new Error('on_after_add_column not expected as a function')
 
             let a = after [col.name]
+
             if (a) for (let i of a) result.push (i)
 
         }
