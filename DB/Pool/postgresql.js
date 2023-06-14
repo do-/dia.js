@@ -672,7 +672,9 @@ module.exports = class extends require ('../Pool.js') {
 
         if (name in existing_columns) {
 
-            let after = table.on_after_add_column = typeof table.on_after_add_column === 'function' ? table.on_after_add_column() : table.on_after_add_column
+            let after = table.on_after_add_column
+            after = typeof after === 'function' ? after(table) : after
+            table.on_after_add_column = after
 
             if (after && name in after) {
             	this.model.odd ({type: 'on_after_add_column', id: `${table.name}.${name}`})
