@@ -41,6 +41,24 @@ module.exports = class extends require ('../Pool.js') {
     async release (client) {
     }
 
+    async run (list, o = {}) {
+
+    	return this.do_with_db ({
+    	
+			label : 'Running batch',
+			
+			f     : async db => {
+
+				db.set_session (o.session_id || 'batch', o.session_timeout || 3600)
+
+				for (let {sql, params} of list) await db.do (sql, params)
+				
+			} 
+			
+    	})
+
+    }
+
     async select_version (db) {
         let label = await db.select_scalar (`SELECT version()`)
         let [m, major, minor] = label.match (/^(\d+)\.(\d+)\b/i)
@@ -186,7 +204,7 @@ module.exports = class extends require ('../Pool.js') {
 		const result = [], {model} = this
 
         for (const type of ['tables', 'partitioned_tables']) for (const table of Object.values (model [type])) {
-        
+
             const {existing} = table; if (!existing) continue
 
             if (table.engine == existing.engine) {
@@ -207,9 +225,11 @@ module.exports = class extends require ('../Pool.js') {
 
             }
             
-            delete table.model
+            delete table.model            
 
             let tmp_table = clone (table)
+            
+			for (const сol_name in table.columns) tmp_table.columns [сol_name] = clone (table.columns [сol_name])
 
             if (existing.p_k) for (let сol_name of existing.p_k)
 
@@ -248,6 +268,8 @@ module.exports = class extends require ('../Pool.js') {
                 result.push (this.gen_sql_add_column (tmp_table, col))
 
             }
+
+            result.push ({sql: `SET max_partitions_per_insert_block=0`})
 
             result.push ({sql: `INSERT INTO ${tmp_table.qname} (${cols}) SELECT ${cols} FROM ${table.name}`})
 
