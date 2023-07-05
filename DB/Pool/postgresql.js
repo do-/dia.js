@@ -990,14 +990,16 @@ module.exports = class extends require ('../Pool.js') {
 	                	plpgsql;`
                 })
 
+                const for_each_row = name.endsWith('_truncate') ? '' : 'FOR EACH ROW'
+
                 result.push ({sql: `
                     CREATE TRIGGER 
                         "${glob}"
                     ${phase} ${events.join (' OR ')} ON 
                         ${table.name}
-                    FOR EACH ROW EXECUTE PROCEDURE 
+                    ${for_each_row} EXECUTE PROCEDURE 
                         "${glob}" ();`
-				})
+                })
 
             }
 
