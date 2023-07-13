@@ -66,6 +66,7 @@ module.exports = class extends Dia.DB.Client {
 
 		let dbs = [dw_name, ods_name].map (k => handler [k])
 
+		// eslint-disable-next-line redos/no-vulnerable
 		if (/\s+DESC\s*$/i.test (original_sql)) { // njsscan-ignore: regex_dos
 			dbs.reverse ()
 		}
@@ -127,6 +128,7 @@ module.exports = class extends Dia.DB.Client {
 
 		let dbs = [dw_name, ods_name].map (k => handler [k])
 
+		// eslint-disable-next-line redos/no-vulnerable
 		if (/\s+DESC\s*$/i.test (original_sql)) { // njsscan-ignore: regex_dos
 			dbs.reverse ()
 		}
