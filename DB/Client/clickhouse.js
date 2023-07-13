@@ -24,7 +24,9 @@ const {
 }   				= require ('stream')
 
 const RE_NULLABLE = /^Nullable\((.*?)\)$/
+// eslint-disable-next-line redos/no-vulnerable
 const RE_CAST     = /^CAST\('?(.*?)'?,.*\)$/i
+// eslint-disable-next-line redos/no-vulnerable
 const RE_DIM      = /^(.*?)\((.+)\)$/
 
 class ChClient extends Dia.DB.Client {

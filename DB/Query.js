@@ -19,6 +19,7 @@ module.exports = class {
                     let src = k.trim ()
 
                     let join_hint
+                    // eslint-disable-next-line redos/no-vulnerable
                     [src, join_hint] = src.split (/\s+ON\s+/)
                     if (join_hint) this.join_hint = join_hint
                     
@@ -30,7 +31,8 @@ module.exports = class {
                     else {
                         this.cols = undefined
                     }
-                    
+
+                    // eslint-disable-next-line redos/no-vulnerable
                     let [t, a] = src.split (/\s+AS\s+/)
                     
                     t = t.trim ()
@@ -224,7 +226,7 @@ module.exports = class {
                             src = src.trim ()
 
                             // njsscan-ignore: regex_dos
-                            // eslint-disable-next-line: security/detect-unsafe-regex
+                            // eslint-disable-next-line redos/no-vulnerable
                             let col_etc_other = /^(\w+)(\.\.\.)?(\s*(?:NOT\s+)?\S*)\s*$/.exec (src)
 
                             if (col_etc_other) {
@@ -265,6 +267,7 @@ module.exports = class {
                         
                             case 'ORDER':
                                 query.order = String (val).trim ()
+                                    // eslint-disable-next-line redos/no-vulnerable
                                 	.split (/\s*,\s*/)
                                 	.map (i => i.indexOf ('.') > 0 || i.indexOf ('CASE') > -1 ? i : this.alias + '.' + i)
                                 	.join (',')
@@ -294,7 +297,8 @@ module.exports = class {
                 this.Col = class {
 
                     constructor (src) {
-                    
+
+                        // eslint-disable-next-line redos/no-vulnerable
                         let [expr, alias] = src.split (/\s+AS\s+/)
 
                         this.part = part

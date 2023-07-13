@@ -24,7 +24,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: install eslint
-        run: npm install eslint@7.32.0
+        run: npm install eslint@7.32.0 eslint-plugin-redos@4.4.5
 
       - name: run eslint
         run: npx eslint .

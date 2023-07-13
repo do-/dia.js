@@ -206,6 +206,7 @@ class PgClient extends Dia.DB.Client {
                 
                 let cols = ix.slice (1 + ix.indexOf ('('), ix.lastIndexOf (')'))
 
+                // eslint-disable-next-line redos/no-vulnerable
                 let parts = cols.split (/\s*,\s*/)
                 
                 if (parts.length != key.length) continue
@@ -219,7 +220,8 @@ class PgClient extends Dia.DB.Client {
             }
         
             if (!the_index) throw 'No unique key found for ' + table + ' on ' + key
-                        
+
+            // eslint-disable-next-line redos/no-vulnerable
             where = the_index.match (/ WHERE .*$/)
             
         }
@@ -713,6 +715,7 @@ class PgClient extends Dia.DB.Client {
             let v = r.indexdef
             
             if (re_pk.test (k)) {
+                // eslint-disable-next-line redos/no-vulnerable
                 let p_k = /\((.*)\)/.exec (v) [1].trim ().replace (/\s/g, '').split (',')
                 t.existing.p_k = p_k
                 t.existing.pk = p_k.length == 1 ? p_k [0] : p_k

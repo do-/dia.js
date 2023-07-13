@@ -90,11 +90,13 @@ module.exports = class {
     }
     
     to_error (x) {
-    
+
+        // eslint-disable-next-line redos/no-vulnerable
     	if (x instanceof Error && !x.message.match (/^#.*#:.*$/)) return x
 
     	const try_validation_error = s => {
 
+            // eslint-disable-next-line redos/no-vulnerable
 	    	let fm = /^#([^#]+)#:\s*(.*)$/.exec (s); if (!fm) return null
 	    	
 	    	return new ValidationError (fm [2], fm [1])

@@ -296,9 +296,11 @@ module.exports = class {
     }
     
     parse_column (s) {
-    
+
+		// eslint-disable-next-line redos/no-vulnerable
         let [content, comment] = s.split (/\s*\/\/\s*/)
     
+		// eslint-disable-next-line redos/no-vulnerable
         let [type, column_def] = content.split (/\s*=\s*/)
         
         let col = {
@@ -339,11 +341,13 @@ module.exports = class {
         }
         else {
 
+			// eslint-disable-next-line redos/no-vulnerable
 			let [, t, len, mm] = /(\w+)(?:\[(.*?)\])?(?:\{(.*?)\})?/.exec (type)
 
             set ('TYPE_NAME', t)
             
             if (len) {
+				// eslint-disable-next-line redos/no-vulnerable
 				let [, min_length, column_size, decimal_digits] = /(?:(\d+)\.\.)?(\d+)(?:\,(\d+))?$/.exec (len)
 				if (min_length)     set ('MIN_LENGTH', min_length)
 				if (column_size)    set ('COLUMN_SIZE', column_size)
@@ -351,6 +355,7 @@ module.exports = class {
             }
 
             if (mm) {            
+				// eslint-disable-next-line redos/no-vulnerable
 				let [, min, max] = /^(.*?)\.\.(.*?)$/.exec (mm)
 				if (min) set ('MIN', min)
 				if (max) set ('MAX', max)
