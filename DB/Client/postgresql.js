@@ -191,7 +191,7 @@ class PgClient extends Dia.DB.Client {
         
         if (inv (key) != inv (def.p_k)) {
         
-        	darn (inv (key) + '!=' + inv (def.p_k))
+//        	darn (inv (key) + '!=' + inv (def.p_k))
         
             let keys = def.keys
             if (!keys) throw 'Keys are not defined for ' + table
