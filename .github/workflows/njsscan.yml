@@ -16,6 +16,7 @@ jobs:
       uses: actions/checkout@v2
     - name: nodejsscan scan
       id: njsscan
+      # nosemrep yaml.github-actions.security.third-party-action-not-pinned-to-commit-sha.third-party-action-not-pinned
       uses: ajinabraham/njsscan-action@v7
       with:
         args: '. -w'
