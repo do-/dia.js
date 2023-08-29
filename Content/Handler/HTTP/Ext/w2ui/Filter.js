@@ -51,14 +51,14 @@ module.exports = class {
         
         	let [from, to] = s.value || []
 
-        	if (!from && !to) {
+        	if (!from && !to && from !== 0 && to !== 0) {
         		s.value = null
         	}
-        	else if (from && !to) {
+        	else if (from && !to && to !== 0) {
         		s.operator = 'more'
         		s.value = from
         	}
-        	else if (!from && to) {
+        	else if (!from && from !== 0 && to) {
         		s.operator = 'less'
         		s.value = to
         	}
