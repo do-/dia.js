@@ -1,4 +1,4 @@
-const {Pool} = require ('pg')
+const pg         = require ('pg')
 const wrapper = require ('../Client/postgresql.js')
 const crypto  = require ('crypto')
 const LogEvent = require ('../../Log/Events/Text.js')
@@ -8,7 +8,11 @@ module.exports = class extends require ('../Pool.js') {
 
     constructor (o) {
         super (o)
-        this.backend = new Pool (o)
+        this.backend = new pg.Pool (o)
+
+        pg.types.setTypeParser(pg.types.builtins.DATE, (dt) => dt)
+        pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (dt) => dt)
+        pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, (dt) => dt)
     }
 
     is_not_to_merge (i) {
