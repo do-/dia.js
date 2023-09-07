@@ -10,9 +10,9 @@ module.exports = class extends require ('../Pool.js') {
         super (o)
         this.backend = new pg.Pool (o)
 
-        pg.types.setTypeParser(pg.types.builtins.DATE, (dt) => dt)
-        pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (dt) => dt)
-        pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, (dt) => dt)
+        pg.types.setTypeParser(pg.types.builtins.DATE, (dt) => dt === 'infinity' || dt === '-infinity' ? null : dt)
+        pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (dt) => dt === 'infinity' || dt === '-infinity' ? null : dt)
+        pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, (dt) => dt === 'infinity' || dt === '-infinity' ? null : dt)
     }
 
     is_not_to_merge (i) {
