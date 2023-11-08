@@ -1015,7 +1015,7 @@ module.exports = class extends require ('../Pool.js') {
 
     normalize_model_table_key (table, k) {
 
-        let glob = `ix_${table.name}_${k}`
+        let glob = `ix_${table.name.replace('.', '_')}_${k}`
 
         let src = table.keys [k]
         
