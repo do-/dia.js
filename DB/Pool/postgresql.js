@@ -1015,7 +1015,7 @@ module.exports = class extends require ('../Pool.js') {
 
     normalize_model_table_key (table, k) {
 
-        let glob = `ix_${table.name.replace('.', '_')}_${k}`
+        let glob = `ix_${table.schema ? table.name.replace('.', '_') : table.name}_${k}`
 
         let src = table.keys [k]
         
@@ -1087,7 +1087,7 @@ module.exports = class extends require ('../Pool.js') {
                 if (invariant (src) == invariant (old_src)) continue
 
                 if (old_src) {
-                	result.push ({sql: `DROP INDEX IF EXISTS ${name};`, params: []})
+                	result.push ({sql: `DROP INDEX IF EXISTS ${(table.schema ? table.schema + '.' : '') + name};`, params: []})
                 }
                 else if (before) {
                     let b = before [name]
