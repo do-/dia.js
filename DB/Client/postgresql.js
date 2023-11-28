@@ -766,7 +766,7 @@ class PgClient extends Dia.DB.Client {
 	
     async load_schema_proc () {
 
-        if (!this.model.conf.db.skip_recreating_unchanged_triggers) return
+        if (!(this.model.conf.db.skip_recreating_unchanged || {}).triggers) return
 
         let rs = await this.select_all (`SELECT proname, prosrc FROM pg_proc WHERE proname LIKE 'on_%' AND pronargs = 0`, [])
 
