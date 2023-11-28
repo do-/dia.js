@@ -764,6 +764,16 @@ class PgClient extends Dia.DB.Client {
 
 	}
 	
+    async load_schema_proc () {
+
+        let rs = await this.select_all (`SELECT proname, prosrc FROM pg_proc WHERE proname LIKE 'on_%' AND pronargs = 0`, [])
+
+        let procs = this.model.procs = {}
+
+        for (let r of rs) procs [r.proname] = r.prosrc
+
+    }
+
     async load_schema_table_data () {
     
     	const {model} = this
