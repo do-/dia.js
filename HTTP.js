@@ -207,7 +207,7 @@ module.exports = class {
 
 							rp.on ('error', x => fail (x))
 							
-							let {location} = headers; if (!location) {
+							let {location} = headers; if (!o.disable_redirect && !location) {
 
 								rp.on ('close', () => {this.log_write (log_event.finish ())})
 								
