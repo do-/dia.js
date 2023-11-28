@@ -977,7 +977,7 @@ module.exports = class extends require ('../Pool.js') {
 
                 let glob = `on_${name}_${table.name}`
 
-                if (src && src != -Infinity && this.model.procs[glob] == src) continue
+                if (this.model.conf.db.skip_recreating_unchanged_triggers && src && src != -Infinity && this.model.procs[glob] == src) continue
 
                 result.push ({sql: `DROP FUNCTION IF EXISTS "${glob}" () CASCADE`})
 
