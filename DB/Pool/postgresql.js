@@ -10,6 +10,18 @@ module.exports = class extends require ('../Pool.js') {
         super (o)
         this.backend = new pg.Pool (o)
 
+        this.backend.on('connect', (client) => {
+            client.on ('notice', async (e) => {
+                let log_event = this.log_write (new LogEvent ({
+                    category: 'db',
+                    label: 'PostgreSQL notice: ' + (e.where ? e.where + ': ' : '') + e.message,
+                    phase: 'before',
+                }))
+
+                this.log_write (log_event.finish ())
+            })
+        })
+
         pg.types.setTypeParser(pg.types.builtins.DATE, (dt) => dt === 'infinity' || dt === '-infinity' ? null : dt)
         pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (dt) => dt === 'infinity' || dt === '-infinity' ? null : dt)
         pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, (dt) => dt === 'infinity' || dt === '-infinity' ? null : dt)
