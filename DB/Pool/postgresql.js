@@ -1090,6 +1090,8 @@ module.exports = class extends require ('../Pool.js') {
 
                 if (invariant (src) == invariant (old_src)) continue
 
+                this.model.odd ({type: 'redefined_index', id: `${old_src} -> ${src}`})
+
                 if (old_src) {
                 	result.push ({sql: `DROP INDEX IF EXISTS ${(table.schema ? table.schema + '.' : '') + name};`, params: []})
                 }
