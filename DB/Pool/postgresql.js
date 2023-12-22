@@ -724,10 +724,9 @@ module.exports = class extends require ('../Pool.js') {
 
             if (typeof s !== 'string') return s
 
-            if (s.slice (-3) === ' ()') s = s.slice (0,-3) + '()'
-
             switch (s) {
                 case 'now()': return 'NOW()'
+                case 'uuid_generate_v4 ()': return 'uuid_generate_v4()'
                 case 'infinity': return 'Infinity'
                 case '-infinity': return '-Infinity'
                 default: return s
