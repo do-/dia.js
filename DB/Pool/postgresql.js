@@ -720,7 +720,24 @@ module.exports = class extends require ('../Pool.js') {
 
         if (col.TYPE_NAME == 'SERIAL') return
 
-        if (d != exd) {
+        const invariant = s => {
+
+            if (typeof s !== 'string') return s
+
+            if (s.slice (-3) === ' ()') s = s.slice (0,-3) + '()'
+
+            switch (s) {
+                case 'now()': return 'NOW()'
+                case 'infinity': return 'Infinity'
+                case '-infinity': return '-Infinity'
+                default: return s
+            }
+
+        }
+
+        if (invariant (d) != invariant (exd)) {
+
+            if (d !== null && exd !== null) this.model.odd ({type: 'changed_default', id: `${table.name}.${col.name}: ${exd} -> ${d}`})
 
         	if (d == 'AUTO_INCREMENT') {
         	
