@@ -724,7 +724,9 @@ module.exports = class extends require ('../Pool.js') {
 
             const pos = exd.indexOf ('('); if (pos !== -1) {
 
-                const RE_FUNCTION_NAME = /([\w_]+)\s*\(/g
+                // postgres identifier limit is 63 chars
+                // eslint-disable-next-line redos/no-vulnerable
+                const RE_FUNCTION_NAME = /([\w_]{1,63})\s*\(/g
 
                 for (const fun of exd.matchAll (RE_FUNCTION_NAME)) if ((fun [1]).toLowerCase () in this.model.functions) {
 
