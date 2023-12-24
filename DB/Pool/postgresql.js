@@ -720,13 +720,32 @@ module.exports = class extends require ('../Pool.js') {
 
         if (col.TYPE_NAME == 'SERIAL') return
 
+        if (typeof exd === 'string') {
+
+            const pos = exd.indexOf ('('); if (pos !== -1) {
+
+                const RE_FUNCTION_NAME = /([\w_]+)\s*\(/g
+
+                for (const fun of exd.matchAll (RE_FUNCTION_NAME)) if ((fun [1]).toLowerCase () in this.model.functions) {
+
+                    exd = null
+
+                    break
+
+                }
+
+            }
+
+        }
+
         const invariant = s => {
 
             if (typeof s !== 'string') return s
 
+            if (s.slice (-3) === ' ()') s = s.slice (0,-3) + '()'
+
             switch (s) {
                 case 'now()': return 'NOW()'
-                case 'uuid_generate_v4 ()': return 'uuid_generate_v4()'
                 case 'infinity': return 'Infinity'
                 case '-infinity': return '-Infinity'
                 default: return s
