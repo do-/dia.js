@@ -793,9 +793,13 @@ module.exports = class extends require ('../Pool.js') {
 				}
 				else {
 
-					let [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
+                    if (ex.NULLABLE) {
 
-					result.push ({sql: `UPDATE ${table.qname} SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
+                        const [v, params] = d.indexOf ('(') < 0 ? ['?', [d]] : [d, []]
+
+                        result.push ({sql: `UPDATE ${table.qname} SET "${col.name}" = ${v} WHERE "${col.name}" IS NULL`, params})
+
+                    }
 
 					if (d.indexOf (')') < 0) d = this.gen_sql_quoted_literal (d)
 
