@@ -22,10 +22,23 @@ module.exports = class extends Event {
 			
 			case 'before' : 
 
-				let {method_name, rq} = this
+				const {method_name, rq} = this
 
-				return [method_name, JSON.stringify (rq)].filter (i => i).join (' ')
-				
+				if (rq == null) return method_name
+
+				if (typeof rq !== 'object') return method_name + ' ' + rq
+
+				try {
+
+					return method_name + ' ' + JSON.stringify (rq)
+
+				}
+				catch (err) {
+
+					return method_name + '{Circular references?}'
+
+				}
+
 			case 'auth' : 
 
 				let {user, session} = this; if (!user) user = {id: null}
