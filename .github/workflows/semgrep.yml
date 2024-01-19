@@ -10,7 +10,7 @@ jobs:
   semgrep:
     name: semgrep
     runs-on: ubuntu-latest
-    container: returntocorp/semgrep:1.21.0
+    container: returntocorp/semgrep:1.54.3
     steps:
       - uses: actions/checkout@v3
 
