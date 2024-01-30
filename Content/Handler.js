@@ -323,7 +323,7 @@ module.exports = class {
 
         for (let resource of this.__resources) try {
 
-            resource.release (!this.is_failed)
+            await resource.release (!this.is_failed)
 
         }
         catch (x) {
