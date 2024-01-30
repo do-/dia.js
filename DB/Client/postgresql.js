@@ -16,7 +16,7 @@ class PgClient extends Dia.DB.Client {
     async break () {
         
     	try {    	
-	        await this.backend.end ()    	
+	        await this.backend.release (true)
     	}
     	catch (x) {    	
     		this.warn ('' + x)
