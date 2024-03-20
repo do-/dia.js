@@ -1,6 +1,7 @@
 const LOGICAL_OPERATORS = new Set(['and', 'or', 'not']);
 const IN_SET_OPERATORS = new Set(['in', 'not in']);
 const PRODUCT = Symbol ('__product__')
+
 module.exports = class {
 
     op (src) {switch (src) {
@@ -26,7 +27,10 @@ module.exports = class {
             return term;
         }
         if (term.field === undefined && Array.isArray(term.value)) {
-            return term.value.map(sub => this.get_params(sub)).reduce((acc, val) => acc.concat(val), []);
+            return term.value
+                .map(sub => this.get_params(sub))
+                .reduce((acc, val) => acc.concat(val), [])
+                .filter(val => val !== null && val !== undefined);
         }
 
         return term.value;
@@ -38,7 +42,7 @@ module.exports = class {
             if (!LOGICAL_OPERATORS.has(s.operator)) {
                 throw 'Unsupported operator: ' + s.operator;
             }
-            
+
             if (!Array.isArray(s.value)) s.value = [s.value];
             for (let sub of s.value) this.adjust_term(sub, true);
             s.expr = (s.operator == 'not') ? `(NOT ${s.value[0].expr})` :
@@ -128,6 +132,9 @@ module.exports = class {
         if (nested && s.field) {
             if (IN_SET_OPERATORS.has(s.operator)) {
                 s.expr += `(${s.value.map(() => '?').join(',')})`;
+            }
+            else if (s.operator == 'null') {
+                s.expr += ' IS NULL';
             }
         }
     
