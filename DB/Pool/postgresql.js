@@ -159,6 +159,8 @@ module.exports = class extends require ('../Pool.js') {
 
 		this.log_write (log_event.finish ())
 
+		return db
+
     }    
         
     async acquire (o = {}) {
