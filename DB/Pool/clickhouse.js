@@ -271,7 +271,7 @@ module.exports = class extends require ('../Pool.js') {
 
             result.push ({sql: `SET max_partitions_per_insert_block=0`})
 
-            result.push ({sql: `INSERT INTO ${tmp_table.qname} (${cols}) SELECT ${cols} FROM ${table.name}`})
+            result.push ({sql: `INSERT INTO ${tmp_table.qname} (${cols}) SELECT ${cols} FROM ${table.name} WHERE ${tmp_table.p_k.map(i => i + ' IS NOT NULL').join(' AND ')}`})
 
             result.push ({sql: `DROP TABLE ${table.qname}`})
             
