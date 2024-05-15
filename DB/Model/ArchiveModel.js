@@ -119,6 +119,8 @@ module.exports = class extends Model {
 
     	const {name, label, pk, partition, except_columns} = def.archive
 
+		const {on_cluster} = def
+
     	let columns = []; for (let [k, v] of Object.entries (def.columns)) {
 
 			if (except_columns && except_columns.includes (k)) continue
@@ -135,7 +137,7 @@ module.exports = class extends Model {
 
 		}
 
-		return {name, label, pk, partition, columns}
+		return {name, label, pk, partition, columns, on_cluster}
 
     }
 
