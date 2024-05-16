@@ -176,11 +176,12 @@ class PgClient extends Dia.DB.Client {
 
         if (Array.isArray (data)) return Promise.all (data.map (d => this.upsert (table, d, key)))
 
-        if (typeof data !== 'object') throw 'upsert called with wrong argument: ' + JSON.stringify ([table, data])
-        if (data === null) throw 'upsert called with null argument: ' + JSON.stringify ([table, data])
+        if (typeof data !== 'object') throw Error ('upsert called with wrong argument: ' + JSON.stringify ([table, data]))
+        if (data === null) throw Error ('upsert called with null argument: ' + JSON.stringify ([table, data]))
 
-        let def = this.model.tables [table]
-        if (!def) throw 'Table not found: ' + table
+        let def = this.model.get_relation (table)
+
+        if (!def) throw Error ('Table not found: ' + table)
 
         if (!key) key = def.p_k
         if (!Array.isArray (key)) key = [key]
@@ -194,7 +195,7 @@ class PgClient extends Dia.DB.Client {
 //        	darn (inv (key) + '!=' + inv (def.p_k))
         
             let keys = def.keys
-            if (!keys) throw 'Keys are not defined for ' + table
+            if (!keys) throw Error ('Keys are not defined for ' + table)
             
             let the_index
             
@@ -219,11 +220,29 @@ class PgClient extends Dia.DB.Client {
             
             }
         
-            if (!the_index) throw 'No unique key found for ' + table + ' on ' + key
+            if (!the_index) throw Error ('No unique key found for ' + table + ' on ' + key)
 
             // eslint-disable-next-line redos/no-vulnerable
             where = the_index.match (/ WHERE .*$/)
             
+        }
+
+        const {partition} = def; if (partition) {
+
+            const {by} = partition; if (!by) throw Error ('.partition without .by: ' + table)
+
+            if (typeof by !== 'string') throw Error ('.partition.by not a string: ' + table)
+
+            if (by.slice (0, 4) !== 'LIST') throw Error ('only .partition.by LIST is supported: ' + table)
+
+            const col = by.slice (by.indexOf ('(')).slice (1, -1); if (key [0] !== col) throw Error ('the key must start with ${col}')
+
+            key.shift ()
+            
+            const value = data [col]; if (value == null) throw Error ('partition key (${col}) value not defided')
+
+            table = await this.select_scalar (`SELECT tableoid::pg_catalog.regclass::TEXT FROM ${table} WHERE ${col} = ?`, [data [col]])
+
         }
         
         let [fields, args, set, params] = [[], [], [], []]
