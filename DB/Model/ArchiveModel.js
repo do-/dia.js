@@ -47,7 +47,7 @@ module.exports = class extends Model {
 
 		this.template = this.get_template ()			
 			
-		for (const def of Object.values (ods_model.tables)) if ('archive' in def) {
+		for (const def of [...Object.values (ods_model.tables), ...Object.values (ods_model.partitioned_tables)]) if ('archive' in def) {
 
 			def.archive = this.adjust_options (def)
 
