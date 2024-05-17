@@ -111,7 +111,7 @@ module.exports = class {
 					rp.on ('end', () => {
 
 						this.log_write (rp.log_event.set ({
-							response_body: rp_body,
+							response_body: rp.headers ['content-type'] === 'application/json' ? JSON.parse(rp_body) : rp_body,
 							phase: 'response_body',
 						}))
 
