@@ -536,7 +536,7 @@ module.exports = class extends require ('../Pool.js') {
 						if (col.ref != table.name) continue
 
 						if (!ref_table.existing.columns[col.name]) continue
-
+						if (!table.existing.columns[table.existing.pk]) continue
 						if (ref_table.existing.columns[col.name].TYPE_NAME != table.existing.columns[table.existing.pk].TYPE_NAME) continue
 
 						let tmp_col = {TYPE_NAME, ref: tmp_table, name: 'c_' + String (Math.random ()).replace (/\D/g, '_')} // njsscan-ignore: node_insecure_random_generator
