@@ -563,5 +563,30 @@ module.exports = class extends require ('../Pool.js') {
         return result
 
     }
-    
+
+    gen_sql_after_add_tables() {
+        const result = []
+
+        for (let type of ['tables', 'partitioned_tables']) for (let table of Object.values(this.model[type])) {
+            if (table._is_just_added) {
+
+                let a = table.on_after_add_table
+
+                if (a) {
+                    if (typeof a === 'function') a = a.call(table, table)
+                    if (a == null) a = []
+                    if (!Array.isArray(a)) a = [a]
+                    for (let i of a) result.push(i)
+                }
+
+                const data = table.init_data
+                if (data) table._data_modified = table.data = data
+
+            } else {
+                delete table.init_data
+            }
+        }
+
+        return result
+    }
 }
