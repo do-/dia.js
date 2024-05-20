@@ -1008,8 +1008,8 @@ module.exports = class extends require ('../Pool.js') {
     
         let result = []
         
-        for (let table of Object.values (this.model.tables)) {
-        
+        for (const type of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [type])) {
+
             let {triggers} = table; if (!triggers) continue
                     
             for (let name in triggers) {

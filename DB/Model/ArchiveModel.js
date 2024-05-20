@@ -35,7 +35,7 @@ module.exports = class extends Model {
 				
 			}
 		
-			for (const def of Object.values (this.ods_model.tables)) if (spy.option_name in def) {
+			for (const def of [...Object.values (ods_model.tables), ...Object.values (ods_model.partitioned_tables)]) if (spy.option_name in def) {
 		
 				const log_table = spy.to_logging_table (def)
 

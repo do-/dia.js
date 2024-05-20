@@ -107,6 +107,8 @@ module.exports = class extends require ('../../Spy.js') {
 	to_logging_table (def) {
 	
 		let logging_table = super.to_logging_table (def)
+
+		delete logging_table.partition
 		
 		if (!def.triggers) def.triggers = {}
 		
