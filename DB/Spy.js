@@ -83,9 +83,17 @@ module.exports = class {
 	
 	to_logging_table (def) {
 
-		const {name, label, columns} = def, options = def [this.option_name], {except_columns} = options
+		const {name, label, columns} = def, options = def [this.option_name]
 		
-		let {pk} = def; if (!Array.isArray (pk)) pk = [pk]; pk.unshift ('_ts')
+		let {except_columns, archive} = options
+
+		let {pk} = def; if (!Array.isArray (pk)) pk = [pk]
+
+		if (!archive) archive = {
+			pk: ['_ts', ...pk],
+		}
+
+		archive.name = this.to_archive_table_name (name)
 
 		let log = {
 		
@@ -99,12 +107,7 @@ module.exports = class {
 
 			triggers: {},
 
-			archive: {
-				name      : this.to_archive_table_name (name),
-				pk,
-//				threshold : log.threshold,
-//				keep      : Object.keys (log.keep).length > 0,
-			},
+			archive,
 
 		}
 		
