@@ -247,11 +247,13 @@ module.exports = class extends require ('../Pool.js') {
 
     	for (let name of Object.keys (partitioned_tables).sort ()) {
     	
-    		let table = partitioned_tables [name], {qname, columns, partition, existing} = table
+    		let table = partitioned_tables [name], {qname, columns, partition, existing, p_k} = table
 
     		if (!existing) {
-    		
-				result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
+
+                result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
+
+                if (Array.isArray (p_k) && p_k.length > 1) result.push ({sql: `ALTER TABLE ${qname} ADD PRIMARY KEY (${p_k})`})
 
 				continue
 				
