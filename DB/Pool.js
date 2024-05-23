@@ -314,6 +314,7 @@ module.exports = class {
     
     normalize_model_table_column (table, col) {
     
+		if (col == -Infinity) delete table.columns[col]
 		if (typeof col !== 'object') return
 
         col.TYPE_NAME_ORIGINAL = col.TYPE_NAME
