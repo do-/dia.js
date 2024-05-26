@@ -14,12 +14,31 @@ class PgClient extends Dia.DB.Client {
     }
     
     async break () {
-        
-    	try {    	
-	        await this.backend.release (true)
+
+        const conn = this.backend
+
+        try {
+
+            if (conn.activeQuery) {
+
+                const {processID} = conn
+
+                await this.pool.do_with_db ({
+                    label: `Killing connection #${processID}`,
+                    f: async db => {
+                        await db.do ('SELECT pg_terminate_backend (?)', [processID])
+                    }
+                })
+
+            }
+
+            await conn.release (true)
+
     	}
-    	catch (x) {    	
-    		this.warn ('' + x)
+    	catch (x) {
+
+            darn (x)
+
     	}
         
     }
