@@ -246,24 +246,6 @@ class PgClient extends Dia.DB.Client {
             
         }
 
-        const {partition} = def; if (partition) {
-
-            const {by} = partition; if (!by) throw Error ('.partition without .by: ' + table)
-
-            if (typeof by !== 'string') throw Error ('.partition.by not a string: ' + table)
-
-            if (by.slice (0, 4) !== 'LIST') throw Error ('only .partition.by LIST is supported: ' + table)
-
-            const col = by.slice (by.indexOf ('(')).slice (1, -1); if (key [0] !== col) throw Error ('the key must start with ${col}')
-
-            key.shift ()
-            
-            const value = data [col]; if (value == null) throw Error ('partition key (${col}) value not defided')
-
-            table = await this.select_scalar (`SELECT tableoid::pg_catalog.regclass::TEXT FROM ${table} WHERE ${col} = ?`, [data [col]])
-
-        }
-        
         let [fields, args, set, params] = [[], [], [], []]
         
         let {columns} = def
