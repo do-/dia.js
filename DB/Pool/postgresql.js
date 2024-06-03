@@ -494,7 +494,7 @@ module.exports = class extends require ('../Pool.js') {
             
             let cols = []
 
-            for (let col of Object.values (tmp_table.columns)) {
+            for (let col of Object.values (tmp_table.columns)) if (col) {
 
                 let col_name = col.name
 
