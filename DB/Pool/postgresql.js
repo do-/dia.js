@@ -251,7 +251,7 @@ module.exports = class extends require ('../Pool.js') {
 
     		if (!existing) {
 
-                result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
+                result.push ({sql: `CREATE TABLE ${qname} (${Object.values (columns).filter (i => i !== -Infinity).map (col => col.name + ' ' + this.gen_sql_column_definition (col))}) PARTITION BY ${partition.by}`})
 
                 if (Array.isArray (p_k) && p_k.length > 1) result.push ({sql: `ALTER TABLE ${qname} ADD PRIMARY KEY (${p_k})`})
 
