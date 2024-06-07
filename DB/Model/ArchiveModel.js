@@ -117,9 +117,7 @@ module.exports = class extends Model {
     
     to_dw (def) {
 
-    	const {name, label, pk, partition, except_columns} = def.archive
-
-		const {on_cluster} = def
+		const {name, label, pk, partition, except_columns, on_cluster, engine} = def.archive
 
     	let columns = []; for (let [k, v] of Object.entries (def.columns)) {
 
@@ -137,7 +135,7 @@ module.exports = class extends Model {
 
 		}
 
-		return {name, label, pk, partition, columns, on_cluster}
+		return {name, label, pk, partition, columns, on_cluster, engine}
 
     }
 
