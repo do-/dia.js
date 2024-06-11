@@ -230,7 +230,7 @@ module.exports = class extends Model {
 
 						BEGIN
 
-							IF TG_OP = 'UPDATE' AND NOT OLD._is_copied AND NEW._is_copied THEN
+							IF TG_OP = 'UPDATE' AND NOT OLD._is_copied AND NEW._is_copied AND NOT ${this.archive.keep} THEN
 
 								PERFORM pg_notify ('dia', '{"type":"_archive","action":"purge","id":"${this.name}"}');
 
