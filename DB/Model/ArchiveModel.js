@@ -133,6 +133,16 @@ module.exports = class extends Model {
 
 			columns [k] = v
 
+			if (v === -Infinity && def.archive.columns && def.archive.columns.length) {
+
+				for (let col of def.archive.columns) {
+
+					if (col.name === k) columns [k] = col
+
+				}
+
+			}
+
 		}
 
 		return {name, label, pk, partition, columns}
