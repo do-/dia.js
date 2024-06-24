@@ -33,11 +33,15 @@ module.exports = class {
 			if (!category) carp ('Category not set')
 			if (!path)     carp ('Path not set')
 
-			let s = level + ' '
+			let s = level
 
 			{
 
-				const {length} = path; for (let i = 0; i < length; i ++) {
+				const {length} = path;
+
+				if (length > 0) s += ' '
+
+				for (let i = 0; i < length; i ++) {
 
 					if (i > 0) s += '/'
 
