@@ -234,10 +234,12 @@ class ChClient extends Dia.DB.Client {
 		let table = this.model.get_relation (table_name); if (!table) throw 'Table not found: ' + table_name
 
 		if (!isStream.readable (data)) {
-		
-			if (!Array.isArray (data)) data = [data]; if (data.length == 0) return
-	        
-			let _data = data; i = 0; data = new Readable ({objectMode: true, read () {this.push (_data [i ++] || null)}})
+
+			if (!Array.isArray (data)) data = [data]
+			
+			if (data.length == 0) return
+
+			data = Readable.from (data)
 
 		}
 		
