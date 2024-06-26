@@ -55,7 +55,7 @@ module.exports = class extends Event {
 				return false
 
 			case 'response_headers': 
-				return !this.response_headers ['x-clickhouse-query-id']
+				return !this.response_headers ['x-clickhouse-query-id'] && !this.response_headers ['x-clickhouse-summary']
 
 			default: 
 				return true
