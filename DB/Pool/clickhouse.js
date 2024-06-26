@@ -12,9 +12,11 @@ module.exports = class extends require ('../Pool.js') {
 		
 		let p = url.split ('/')
 		
-		this.database = p.pop ()
-		
-		p.push ('?database=' + this.database)
+		let db_with_options = p.pop ().split ('&')
+
+		this.database = db_with_options.shift()
+
+		p.push ('?database=' + this.database + (db_with_options.length > 0 ? '&' + db_with_options.join ('&') : ''))
 
 		if (p.length < 2 || p [1]) p.unshift ('http:/')
 
@@ -553,11 +555,15 @@ module.exports = class extends require ('../Pool.js') {
 		let views = names.map (i => this.model.views [i])
 
         for (let view of views) {
-        	result.push ({sql: `DROP TABLE IF EXISTS ${view.name}`, params: []})
+            let on_cluster = view.on_cluster? ` ON CLUSTER ${view.on_cluster}` : ''
+
+            result.push ({sql: `DROP VIEW IF EXISTS ${view.name}${on_cluster}`, params: []})
         }
 
         for (let view of views) {           
-            result.push ({sql: `CREATE VIEW "${view.name}" AS ${view.sql}`, params: []})            
+            let on_cluster = view.on_cluster? ` ON CLUSTER ${view.on_cluster}` : ''
+
+            result.push ({sql: `CREATE VIEW "${view.name}"${on_cluster} AS ${view.sql}`, params: []})
         }
 
         return result

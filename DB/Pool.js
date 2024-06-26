@@ -145,7 +145,7 @@ module.exports = class {
             return await f.call (this, db)
         }
         finally {
-            this.release (db)
+            if (db) this.release (db)
             this.log_write (this.log_event.finish ())
         }
         
