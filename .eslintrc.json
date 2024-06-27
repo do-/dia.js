@@ -10,6 +10,13 @@
     "extends": [
         "eslint:recommended", "plugin:redos/recommended"
     ],
+    "globals": {
+        "ZERO_UUID": "readonly",
+        "darn": "readonly",
+        "clone": "readonly",
+        "suicide": "readonly",
+        "dt_iso": "readonly"
+    },
     "rules": {
         "no-unused-vars": "off",
         "no-fallthrough": "off",
