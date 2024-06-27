@@ -148,7 +148,7 @@ module.exports = class extends Transform {
 				}
 				catch (xxx) {
 
-					for (let f of fields) message += `, ${f} = ${r [f]}`
+					for (let f of this.fields) message += `, ${f} = ${r [f]}`
 
 				}
 
