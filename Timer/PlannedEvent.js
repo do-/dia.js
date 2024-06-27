@@ -92,7 +92,7 @@ module.exports = class {
 	
 	schedule () {
 	
-		if (this.status !== ST_NEW) throw new Exception ('Wrong status:' + this.status)
+		if (this.status !== ST_NEW) throw Error ('Wrong status:' + this.status)
 	
 		const schedule_comments = this.adjust ()
 
@@ -142,7 +142,7 @@ module.exports = class {
 		switch (this.status) {
 			case ST_CANCELLING : return
 			case ST_SCHEDULED  : break
-			default            : throw new Exception ('Wrong status:' + this.status)
+			default            : throw Error ('Wrong status:' + this.status)
 		}
 
 		let message = 'cancel requested'; if (note) message += ': ' + note
