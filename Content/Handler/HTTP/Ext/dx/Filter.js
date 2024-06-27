@@ -18,7 +18,7 @@ const _sqlize_sum = list => {
 
 		let s = list [i]
 		
-		const aggr = AGGR_MAP.get (s.summaryType); if (!aggr) throw new Exception ('Invalid summaryType in ' + JSON.stringify (s))
+		const aggr = AGGR_MAP.get (s.summaryType); if (!aggr) throw Error ('Invalid summaryType in ' + JSON.stringify (s))
 
 		s.name = 'sum_' + i
 

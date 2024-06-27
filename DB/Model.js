@@ -137,9 +137,9 @@ module.exports = class {
     
     	if (!('type' in def)) def.type = this.guess_type (def)
 
-    	const {name, type} = def; if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
+    	const {name, type} = def; if (!name) {darn (def); throw Error ('Attempt to register a non named object')}
     	
-    	if (!name) {darn (def); throw new Exception ('Attempt to register a non named object')}
+    	if (!name) {darn (def); throw Error ('Attempt to register a non named object')}
 
 		const r = this.get_roster (type + 's')
 
