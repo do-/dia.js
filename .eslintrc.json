@@ -11,7 +11,6 @@
         "eslint:recommended", "plugin:redos/recommended"
     ],
     "rules": {
-        "no-undef": "off",
         "no-unused-vars": "off",
         "no-fallthrough": "off",
         "no-case-declarations": "off",
