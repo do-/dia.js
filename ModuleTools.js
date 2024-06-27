@@ -1,18 +1,3 @@
-exports.new_uuid = () => {
+const crypto = require ('crypto')
 
-    let id = ''
-    
-    let f = [
-        () => {id += '-'},
-        () => {
-            let s = Math.floor (((1 << 16) - 1) * Math.random ()).toString (16) // njsscan-ignore: node_insecure_random_generator
-            for (let j = 0; j < 4 - s.length; j ++) id += '0'
-            id += s
-        },
-    ]
-    
-    for (i of [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1]) f [i] ()
-    
-    return id
-
-}
+exports.new_uuid = () => crypto.randomUUID ()
