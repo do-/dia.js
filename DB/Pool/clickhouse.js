@@ -8,7 +8,9 @@ module.exports = class extends require ('../Pool.js') {
     
         super (o)
         	
-		let [url, auth] = o.connectionString.slice ('clickhouse://'.length).split ('@').reverse ()
+		let cs   = o.connectionString.slice ('clickhouse://'.length).split ('@')
+		let url  = cs.pop ()
+		let auth = cs.join ('@')
 		
 		let p = url.split ('/')
 		
