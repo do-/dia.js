@@ -263,8 +263,8 @@ module.exports = class {
     
     async update (table, data, key) {
 
-        let def = this.model.tables [table]
-        if (!def) throw 'Table not found: ' + table
+        let def = this.model.get_relation (table)
+        if (!def) throw Error ('Table not found: ' + table)
 
         if (Array.isArray (data)) {
             for (let d of data) await this.update (table, d, key)
@@ -272,14 +272,14 @@ module.exports = class {
         }
         
         if (key == null) key = def.p_k
-        if (!Array.isArray (key)) throw 'The key must be an array of field names, got ' + JSON.stringify (key)
-        if (!key.length) throw 'Empty update key supplied for ' + table
+        if (!Array.isArray (key)) throw Error ('The key must be an array of field names, got ' + JSON.stringify (key))
+        if (!key.length) throw Error ('Empty update key supplied for ' + table)
 
         let [fields, filter, params] = [[], [], []]
         
         for (let k of key) {
             let v = data [k]
-            if (v == undefined) throw 'No ' + k + ' supplied for ' + table + ': ' + JSON.stringify (data)
+            if (v == undefined) throw Error ('No ' + k + ' supplied for ' + table + ': ' + JSON.stringify (data))
             filter.push (`${k}=?`)
             params.push (v)
             delete data [k]
