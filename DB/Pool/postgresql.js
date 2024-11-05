@@ -46,7 +46,7 @@ module.exports = class extends require ('../Pool.js') {
 			phase: 'before',
 		}))
 
-		let db = new (require ('pg')).Client (this.options.connectionString)		
+		let db = new (require ('pg')).Client (this.options)
 		
 		db.connect ()
 		
