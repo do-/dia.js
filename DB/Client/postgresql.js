@@ -724,11 +724,12 @@ class PgClient extends Dia.DB.Client {
         `, [])
 
         let tables = this.model.tables
+        let partitioned_tables = this.model.partitioned_tables
         let re_pk = /_pkey$/
 
         for (let r of rs) {
 
-            let t = tables [r.tablename]
+            let t = tables [r.tablename] || partitioned_tables [r.tablename]
             if (!t) continue
             
             let k = r.indexname            

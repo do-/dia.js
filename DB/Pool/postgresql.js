@@ -1113,7 +1113,7 @@ module.exports = class extends require ('../Pool.js') {
                 .toLowerCase ()
         }
 
-        for (let table of Object.values (this.model.tables)) {
+        for (const kind of ['tables', 'partitioned_tables']) for (let table of Object.values (this.model [kind])) {
         
             let keys = table.keys
 
