@@ -1126,9 +1126,11 @@ module.exports = class extends require ('../Pool.js') {
 			for (let name in keys) {
             
                 let src = keys [name]
-                
+
                 let old_src = existing_keys [name]
-                
+
+                if (old_src && kind === 'partitioned_tables') old_src = old_src.replace ('ON ONLY ' + table.name, 'ON ' + table.name)
+                    
                 let original_name = name.split (table.name + '_') [1]
                 
            		if (old_src && before && name in before) this.model.odd ({type: 'on_before_create_index', id: `${table.name}.${original_name}`})
