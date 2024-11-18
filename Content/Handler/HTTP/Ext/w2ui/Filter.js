@@ -26,7 +26,7 @@ module.exports = class {
             return term;
         }
         if (term.field === undefined && Array.isArray(term.value)) {
-            return term.value.map(sub => this.get_params(sub)).reduce((acc, val) => acc.concat(val), []);
+            return term.value.map(sub => this.get_params(sub)).filter(v => v !== undefined).reduce((acc, val) => acc.concat(val), []);
         }
 
         return term.value;
@@ -128,6 +128,10 @@ module.exports = class {
         if (nested && s.field) {
             if (IN_SET_OPERATORS.has(s.operator)) {
                 s.expr += `(${s.value.map(() => '?').join(',')})`;
+            }
+            if (s.operator == 'null') {
+                s.expr += ' IS NULL';
+                s.value = undefined;
             }
         }
     
