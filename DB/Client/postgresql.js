@@ -278,7 +278,7 @@ class PgClient extends Dia.DB.Client {
 			return this.load (Readable.from (data), table, Object.keys (data [0]))
         }
 
-        let def = this.model.tables [table]; if (!def) throw 'Table not defined: ' + table
+        let def = this.model.get_relation (table); if (!def) throw 'Table not defined: ' + table
 
         let [fields, args, params] = [[], [], []]
         
