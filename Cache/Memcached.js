@@ -51,4 +51,17 @@ module.exports = class extends Cache {
                         
     }
 
+    async gets (k) {
+
+        return new Promise ((ok, fail) => {
+            this._.gets (k, this.cb (ok, fail))
+        })
+    }
+
+    async cas (k, v, cas) {
+
+        return new Promise ((ok, fail) => {
+            this._.cas(k, v, cas, 0, this.cb (ok, fail))
+        })
+    }
 }
