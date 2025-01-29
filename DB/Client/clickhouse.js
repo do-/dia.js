@@ -201,7 +201,13 @@ class ChClient extends Dia.DB.Client {
 
 		try {
  
-			await backend.response ({headers}, is)
+			let res = await backend.response ({headers}, is)
+
+			if (res.includes ('DB::Exception')) {
+				const match = res.match(/DB::Exception: (.+)/);
+				throw new Error (match.join ('. '));
+			}
+
 
 		}
 		catch (error) {
@@ -318,8 +324,13 @@ class ChClient extends Dia.DB.Client {
     	sql = this.bind (sql, params)
     	        
         try {        
-			await this.backend.response ({}, sql)			
-        }
+			let res = await this.backend.response ({}, sql)
+
+			if (res.includes ('DB::Exception')) {
+				const match = res.match(/DB::Exception: (.+)/);
+				throw new Error (match.join ('. '));
+			}
+		}
 		catch (error) {			
 		    this.log_error (log_event, error)		
 		}
